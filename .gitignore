@@ -1,0 +1,45 @@
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Uu]serSettings/
+[Mm]emoryCaptures/
+
+# User-specific files
+*.user
+*.userprefs
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+
+# IDE and editor caches
+.vs/
+.idea/
+*.csproj
+*.sln
+*.slnx
+*.unityproj
+*.pidb.meta
+
+# Crash reports
+sysinfo.txt
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Gradle cache
+.gradle/
+
+# IL2CPP output
+il2cppOutput/
+
+.vscode
+*.lfx
+*.lfx.*
