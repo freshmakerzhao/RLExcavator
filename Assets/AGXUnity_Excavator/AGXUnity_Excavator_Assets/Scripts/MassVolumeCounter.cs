@@ -53,77 +53,12 @@ public class MassVolumeCounter : ScriptComponent
 
     Debug.Assert( m_infoText );
 
-    // Initialize the heights of the terrain
-    ComputeTerrainHeights();
+    m_terrain.Native.getProperties().setSoilParticleSizeScaling( 1.5f );
 
     return base.Initialize();
 
   }
   public TerrainData TerrainData { get { return m_unityTerrain?.terrainData; } }
-
-
-  /// <summary>
-  /// Reset the terrain.
-  /// Compute a new height for the terrain given some function
-  /// </summary>
-  void ComputeTerrainHeights()
-  {
-    m_terrain.ResetHeights();
-
-    var terrain = m_terrain.Native;
-    int resX = (int)m_terrain.Native.getResolutionX();
-    int resY = (int)m_terrain.Native.getResolutionY();
-    double[] height_data = new double[resX * resY];
-
-    // compute new heights for the terrain data
-    Vector2 center = new Vector2(resX/2, resY/2);
-    for ( var x = 0; x < resX; x++ )
-      for ( var y = 0; y < resY; y++ ) {
-        var distance = (center - new Vector2(x, y)).magnitude*0.1f;
-        var z = (1 / Mathf.Sqrt(2 * Mathf.PI)) * Mathf.Exp(-.5f * distance*distance);
-        height_data[ resX * x + y ] = 1 + z * 5;
-      }
-
-    // Create a vector we will use to update the terrain heights
-    var heights = new agx.RealVector(height_data);
-
-    // update the deformable terrain
-    terrain.setHeights( heights );
-
-    // now update the unity terrain
-    var scale = TerrainData.heightmapScale.y;
-    var result = new float[,] { { 0.0f } };
-    for ( var x = 0; x < resX; x++ )
-      for ( var y = 0; y < resY; y++ ) {
-        var i = (int)x;
-        var j = (int)y;
-        var h = (float)height_data[resX * x + y];
-
-        result[ 0, 0 ] = h / scale;
-
-        TerrainData.SetHeightsDelayLOD( resX - i - 1, resY - j - 1, result );
-      }
-
-#if UNITY_2019_1_OR_NEWER
-    TerrainData.SyncHeightmap();
-#else
-      Terrain.ApplyDelayedHeightmapModification();
-#endif
-
-
-
-#if UNITY_EDITOR
-    // If the editor is closed during play the modified height
-    // data isn't saved, this resolves corrupt heights in such case.
-    UnityEditor.EditorUtility.SetDirty( TerrainData );
-    UnityEditor.AssetDatabase.SaveAssets();
-#endif
-
-
-    m_terrain.Native.getProperties().setSoilParticleSizeScaling( 1.5f );
-
-
-  }
 
 
   // Update is called once per frame
@@ -139,9 +74,7 @@ public class MassVolumeCounter : ScriptComponent
     {
       m_excavatedVolume = 0;
       m_excavatedMass = 0;
-      m_excavatedVolume = 0;
-
-      ComputeTerrainHeights();
+      m_massInBucket = 0;
     }
 
     Debug.Assert( m_terrain != null );
