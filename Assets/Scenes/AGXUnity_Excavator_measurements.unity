@@ -279,7 +279,7 @@ Transform:
   m_GameObject: {fileID: 394290803}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -14.47, y: 2.81, z: 7.12}
+  m_LocalPosition: {x: -14.63, y: -0.06, z: 7.12}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -314,6 +314,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 32ba13c68cf6d734bbedb06bdb5f4a8f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  ExcavatorController: {fileID: 0}
+  Agent: {fileID: 0}
+  MassCounter: {fileID: 0}
 --- !u!1 &483917372
 GameObject:
   m_ObjectHideFlags: 0
@@ -579,27 +582,11 @@ MonoBehaviour:
     m_isOriented: 0
     m_referenceObject: {fileID: 0}
     m_primaryDirection: 0
-  - ContactMaterial: {fileID: -2394617653753771142, guid: 808a114382fe5ee43a400e8d937fc32d, type: 2}
-    m_isOriented: 0
-    m_referenceObject: {fileID: 0}
-    m_primaryDirection: 0
-  - ContactMaterial: {fileID: -4785354430592669293, guid: 808a114382fe5ee43a400e8d937fc32d, type: 2}
-    m_isOriented: 0
-    m_referenceObject: {fileID: 0}
-    m_primaryDirection: 0
-  - ContactMaterial: {fileID: 3134743987640456451, guid: 808a114382fe5ee43a400e8d937fc32d, type: 2}
-    m_isOriented: 0
-    m_referenceObject: {fileID: 0}
-    m_primaryDirection: 0
   - ContactMaterial: {fileID: -7661270470415123664, guid: 808a114382fe5ee43a400e8d937fc32d, type: 2}
     m_isOriented: 0
     m_referenceObject: {fileID: 0}
     m_primaryDirection: 0
   - ContactMaterial: {fileID: -8334887556862277377, guid: 808a114382fe5ee43a400e8d937fc32d, type: 2}
-    m_isOriented: 0
-    m_referenceObject: {fileID: 0}
-    m_primaryDirection: 0
-  - ContactMaterial: {fileID: 5712329992809973550, guid: 808a114382fe5ee43a400e8d937fc32d, type: 2}
     m_isOriented: 0
     m_referenceObject: {fileID: 0}
     m_primaryDirection: 0
@@ -5282,7 +5269,7 @@ MonoBehaviour:
   m_isSensor: 0
   m_enableMassProperties: 1
   m_material: {fileID: 0}
-  m_halfExtents: {x: 20, y: 0.1, z: 20}
+  m_halfExtents: {x: 10.04, y: 0.1, z: 10}
 --- !u!4 &968973185
 Transform:
   m_ObjectHideFlags: 0
@@ -5292,7 +5279,7 @@ Transform:
   m_GameObject: {fileID: 968973182}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: -14.579161, y: 1.6207519, z: 8.390215}
+  m_LocalPosition: {x: -14.5, y: 1.6, z: 11}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -5315,6 +5302,7 @@ MonoBehaviour:
   m_serializationVersion: 1
   shovel: {fileID: 1780963656}
   m_terrain: {fileID: 394290804}
+  agent: {fileID: 1408837723}
 --- !u!1 &1127195340
 GameObject:
   m_ObjectHideFlags: 0
@@ -5787,6 +5775,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Excavator CAT 365 Tracked
       objectReference: {fileID: 0}
+    - target: {fileID: 2994998943355307600, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2994998943355307602, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -5801,7 +5793,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2994998943355307603, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 4.39
+      value: 4.394
       objectReference: {fileID: 0}
     - target: {fileID: 2994998943355307603, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_LocalPosition.z
@@ -6732,8 +6724,23 @@ MonoBehaviour:
   stickMaxSpeed: 0.5
   bucketMaxSpeed: 0.6
   swingMaxSpeed: 0.5
-  linearAcceleration: 0.7
-  rotationalAcceleration: 1
+  boomAcceleration: 0.7
+  bucketAcceleration: 0.7
+  useInspectorHomePose: 1
+  boomHomePose:
+  - 0
+  - 0
+  stickHomePose: 0
+  bucketHomePose: 0
+  swingHomePose: 0
+  homeSettleSteps: 60
+  maxHomeSettleSteps: 300
+  homePoseTolerance: 0.01
+  warnOnHomeTimeout: 1
+  currentBoomPose: []
+  currentStickPose: 0
+  currentBucketPose: 0
+  currentSwingPose: 0
 --- !u!114 &1408837722
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -6741,7 +6748,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 621128809}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d87a3ec36012828deb7ca774b1783978, type: 3}
   m_Name: 
@@ -6753,7 +6760,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 621128809}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a6171f28cea2ae8eb89651ab13c14d35, type: 3}
   m_Name: 
@@ -6766,6 +6773,7 @@ MonoBehaviour:
   terrain: {fileID: 394290804}
   shovel: {fileID: 1780963656}
   bucketTip: {fileID: 1972424273}
+  episodeResetter: {fileID: 0}
   successIndicatorRenderer: {fileID: 1994713538}
   successColor: {r: 0.1, g: 0.85, b: 0.25, a: 1}
   successIndicatorSeconds: 1
@@ -6775,7 +6783,19 @@ MonoBehaviour:
   wMassGain: 3
   wLift: 0.5
   wActionCost: 0.001
-  debugEpisodeEvents: 1
+  wMassHeld: 0.001
+  wDigDepth: 0.0008
+  wStayNearDigArea: 0.0003
+  wEarlyLiftPenalty: 0.0008
+  digDepthNormalizer: 0.8
+  digAreaRadius: 3
+  resetPoseOnEpisodeBegin: 1
+  poseResetSettleSteps: -1
+  resetEpisodeOnSuccess: 1
+  debugEpisodeEvents: 0
+  disableKeyboardTesterWhenAgentEnabled: 1
+  debugActions: 0
+  debugActionPrints: 20
   CurrentEpisode: 0
 --- !u!114 &1408837724
 MonoBehaviour:
@@ -6784,7 +6804,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 621128809}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d1c4e0b1822b495aa52bc52839ecb30, type: 3}
   m_Name: 
@@ -6815,7 +6835,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 621128809}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
   m_Name: 
@@ -6943,6 +6963,37 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1445735976}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
+--- !u!1 &1447066316
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1447066317}
+  m_Layer: 0
+  m_Name: Environment
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1447066317
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1447066316}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 2.06529, y: -1.33285, z: 0.04989}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &1449959795 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 983923287681366155, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
@@ -8203,7 +8254,7 @@ MonoBehaviour:
   m_fixedUpdateRealTimeFactor: 0
   m_updateRealTimeCorrectionFactor: 0.9
   m_gravity: {x: 0, y: -9.82, z: 0}
-  m_timeStep: 0.02
+  m_timeStep: 0.019999992
   m_solverSettings: {fileID: 11400000, guid: c6ccfb83f5e799847999e16d5314da4c, type: 2}
   m_preIntegratePositions: 0
   m_displayStatistics: 0
@@ -8368,7 +8419,7 @@ Transform:
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
-  m_LocalScale: {x: 40, y: 0.2, z: 40}
+  m_LocalScale: {x: 20.08, y: 0.2, z: 20}
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 968973185}
@@ -8556,3 +8607,4 @@ SceneRoots:
   - {fileID: 483917375}
   - {fileID: 1174931580}
   - {fileID: 601617339}
+  - {fileID: 1447066317}

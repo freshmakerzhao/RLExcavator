@@ -69,6 +69,31 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
+    /// Restores the initial Unity terrain data and recreates the native terrain
+    /// instance so any dynamic soil mass/particles are cleared as part of reset.
+    /// </summary>
+    public void ResetHeightsAndRecreateNative()
+    {
+      if ( TerrainProperties != null )
+        TerrainProperties.Unregister( this );
+
+      if ( Simulation.HasInstance && Native != null )
+        GetSimulation()?.remove( Native );
+
+      Native = null;
+
+      ResetTerrainDataHeightsAndTransform();
+      InitializeNative();
+
+      PropertySynchronizer.Synchronize( this );
+      SetEnable( isActiveAndEnabled );
+
+      // Terrain-dependent renderers/material overlays subscribe to terrain
+      // modification callbacks, so force a full refresh after the native reset.
+      TriggerModifyAllCells();
+    }
+
+    /// <summary>
     /// If, e.g., OnDestroy wasn't called to reset the heights of the
     /// terrain this method can recover some data of the previous terrain
     /// height data. This method will subtract MaximumDepth from each

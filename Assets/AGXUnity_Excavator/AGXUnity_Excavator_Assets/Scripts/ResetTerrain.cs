@@ -9,12 +9,22 @@ using UnityEngine.InputSystem;
 
 public class ResetTerrain : MonoBehaviour
 {
+  [Header("Episode reset")]
+  [Tooltip("按 R 时同步复位挖掘机姿态；留空则运行时自动查找")]
+  public RLExcavator.ExcavatorController ExcavatorController;
+  [Tooltip("按 R 时同步通知 Agent 重新开始本局计数；留空则运行时自动查找")]
+  public RLExcavator.ExcavatorDigAgent Agent;
+  [Tooltip("按 R 或成功 reset 时同步清空质量/体积 UI 计数；留空则运行时自动查找")]
+  public MassVolumeCounter MassCounter;
 
 #if ENABLE_INPUT_SYSTEM
   private InputAction ResetAction;
 #else
   public KeyCode ResetTerrainKey = KeyCode.R;
 #endif
+
+  private Coroutine m_resetRoutine = null;
+  public bool IsResetting { get; private set; } = false;
 
   // Start is called before the first frame update
   void Start()
@@ -24,6 +34,69 @@ public class ResetTerrain : MonoBehaviour
     ResetAction.Enable();
 #endif
 
+    if (ExcavatorController == null)
+      ExcavatorController = FindInScene<RLExcavator.ExcavatorController>();
+
+    if (Agent == null)
+      Agent = FindInScene<RLExcavator.ExcavatorDigAgent>();
+
+    if (MassCounter == null)
+      MassCounter = FindInScene<MassVolumeCounter>();
+
+  }
+
+  public void ResetTerrainHeights()
+  {
+    var terrain = GetComponent<AGXUnity.Model.DeformableTerrain>();
+    if (terrain != null)
+      terrain.ResetHeightsAndRecreateNative();
+  }
+
+  public void ResetEpisode()
+  {
+    ResetEpisode( true );
+  }
+
+  public void ResetEpisode( bool restartAgentMeasurements )
+  {
+    if (m_resetRoutine != null)
+      StopCoroutine(m_resetRoutine);
+
+    m_resetRoutine = StartCoroutine(ResetEpisodeRoutine(restartAgentMeasurements));
+  }
+
+  private IEnumerator ResetEpisodeRoutine( bool restartAgentMeasurements )
+  {
+    IsResetting = true;
+
+    if (ExcavatorController != null)
+      ExcavatorController.BeginHomePoseReset();
+
+    while (ExcavatorController != null && ExcavatorController.IsHoming)
+      yield return new WaitForFixedUpdate();
+
+    ResetTerrainHeights();
+
+    if (MassCounter != null)
+      MassCounter.ResetCounters();
+
+    if (restartAgentMeasurements && Agent != null)
+      Agent.RestartEpisodeMeasurements();
+
+    IsResetting = false;
+    m_resetRoutine = null;
+  }
+
+  private T FindInScene<T>() where T : Component
+  {
+    var roots = gameObject.scene.GetRootGameObjects();
+    foreach (var root in roots) {
+      var component = root.GetComponentInChildren<T>(true);
+      if (component != null)
+        return component;
+    }
+
+    return null;
   }
 
   // Update is called once per frame
@@ -35,9 +108,7 @@ public class ResetTerrain : MonoBehaviour
     if (Input.GetKeyDown(ResetTerrainKey))
 #endif
     {
-      var terrain = GetComponent<AGXUnity.Model.DeformableTerrain>();
-      if (terrain != null)
-        terrain.ResetHeights();
+      ResetEpisode();
     }
   }
 }

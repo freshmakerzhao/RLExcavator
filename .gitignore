@@ -43,3 +43,8 @@ il2cppOutput/
 .vscode
 *.lfx
 *.lfx.*
+
+# ML-Agents training outputs/runtime diagnostics
+results/
+Assets/ML-Agents/
+Assets/ML-Agents.meta

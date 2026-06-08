@@ -21,6 +21,7 @@ public class MassVolumeCounter : ScriptComponent
   agxCollide.Geometry m_geometry;
   public AGXUnity.Model.DeformableTerrainShovel shovel;
   public AGXUnity.Model.DeformableTerrain m_terrain;
+  public RLExcavator.ExcavatorDigAgent agent;
   Terrain m_unityTerrain;
 
   float m_excavatedVolume = 0;
@@ -53,12 +54,34 @@ public class MassVolumeCounter : ScriptComponent
 
     Debug.Assert( m_infoText );
 
+    if ( agent == null )
+      agent = FindInScene<RLExcavator.ExcavatorDigAgent>();
+
     m_terrain.Native.getProperties().setSoilParticleSizeScaling( 1.5f );
 
     return base.Initialize();
 
   }
   public TerrainData TerrainData { get { return m_unityTerrain?.terrainData; } }
+
+  public void ResetCounters()
+  {
+    m_excavatedVolume = 0;
+    m_excavatedMass = 0;
+    m_massInBucket = 0;
+  }
+
+  private T FindInScene<T>() where T : Component
+  {
+    var roots = gameObject.scene.GetRootGameObjects();
+    foreach ( var root in roots ) {
+      var component = root.GetComponentInChildren<T>( true );
+      if ( component != null )
+        return component;
+    }
+
+    return null;
+  }
 
 
   // Update is called once per frame
@@ -72,15 +95,19 @@ public class MassVolumeCounter : ScriptComponent
     if (Input.GetKeyDown(ResetTerrainKey))
 #endif
     {
-      m_excavatedVolume = 0;
-      m_excavatedMass = 0;
-      m_massInBucket = 0;
+      ResetCounters();
     }
 
     Debug.Assert( m_terrain != null );
 
-    m_massInBucket = (float)m_terrain.Native.getDynamicMass( shovel.Native );
-    string info = string.Format( "Mass in bucket: \t\t{0:f} kg\n", m_massInBucket );
+    m_massInBucket = Mathf.Max( 0f, (float)m_terrain.Native.getDynamicMass( shovel.Native ) );
+    string info = "";
+    if ( agent != null ) {
+      info += string.Format( "Episode: \t\t{0}\n", agent.CurrentEpisode );
+      info += string.Format( "Score: \t\t{0:f3}\n", agent.CurrentScore );
+      info += string.Format( "Step: \t\t{0}\n", agent.StepCount );
+    }
+    info += string.Format( "Mass in bucket: \t\t{0:f} kg\n", m_massInBucket );
 
     // Get all particles that are in contact with our sensor geometry
     var ids = sensor.getContactingParticleIds();

@@ -38,6 +38,8 @@ namespace RLExcavator
     public DeformableTerrainShovel shovel;
     [Tooltip("铲斗尖参考点（用于观测铲斗位置 / 埋深），可用铲斗上的一个空物体")]
     public Transform bucketTip;
+    [Tooltip("Episode reset 入口。留空则运行时自动查找 ResetTerrain 组件")]
+    public global::ResetTerrain episodeResetter;
 
     [Header("成功提示")]
     [Tooltip("达标后短暂变绿的地板/平台 Renderer。建议拖入 Frame 或平台网格的 Renderer")]
@@ -58,25 +60,55 @@ namespace RLExcavator
     public float wMassGain   = 3.0f;   // 每步装载量增量的奖励（核心信号）
     public float wLift       = 0.5f;   // 达标后抬升奖励
     public float wActionCost = 0.001f; // 抖动惩罚
+    [Tooltip("斗内已有质量的持续小奖励，帮助 agent 知道保土是好事")]
+    public float wMassHeld = 0.001f;
+    [Tooltip("未达标前铲斗尖向下进入土层的塑形奖励")]
+    public float wDigDepth = 0.0008f;
+    [Tooltip("未达标前保持在初始挖掘区域附近的塑形奖励")]
+    public float wStayNearDigArea = 0.0003f;
+    [Tooltip("未达标前过早抬升铲斗尖的惩罚")]
+    public float wEarlyLiftPenalty = 0.0008f;
+    [Tooltip("用于归一化下探奖励的参考深度(m)")]
+    public float digDepthNormalizer = 0.8f;
+    [Tooltip("挖掘区域水平半径(m)，越小越强调在初始土堆附近挖")]
+    public float digAreaRadius = 3.0f;
+
+    [Header("Episode 复位")]
+    [Tooltip("每局开始时用 ExcavatorController 的 LockController 复位挖掘机姿态")]
+    public bool resetPoseOnEpisodeBegin = true;
+    [Tooltip("姿态复位保持 LockController 的物理步数，负数表示使用 controller.homeSettleSteps")]
+    public int poseResetSettleSteps = -1;
+    [Tooltip("成功提示结束后自动执行和 R 键一致的 episode reset")]
+    public bool resetEpisodeOnSuccess = true;
 
     [Header("调试")]
     [Tooltip("打印达标/成功日志，用于 Heuristic 验证阶段")]
     public bool debugEpisodeEvents = true;
+    [Tooltip("Agent 启用时自动禁用键盘测试脚本，避免键盘 0 输入覆盖 trainer 动作")]
+    public bool disableKeyboardTesterWhenAgentEnabled = true;
+    [Tooltip("打印前若干次 trainer 动作，用于确认 agent 是否收到非零动作")]
+    public bool debugActions = false;
+    public int debugActionPrints = 20;
 
     // ---- 运行时状态 ----
     private float m_prevMass = 0f;      // 上一步铲斗内土质量，用于算增量
     private bool  m_reachedTarget = false;
     private bool  m_successSignaled = false;
     private float m_episodeStartTipY = 0f;
+    private Vector3 m_episodeStartTipPosition = Vector3.zero;
     private Coroutine m_successIndicatorRoutine = null;
+    private bool m_waitingForPoseReset = false;
+    private int m_debugActionPrintCount = 0;
     [HideInInspector] public int CurrentEpisode = 0;
+    public float CurrentScore => GetCumulativeReward();
+    public float CurrentMassInBucket => MassInBucket();
 
     // 取铲斗内当前土质量(kg)。来自 AGX：terrain.getDynamicMass(shovel) 返回被铲斗"托住"的动态土质量。
     private float MassInBucket()
     {
       if ( terrain == null || shovel == null || terrain.Native == null || shovel.Native == null )
         return 0f;
-      return (float)terrain.Native.getDynamicMass( shovel.Native );
+      return Mathf.Max( 0f, (float)terrain.Native.getDynamicMass( shovel.Native ) );
     }
 
     public override void Initialize()
@@ -84,10 +116,57 @@ namespace RLExcavator
       CurrentEpisode = 0;
 
       if ( successIndicatorRenderer == null ) {
-        var frame = GameObject.Find( "Frame" );
+        var frame = FindInSceneByName( "Frame" );
         if ( frame != null )
           successIndicatorRenderer = frame.GetComponentInChildren<Renderer>();
       }
+
+      if ( episodeResetter == null )
+        episodeResetter = FindInScene<global::ResetTerrain>();
+
+      if ( disableKeyboardTesterWhenAgentEnabled ) {
+        var keyboardTester = GetComponent<ExcavatorKeyboardTester>();
+        if ( keyboardTester != null )
+          keyboardTester.enabled = false;
+      }
+    }
+
+    private T FindInScene<T>() where T : Component
+    {
+      var roots = gameObject.scene.GetRootGameObjects();
+      foreach ( var root in roots ) {
+        var component = root.GetComponentInChildren<T>( true );
+        if ( component != null )
+          return component;
+      }
+
+      return null;
+    }
+
+    private GameObject FindInSceneByName( string objectName )
+    {
+      var roots = gameObject.scene.GetRootGameObjects();
+      foreach ( var root in roots ) {
+        var match = FindChildByName( root.transform, objectName );
+        if ( match != null )
+          return match.gameObject;
+      }
+
+      return null;
+    }
+
+    private static Transform FindChildByName( Transform parent, string objectName )
+    {
+      if ( parent.name == objectName )
+        return parent;
+
+      foreach ( Transform child in parent ) {
+        var match = FindChildByName( child, objectName );
+        if ( match != null )
+          return match;
+      }
+
+      return null;
     }
 
     public override void OnEpisodeBegin()
@@ -95,12 +174,38 @@ namespace RLExcavator
       CurrentEpisode++;
       m_reachedTarget = false;
       m_successSignaled = false;
-      m_episodeStartTipY = bucketTip != null ? bucketTip.position.y : 0f;
+      m_waitingForPoseReset = true;
 
+      if ( episodeResetter != null ) {
+        episodeResetter.ResetEpisode( false );
+        return;
+      }
+
+      if ( resetPoseOnEpisodeBegin && controller != null ) {
+        controller.BeginHomePoseReset( poseResetSettleSteps );
+        return;
+      }
+
+      BeginEpisodeMeasurements();
+    }
+
+    private void BeginEpisodeMeasurements()
+    {
+      m_waitingForPoseReset = false;
+      m_episodeStartTipPosition = bucketTip != null ? bucketTip.position : Vector3.zero;
+      m_episodeStartTipY = m_episodeStartTipPosition.y;
       m_prevMass = MassInBucket();
 
       if ( debugEpisodeEvents )
         Debug.Log( $"[ExcavatorDigAgent] Episode {CurrentEpisode} begin. tipY={m_episodeStartTipY:F2}, mass={m_prevMass:F1}kg" );
+    }
+
+    public void RestartEpisodeMeasurements()
+    {
+      CurrentEpisode++;
+      m_reachedTarget = false;
+      m_successSignaled = false;
+      BeginEpisodeMeasurements();
     }
 
     // 观测：全部尽量归一化到 [-1,1]
@@ -136,10 +241,24 @@ namespace RLExcavator
 
     public override void OnActionReceived( ActionBuffers actions )
     {
+      if ( episodeResetter != null && episodeResetter.IsResetting )
+        return;
+
+      if ( controller != null && controller.IsHoming )
+        return;
+
+      if ( m_waitingForPoseReset )
+        BeginEpisodeMeasurements();
+
       var a = actions.ContinuousActions;
       float boom   = a.Length > 0 ? a[ 0 ] : 0f;
       float stick  = a.Length > 1 ? a[ 1 ] : 0f;
       float bucket = a.Length > 2 ? a[ 2 ] : 0f;
+
+      if ( debugActions && m_debugActionPrintCount < debugActionPrints ) {
+        Debug.Log( $"[ExcavatorDigAgent] action boom={boom:F3}, stick={stick:F3}, bucket={bucket:F3}" );
+        m_debugActionPrintCount++;
+      }
 
       // 1) 动作 -> 关节
       if ( controller != null )
@@ -151,11 +270,29 @@ namespace RLExcavator
       m_prevMass = mass;
       AddReward( wMassGain * dMass / Mathf.Max( massNormalizer, 1f ) );
 
+      float mass01 = Mathf.Clamp01( mass / Mathf.Max( massNormalizer, 1f ) );
+      AddReward( wMassHeld * mass01 );
+
       // 3) 时间惩罚：鼓励尽快完成（沿用 Turtle 思路）
       AddReward( -1f / Mathf.Max( MaxStep, 1 ) );
 
       // 4) 抖动惩罚：避免乱抖
       AddReward( -wActionCost * ( Mathf.Abs( boom ) + Mathf.Abs( stick ) + Mathf.Abs( bucket ) ) );
+
+      if ( !m_reachedTarget && bucketTip != null ) {
+        Vector3 tip = bucketTip.position;
+        float lowerDepth = Mathf.Max( 0f, m_episodeStartTipY - tip.y );
+        float depth01 = Mathf.Clamp01( lowerDepth / Mathf.Max( digDepthNormalizer, 0.01f ) );
+        AddReward( wDigDepth * depth01 );
+
+        Vector2 startXZ = new Vector2( m_episodeStartTipPosition.x, m_episodeStartTipPosition.z );
+        Vector2 tipXZ = new Vector2( tip.x, tip.z );
+        float distance01 = Mathf.Clamp01( Vector2.Distance( startXZ, tipXZ ) / Mathf.Max( digAreaRadius, 0.01f ) );
+        AddReward( wStayNearDigArea * ( 1f - distance01 ) );
+
+        float earlyLift = Mathf.Max( 0f, tip.y - m_episodeStartTipY );
+        AddReward( -wEarlyLiftPenalty * Mathf.Clamp01( earlyLift / Mathf.Max( liftHeight, 0.01f ) ) );
+      }
 
       // 5) 是否装够了土
       if ( !m_reachedTarget && mass >= targetMassKg ) {
@@ -167,22 +304,28 @@ namespace RLExcavator
       // 6) 达标后：抬升奖励 + 成功判定
       if ( m_reachedTarget && bucketTip != null ) {
         float tipLift = bucketTip.position.y - m_episodeStartTipY;
-        AddReward( wLift * Mathf.Max( 0f, tipLift ) / Mathf.Max( liftHeight, 0.01f ) / Mathf.Max( MaxStep, 1 ) );
+        bool hasTargetMass = mass >= targetMassKg;
 
-        if ( !m_successSignaled && tipLift >= liftHeight ) {
+        if ( hasTargetMass )
+          AddReward( wLift * Mathf.Max( 0f, tipLift ) / Mathf.Max( liftHeight, 0.01f ) / Mathf.Max( MaxStep, 1 ) );
+
+        if ( !m_successSignaled && hasTargetMass && tipLift >= liftHeight ) {
           m_successSignaled = true;
           if ( debugEpisodeEvents )
             Debug.Log( $"[ExcavatorDigAgent] Success: mass={mass:F1}kg, tipLift={tipLift:F2}/{liftHeight:F2}m." );
           AddReward( 1.0f );        // 成功大奖励
           ShowSuccessIndicator();
+          if ( resetEpisodeOnSuccess )
+            EndEpisode();
         }
       }
     }
 
     private void ShowSuccessIndicator()
     {
-      if ( successIndicatorRenderer == null )
+      if ( successIndicatorRenderer == null ) {
         return;
+      }
 
       if ( m_successIndicatorRoutine != null )
         StopCoroutine( m_successIndicatorRoutine );

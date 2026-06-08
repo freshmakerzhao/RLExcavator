@@ -48,8 +48,37 @@ namespace RLExcavator
     [Tooltip("铲斗目标速度每秒最大变化量(m/s^2)，越小越柔和")]
     public float bucketAcceleration = 0.7f;
 
+    [Header("初始位姿复位")]
+    [Tooltip("开启后使用 Inspector 中填写的 home 位姿；关闭则使用 Play 后第一次捕获的位姿")]
+    public bool useInspectorHomePose = false;
+    [Tooltip("大臂液压缸 home 位移。长度应与 boom 数组一致；两根缸通常填同一组初始读数")]
+    public float[] boomHomePose;
+    [Tooltip("小臂液压缸 home 位移")]
+    public float stickHomePose = 0f;
+    [Tooltip("铲斗液压缸 home 位移")]
+    public float bucketHomePose = 0f;
+    [Tooltip("回转 home 角度(rad)")]
+    public float swingHomePose = 0f;
+    [Tooltip("执行复位时保持 LockController 的物理步数")]
+    public int homeSettleSteps = 60;
+    [Tooltip("复位最多等待的物理步数，防止异常姿态导致训练永久卡住")]
+    public int maxHomeSettleSteps = 300;
+    [Tooltip("判断已回到 home 的关节误差阈值(prismatic=m, hinge=rad)")]
+    public float homePoseTolerance = 0.01f;
+    [Tooltip("复位超时但未到达 home 时打印警告")]
+    public bool warnOnHomeTimeout = true;
+
+    [Header("当前关节读数（运行时参考）")]
+    public float[] currentBoomPose;
+    public float currentStickPose = 0f;
+    public float currentBucketPose = 0f;
+    public float currentSwingPose = 0f;
+
     private float m_boomSpeed = 0f;
     private float m_bucketSpeed = 0f;
+    private Coroutine m_homeRoutine = null;
+
+    public bool IsHoming { get; private set; } = false;
 
     // 记录每个关节的初始位置/角度，用于 episode 复位。
     // 注意：AGX 是物理引擎，关节不能"瞬移"复位，只能用 LockController 把它拉回初始位姿。
@@ -67,6 +96,8 @@ namespace RLExcavator
     {
       if ( !m_homeCaptured )
         CaptureHomePose();
+
+      UpdateCurrentPoseReadout();
     }
 
     // ---------- 对外：驱动 ----------
@@ -76,6 +107,9 @@ namespace RLExcavator
     /// </summary>
     public void SetNormalizedSpeeds( float boomCmd, float stickCmd, float bucketCmd, float swingCmd = 0f )
     {
+      if ( IsHoming )
+        return;
+
       float dt = Time.fixedDeltaTime;
       m_boomSpeed = MoveTowardsSpeed( m_boomSpeed, Mathf.Clamp( boomCmd, -1f, 1f ) * boomMaxSpeed, boomAcceleration, dt );
       m_bucketSpeed = MoveTowardsSpeed( m_bucketSpeed, Mathf.Clamp( bucketCmd, -1f, 1f ) * bucketMaxSpeed, bucketAcceleration, dt );
@@ -183,6 +217,38 @@ namespace RLExcavator
       m_homeCaptured = true;
     }
 
+    private void UpdateCurrentPoseReadout()
+    {
+      if ( boom != null ) {
+        if ( currentBoomPose == null || currentBoomPose.Length != boom.Length )
+          currentBoomPose = new float[ boom.Length ];
+
+        for ( int i = 0; i < boom.Length; i++ )
+          currentBoomPose[ i ] = boom[ i ] != null ? boom[ i ].GetCurrentAngle() : 0f;
+      }
+
+      currentStickPose  = stick  != null ? stick.GetCurrentAngle()  : 0f;
+      currentBucketPose = bucket != null ? bucket.GetCurrentAngle() : 0f;
+      currentSwingPose  = swing  != null ? swing.GetCurrentAngle()  : 0f;
+    }
+
+    /// <summary>把当前姿态复制到 Inspector home 字段，方便人工调好姿态后作为固定 reset 目标。</summary>
+    public void CaptureCurrentPoseAsInspectorHome()
+    {
+      CaptureHomePose();
+
+      if ( m_boomHome != null ) {
+        boomHomePose = new float[ m_boomHome.Length ];
+        for ( int i = 0; i < m_boomHome.Length; i++ )
+          boomHomePose[ i ] = m_boomHome[ i ];
+      }
+
+      stickHomePose = m_stickHome;
+      bucketHomePose = m_bucketHome;
+      swingHomePose = m_swingHome;
+      useInspectorHomePose = true;
+    }
+
     /// <summary>
     /// 开/关"回家锁"。开启时用 LockController 把每个关节拉回初始位姿。
     /// AGX 不能瞬移复位，所以 episode 重置时的标准做法是：
@@ -195,11 +261,97 @@ namespace RLExcavator
 
       if ( boom != null )
         for ( int i = 0; i < boom.Length; i++ )
-          LockConstraintAt( boom[ i ], enable, m_boomHome != null && i < m_boomHome.Length ? m_boomHome[ i ] : 0f );
+          LockConstraintAt( boom[ i ], enable, GetBoomHomePose( i ) );
 
-      LockConstraintAt( stick,  enable, m_stickHome );
-      LockConstraintAt( bucket, enable, m_bucketHome );
-      LockConstraintAt( swing,  enable, m_swingHome );
+      LockConstraintAt( stick,  enable, GetStickHomePose() );
+      LockConstraintAt( bucket, enable, GetBucketHomePose() );
+      LockConstraintAt( swing,  enable, GetSwingHomePose() );
+    }
+
+    /// <summary>
+    /// 开始一次物理复位：用 LockController 拉回 home，等待 settleSteps 个 FixedUpdate 后自动解锁。
+    /// </summary>
+    public void BeginHomePoseReset( int settleSteps = -1 )
+    {
+      if ( m_homeRoutine != null )
+        StopCoroutine( m_homeRoutine );
+
+      m_homeRoutine = StartCoroutine( HomePoseResetRoutine( settleSteps ) );
+    }
+
+    private System.Collections.IEnumerator HomePoseResetRoutine( int settleSteps )
+    {
+      IsHoming = true;
+      m_boomSpeed = 0f;
+      m_bucketSpeed = 0f;
+
+      SetHomeLock( true );
+
+      int minSteps = Mathf.Max( settleSteps >= 0 ? settleSteps : homeSettleSteps, 1 );
+      int maxSteps = Mathf.Max( maxHomeSettleSteps, minSteps );
+      int steps = 0;
+
+      while ( steps < minSteps || ( steps < maxSteps && !IsAtHomePose() ) ) {
+        steps++;
+        yield return new WaitForFixedUpdate();
+      }
+
+      if ( warnOnHomeTimeout && !IsAtHomePose() )
+        Debug.LogWarning( $"[ExcavatorController] Home reset timeout after {steps} fixed steps. maxError={GetHomePoseMaxError():F4}" );
+
+      SetHomeLock( false );
+      StopAll();
+
+      IsHoming = false;
+      m_homeRoutine = null;
+    }
+
+    private float GetBoomHomePose( int index )
+    {
+      if ( useInspectorHomePose && boomHomePose != null && index < boomHomePose.Length )
+        return boomHomePose[ index ];
+
+      return m_boomHome != null && index < m_boomHome.Length ? m_boomHome[ index ] : 0f;
+    }
+
+    private float GetStickHomePose()
+    {
+      return useInspectorHomePose ? stickHomePose : m_stickHome;
+    }
+
+    private float GetBucketHomePose()
+    {
+      return useInspectorHomePose ? bucketHomePose : m_bucketHome;
+    }
+
+    private float GetSwingHomePose()
+    {
+      return useInspectorHomePose ? swingHomePose : m_swingHome;
+    }
+
+    private bool IsAtHomePose()
+    {
+      return GetHomePoseMaxError() <= Mathf.Max( homePoseTolerance, 0.0001f );
+    }
+
+    private float GetHomePoseMaxError()
+    {
+      float maxError = 0f;
+
+      if ( boom != null )
+        for ( int i = 0; i < boom.Length; i++ )
+          maxError = Mathf.Max( maxError, GetConstraintHomeError( boom[ i ], GetBoomHomePose( i ) ) );
+
+      maxError = Mathf.Max( maxError, GetConstraintHomeError( stick, GetStickHomePose() ) );
+      maxError = Mathf.Max( maxError, GetConstraintHomeError( bucket, GetBucketHomePose() ) );
+      maxError = Mathf.Max( maxError, GetConstraintHomeError( swing, GetSwingHomePose() ) );
+
+      return maxError;
+    }
+
+    private static float GetConstraintHomeError( Constraint c, float target )
+    {
+      return c != null ? Mathf.Abs( c.GetCurrentAngle() - target ) : 0f;
     }
 
     // 用 LockController 把关节锁在指定位置（同时关掉马达，避免两者打架）。
