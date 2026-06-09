@@ -2,10 +2,8 @@ using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Sensors;
 using Unity.MLAgents.Actuators;
+using Unity.MLAgents.Policies;
 using AGXUnity.Model;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 namespace RLExcavator
 {
@@ -13,13 +11,13 @@ namespace RLExcavator
   /// 挖掘机挖土强化学习智能体（连续控制）。
   ///
   /// 这是整套流程的"大脑接口"，对照你做过的 TurtleAgent 来理解差异：
-  ///   - 动作：Turtle 是离散(前进/转向)，这里是 3 维连续(boom/stick/bucket 目标速度)。
+  ///   - 动作：Turtle 是离散(前进/转向)，这里是 4 维连续(boom/stick/bucket/swing 目标速度)。
   ///   - 奖励：Turtle 是到达目标，这里是"铲斗里挖到的土质量"（密集塑形信号）。
   ///   - 环境：Turtle 是静态地面，这里是 AGX 可变形地形 + 铲斗(shovel)。
   ///
   /// 数据流：
   ///   CollectObservations() 把世界状态喂给网络
-  ///        -> 网络输出 3 个连续动作
+  ///        -> 网络输出 4 个连续动作
   ///        -> OnActionReceived() 把动作交给 ExcavatorController 驱动关节
   ///        -> AddReward() 根据铲斗装载量变化给奖励
   ///        -> 达标 -> 地板/平台变绿提示（当前验证阶段暂不重置环境）
@@ -86,6 +84,8 @@ namespace RLExcavator
     public bool debugEpisodeEvents = true;
     [Tooltip("Agent 启用时自动禁用键盘测试脚本，避免键盘 0 输入覆盖 trainer 动作")]
     public bool disableKeyboardTesterWhenAgentEnabled = true;
+    [Tooltip("Behavior Name 为 ExcavatorDig 时自动禁用轨迹跟踪 Agent，避免两个 Agent 同时接管控制")]
+    public bool disableTrajectoryAgentWhenEnabled = true;
     [Tooltip("打印前若干次 trainer 动作，用于确认 agent 是否收到非零动作")]
     public bool debugActions = false;
     public int debugActionPrints = 20;
@@ -129,6 +129,18 @@ namespace RLExcavator
         if ( keyboardTester != null )
           keyboardTester.enabled = false;
       }
+
+      if ( disableTrajectoryAgentWhenEnabled && IsBehaviorName( "ExcavatorDig" ) ) {
+        var trajectoryAgent = GetComponent<ExcavatorTrajectoryAgent>();
+        if ( trajectoryAgent != null )
+          trajectoryAgent.enabled = false;
+      }
+    }
+
+    private bool IsBehaviorName( string behaviorName )
+    {
+      var behavior = GetComponent<BehaviorParameters>();
+      return behavior != null && behavior.BehaviorName == behaviorName;
     }
 
     private T FindInScene<T>() where T : Component
@@ -211,10 +223,11 @@ namespace RLExcavator
     // 观测：全部尽量归一化到 [-1,1]
     public override void CollectObservations( VectorSensor sensor )
     {
-      // 3× 关节位置（已在 controller 内归一化）
+      // 4× 关节位置（已在 controller 内归一化）
       sensor.AddObservation( controller != null ? controller.BoomNormalizedPosition   : 0f );
       sensor.AddObservation( controller != null ? controller.StickNormalizedPosition  : 0f );
       sensor.AddObservation( controller != null ? controller.BucketNormalizedPosition : 0f );
+      sensor.AddObservation( controller != null ? controller.SwingNormalizedPosition  : 0f );
 
       // 1× 铲斗内土质量（归一化）
       float mass = MassInBucket();
@@ -236,7 +249,7 @@ namespace RLExcavator
 
       // 1× episode 进度
       sensor.AddObservation( MaxStep > 0 ? (float)StepCount / MaxStep : 0f );
-      // 合计 8 维（先精简，确认有效后再加速度等）
+      // 合计 9 维（先精简，确认有效后再加速度等）
     }
 
     public override void OnActionReceived( ActionBuffers actions )
@@ -254,15 +267,16 @@ namespace RLExcavator
       float boom   = a.Length > 0 ? a[ 0 ] : 0f;
       float stick  = a.Length > 1 ? a[ 1 ] : 0f;
       float bucket = a.Length > 2 ? a[ 2 ] : 0f;
+      float swing  = a.Length > 3 ? a[ 3 ] : 0f;
 
       if ( debugActions && m_debugActionPrintCount < debugActionPrints ) {
-        Debug.Log( $"[ExcavatorDigAgent] action boom={boom:F3}, stick={stick:F3}, bucket={bucket:F3}" );
+        Debug.Log( $"[ExcavatorDigAgent] action boom={boom:F3}, stick={stick:F3}, bucket={bucket:F3}, swing={swing:F3}" );
         m_debugActionPrintCount++;
       }
 
       // 1) 动作 -> 关节
       if ( controller != null )
-        controller.SetNormalizedSpeeds( boom, stick, bucket );
+        controller.SetNormalizedSpeeds( boom, stick, bucket, swing );
 
       // 2) 奖励：装载量增量（核心）
       float mass = MassInBucket();
@@ -277,7 +291,7 @@ namespace RLExcavator
       AddReward( -1f / Mathf.Max( MaxStep, 1 ) );
 
       // 4) 抖动惩罚：避免乱抖
-      AddReward( -wActionCost * ( Mathf.Abs( boom ) + Mathf.Abs( stick ) + Mathf.Abs( bucket ) ) );
+      AddReward( -wActionCost * ( Mathf.Abs( boom ) + Mathf.Abs( stick ) + Mathf.Abs( bucket ) + Mathf.Abs( swing ) ) );
 
       if ( !m_reachedTarget && bucketTip != null ) {
         Vector3 tip = bucketTip.position;
@@ -350,43 +364,7 @@ namespace RLExcavator
     // 手动控制：与键盘测试一致，先用它确认动作/观测/奖励闭环正确再训练。
     public override void Heuristic( in ActionBuffers actionsOut )
     {
-      var c = actionsOut.ContinuousActions;
-      c[ 0 ] = KeyAxis( KeyCode.K, KeyCode.I );
-      c[ 1 ] = KeyAxis( KeyCode.G, KeyCode.T );
-      c[ 2 ] = KeyAxis( KeyCode.J, KeyCode.L );
+      ExcavatorKeyboardInput.WriteDefaultTo( actionsOut.ContinuousActions );
     }
-
-    private static float KeyAxis( KeyCode pos, KeyCode neg )
-    {
-#if ENABLE_INPUT_SYSTEM
-      var kb = Keyboard.current;
-      if ( kb == null )
-        return 0f;
-      float v = 0f;
-      if ( kb[ ToKey( pos ) ].isPressed ) v += 1f;
-      if ( kb[ ToKey( neg ) ].isPressed ) v -= 1f;
-      return v;
-#else
-      float v = 0f;
-      if ( Input.GetKey( pos ) ) v += 1f;
-      if ( Input.GetKey( neg ) ) v -= 1f;
-      return v;
-#endif
-    }
-
-#if ENABLE_INPUT_SYSTEM
-    private static Key ToKey( KeyCode code )
-    {
-      switch ( code ) {
-        case KeyCode.I: return Key.I;
-        case KeyCode.K: return Key.K;
-        case KeyCode.T: return Key.T;
-        case KeyCode.G: return Key.G;
-        case KeyCode.J: return Key.J;
-        case KeyCode.L: return Key.L;
-        default:        return Key.None;
-      }
-    }
-#endif
   }
 }

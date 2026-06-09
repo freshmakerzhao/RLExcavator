@@ -1,7 +1,4 @@
 using UnityEngine;
-#if ENABLE_INPUT_SYSTEM
-using UnityEngine.InputSystem;
-#endif
 
 namespace RLExcavator
 {
@@ -31,50 +28,7 @@ namespace RLExcavator
     // 用 FixedUpdate：物理驱动应与 AGX 的固定步对齐，而不是渲染帧。
     private void FixedUpdate()
     {
-      float boom   = Axis( KeyCode.K, KeyCode.I );
-      float stick  = Axis( KeyCode.G, KeyCode.T );
-      float bucket = Axis( KeyCode.J, KeyCode.L );
-      float swing  = Axis( KeyCode.H, KeyCode.F );
-
-      m_controller.SetNormalizedSpeeds( boom, stick, bucket, swing );
+      ExcavatorKeyboardInput.ReadDefault().ApplyTo( m_controller );
     }
-
-    // 返回 +1 / -1 / 0
-    private static float Axis( KeyCode positive, KeyCode negative )
-    {
-#if ENABLE_INPUT_SYSTEM
-      // 新版 Input System：用 Keyboard.current 读键。
-      var kb = Keyboard.current;
-      if ( kb == null )
-        return 0f;
-      float v = 0f;
-      if ( kb[ ToKey( positive ) ].isPressed ) v += 1f;
-      if ( kb[ ToKey( negative ) ].isPressed ) v -= 1f;
-      return v;
-#else
-      float v = 0f;
-      if ( Input.GetKey( positive ) ) v += 1f;
-      if ( Input.GetKey( negative ) ) v -= 1f;
-      return v;
-#endif
-    }
-
-#if ENABLE_INPUT_SYSTEM
-    // 把少量用到的 KeyCode 映射到 Input System 的 Key。
-    private static Key ToKey( KeyCode code )
-    {
-      switch ( code ) {
-        case KeyCode.I: return Key.I;
-        case KeyCode.K: return Key.K;
-        case KeyCode.T: return Key.T;
-        case KeyCode.G: return Key.G;
-        case KeyCode.J: return Key.J;
-        case KeyCode.L: return Key.L;
-        case KeyCode.F: return Key.F;
-        case KeyCode.H: return Key.H;
-        default:        return Key.None;
-      }
-    }
-#endif
   }
 }

@@ -35,8 +35,7 @@ public class MassVolumeCounter : ScriptComponent
 
   protected override bool Initialize()
   {
-    Debug.Assert( m_terrain );
-    m_unityTerrain = m_terrain.GetComponent<Terrain>();
+    m_unityTerrain = m_terrain != null ? m_terrain.GetComponent<Terrain>() : null;
 
 #if ENABLE_INPUT_SYSTEM
     ResetAction = new InputAction( "Reset", binding: "<Keyboard>/r" );
@@ -57,7 +56,8 @@ public class MassVolumeCounter : ScriptComponent
     if ( agent == null )
       agent = FindInScene<RLExcavator.ExcavatorDigAgent>();
 
-    m_terrain.Native.getProperties().setSoilParticleSizeScaling( 1.5f );
+    if ( m_terrain != null && m_terrain.Native != null )
+      m_terrain.Native.getProperties().setSoilParticleSizeScaling( 1.5f );
 
     return base.Initialize();
 
@@ -98,9 +98,12 @@ public class MassVolumeCounter : ScriptComponent
       ResetCounters();
     }
 
-    Debug.Assert( m_terrain != null );
+    bool hasBucketMassSource = m_terrain != null &&
+                               m_terrain.Native != null &&
+                               shovel != null &&
+                               shovel.Native != null;
 
-    m_massInBucket = Mathf.Max( 0f, (float)m_terrain.Native.getDynamicMass( shovel.Native ) );
+    m_massInBucket = hasBucketMassSource ? Mathf.Max( 0f, (float)m_terrain.Native.getDynamicMass( shovel.Native ) ) : 0f;
     string info = "";
     if ( agent != null ) {
       info += string.Format( "Episode: \t\t{0}\n", agent.CurrentEpisode );
@@ -110,6 +113,13 @@ public class MassVolumeCounter : ScriptComponent
     info += string.Format( "Mass in bucket: \t\t{0:f} kg\n", m_massInBucket );
 
     // Get all particles that are in contact with our sensor geometry
+    if ( sensor == null || GetSimulation() == null ) {
+      info += string.Format( "Excavated mass: \t{0:f} kg\n", m_excavatedMass );
+      info += string.Format( "Excavated volume: \t{0:f} m^3", m_excavatedVolume );
+      m_infoText.text = info;
+      return;
+    }
+
     var ids = sensor.getContactingParticleIds();
 
     // Get the particle system
