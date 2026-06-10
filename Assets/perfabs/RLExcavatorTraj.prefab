@@ -1355,9 +1355,7 @@ MonoBehaviour:
   controller: {fileID: 8387008117009763877}
   bucketTip: {fileID: 9222632453387520791}
   trajectory: {fileID: 0}
-  episodeResetter: {fileID: 0}
   successIndicator: {fileID: 0}
-  controlOnlyDebugMode: 1
   targetThreshold: 0.25
   includeTargetVisualRadiusInThreshold: 1
   endEpisodeOnTargetReached: 1
@@ -1369,7 +1367,6 @@ MonoBehaviour:
   waypointBonus: 0.2
   pathCompleteBonus: 1
   resetPoseOnEpisodeBegin: 1
-  useEpisodeResetterOnEpisodeBegin: 0
   poseResetSettleSteps: -1
   debugEpisodeEvents: 1
   disableKeyboardTesterWhenAgentEnabled: 1
