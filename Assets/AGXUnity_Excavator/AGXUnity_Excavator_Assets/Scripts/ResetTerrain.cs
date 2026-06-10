@@ -24,6 +24,7 @@ public class ResetTerrain : MonoBehaviour
 #endif
 
   private Coroutine m_resetRoutine = null;
+  private bool m_inactiveResetWarningShown = false;
   public bool IsResetting { get; private set; } = false;
 
   // Start is called before the first frame update
@@ -59,6 +60,14 @@ public class ResetTerrain : MonoBehaviour
 
   public void ResetEpisode( bool restartAgentMeasurements )
   {
+    if (!isActiveAndEnabled || !gameObject.activeInHierarchy) {
+      if (!m_inactiveResetWarningShown) {
+        Debug.LogWarning("[ResetTerrain] ResetEpisode ignored because ResetTerrain is inactive.");
+        m_inactiveResetWarningShown = true;
+      }
+      return;
+    }
+
     if (m_resetRoutine != null)
       StopCoroutine(m_resetRoutine);
 

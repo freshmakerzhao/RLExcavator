@@ -40,11 +40,8 @@ namespace RLExcavator
     public global::ResetTerrain episodeResetter;
 
     [Header("成功提示")]
-    [Tooltip("达标后短暂变绿的地板/平台 Renderer。建议拖入 Frame 或平台网格的 Renderer")]
-    public Renderer successIndicatorRenderer;
-    public Color successColor = new Color( 0.1f, 0.85f, 0.25f, 1f );
-    [Tooltip("成功后地板保持绿色的秒数")]
-    public float successIndicatorSeconds = 1.0f;
+    [Tooltip("成功时触发的共享视觉提示。留空则运行时尝试在 Frame 上自动创建。")]
+    public SuccessIndicator successIndicator;
 
     [Header("任务参数")]
     [Tooltip("判定成功的铲斗土质量(kg)。先用手动测试估个值再填")]
@@ -96,7 +93,6 @@ namespace RLExcavator
     private bool  m_successSignaled = false;
     private float m_episodeStartTipY = 0f;
     private Vector3 m_episodeStartTipPosition = Vector3.zero;
-    private Coroutine m_successIndicatorRoutine = null;
     private bool m_waitingForPoseReset = false;
     private int m_debugActionPrintCount = 0;
     [HideInInspector] public int CurrentEpisode = 0;
@@ -115,11 +111,8 @@ namespace RLExcavator
     {
       CurrentEpisode = 0;
 
-      if ( successIndicatorRenderer == null ) {
-        var frame = FindInSceneByName( "Frame" );
-        if ( frame != null )
-          successIndicatorRenderer = frame.GetComponentInChildren<Renderer>();
-      }
+      if ( successIndicator == null )
+        successIndicator = FindOrCreateSuccessIndicator();
 
       if ( episodeResetter == null )
         episodeResetter = FindInScene<global::ResetTerrain>();
@@ -337,28 +330,28 @@ namespace RLExcavator
 
     private void ShowSuccessIndicator()
     {
-      if ( successIndicatorRenderer == null ) {
-        return;
-      }
-
-      if ( m_successIndicatorRoutine != null )
-        StopCoroutine( m_successIndicatorRoutine );
-
-      m_successIndicatorRoutine = StartCoroutine( SuccessIndicatorRoutine() );
+      if ( successIndicator != null )
+        successIndicator.Show();
     }
 
-    private System.Collections.IEnumerator SuccessIndicatorRoutine()
+    private SuccessIndicator FindOrCreateSuccessIndicator()
     {
-      var block = new MaterialPropertyBlock();
-      successIndicatorRenderer.GetPropertyBlock( block );
-      block.SetColor( "_BaseColor", successColor );
-      block.SetColor( "_Color", successColor );
-      successIndicatorRenderer.SetPropertyBlock( block );
+      var existing = FindInScene<SuccessIndicator>();
+      if ( existing != null )
+        return existing;
 
-      yield return new WaitForSeconds( Mathf.Max( successIndicatorSeconds, 0.01f ) );
+      var frame = FindInSceneByName( "Frame" );
+      if ( frame == null )
+        return null;
 
-      successIndicatorRenderer.SetPropertyBlock( null );
-      m_successIndicatorRoutine = null;
+      var indicator = frame.GetComponent<SuccessIndicator>();
+      if ( indicator == null )
+        indicator = frame.AddComponent<SuccessIndicator>();
+
+      if ( indicator.targetRenderer == null )
+        indicator.targetRenderer = frame.GetComponentInChildren<Renderer>();
+
+      return indicator;
     }
 
     // 手动控制：与键盘测试一致，先用它确认动作/观测/奖励闭环正确再训练。

@@ -19,8 +19,32 @@ namespace RLExcavator
     public Color pathColor = new Color( 0.1f, 0.8f, 1f, 1f );
     public Color currentTargetColor = new Color( 1f, 0.85f, 0.1f, 1f );
     public float gizmoRadius = 0.12f;
+    [Tooltip("Play 时自动给 waypoint 添加 Game 视图可见的小球标记。")]
+    public bool addRuntimeVisuals = true;
+    public float runtimeVisualRadius = 0.18f;
 
     public int CurrentIndex { get; private set; } = 0;
+
+    /// <summary>当前目标点的 Transform（用于获取 TargetPointVisual 组件）</summary>
+    public Transform CurrentTargetTransform
+    {
+      get
+      {
+        if ( waypoints != null && waypoints.Length > 0 ) {
+          int index = Mathf.Clamp( CurrentIndex, 0, waypoints.Length - 1 );
+          return waypoints[ index ];
+        }
+        return m_fallbackVisualTarget;
+      }
+    }
+
+    private Transform m_fallbackVisualTarget = null;
+
+    private void Start()
+    {
+      if ( addRuntimeVisuals )
+        EnsureRuntimeVisuals();
+    }
 
     public int TargetCount => waypoints != null && waypoints.Length > 0 ? waypoints.Length : 1;
 
@@ -74,6 +98,37 @@ namespace RLExcavator
         return waypoints[ index ].position;
 
       return transform.TransformPoint( fallbackLocalTarget );
+    }
+
+    private void EnsureRuntimeVisuals()
+    {
+      if ( waypoints != null && waypoints.Length > 0 ) {
+        foreach ( var waypoint in waypoints )
+          AddVisualTo( waypoint );
+        return;
+      }
+
+      if ( m_fallbackVisualTarget == null ) {
+        var targetObject = new GameObject( "FallbackTargetPoint" );
+        targetObject.transform.SetParent( transform, false );
+        targetObject.transform.localPosition = fallbackLocalTarget;
+        m_fallbackVisualTarget = targetObject.transform;
+      }
+
+      AddVisualTo( m_fallbackVisualTarget );
+    }
+
+    private void AddVisualTo( Transform target )
+    {
+      if ( target == null )
+        return;
+
+      var visual = target.GetComponent<TargetPointVisual>();
+      if ( visual == null )
+        visual = target.gameObject.AddComponent<TargetPointVisual>();
+
+      visual.color = currentTargetColor;
+      visual.radius = runtimeVisualRadius;
     }
 
     private void OnDrawGizmos()
