@@ -39,6 +39,17 @@ namespace RLExcavator
         m_visual.rotation = Camera.main.transform.rotation;
     }
 
+    public void SetStyle( Color newColor, float newRadius )
+    {
+      color = newColor;
+      radius = newRadius;
+
+      if ( Application.isPlaying )
+        EnsureVisual();
+      else
+        UpdateVisualProperties();
+    }
+
     private void CacheExistingVisual()
     {
       if ( m_visual == null ) {

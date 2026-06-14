@@ -1278,6 +1278,8 @@ MonoBehaviour:
   swingMaxSpeed: 0.5
   boomAcceleration: 0.7
   bucketAcceleration: 0.7
+  resetRootPoseOnHomeReset: 1
+  clearBodyVelocitiesOnHomeReset: 1
   useInspectorHomePose: 1
   boomHomePose:
   - 0
@@ -1356,24 +1358,35 @@ MonoBehaviour:
   bucketTip: {fileID: 9222632453387520791}
   trajectory: {fileID: 0}
   successIndicator: {fileID: 0}
+  environmentRoot: {fileID: 0}
   targetThreshold: 0.25
   includeTargetVisualRadiusInThreshold: 1
   endEpisodeOnTargetReached: 1
   distanceNormalizer: 8
   positionNormalizer: 10
-  wDistance: 0.01
-  wProgress: 0.2
-  wActionCost: 0.001
-  waypointBonus: 0.2
-  pathCompleteBonus: 1
+  waypointLookahead: 3
+  tubeRadius: 1
+  wDistance: 0.005
+  wProgress: 1
+  wActionCost: 0.0002
+  waypointBonus: 1
+  pathCompleteBonus: 5
+  wTargetCoarse: 0.2
+  wTargetFine: 0.3
+  wTube: 0.2
+  wTubeViolation: 0.05
+  wActionDelta: 0.0005
+  wFinalStabilization: 0.05
+  maxStepsPerWaypoint: 1200
+  waypointTimeoutPenalty: 1
   resetPoseOnEpisodeBegin: 1
   poseResetSettleSteps: -1
   debugEpisodeEvents: 1
   disableKeyboardTesterWhenAgentEnabled: 1
-  disableDigAgentWhenEnabled: 1
   autoFindReferences: 1
   debugActions: 1
   debugActionPrints: 20
+  recordTrainingStats: 1
   CurrentEpisode: 0
 --- !u!114 &2630079990767059786
 MonoBehaviour:

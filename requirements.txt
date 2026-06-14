@@ -1,0 +1,32 @@
+# RLExcavator ML-Agents training environment.
+#
+# Recommended usage in a clean Python 3.10 conda environment:
+#   pip install -r requirements.txt
+#
+# Training environment for RTX 5070 Ti.
+# Keep ONNX export tooling out of this environment. If ONNX export conflicts
+# with training dependencies, use the separate export environment below instead
+# of modifying ML-Agents package files.
+
+numpy==1.23.5
+protobuf==3.20.3
+onnx==1.15.0
+
+torch==2.12.0
+tensorboard==2.20.0
+
+grpcio==1.53.2
+gym==0.26.2
+gym-notices==0.1.0
+h5py==3.16.0
+PettingZoo==1.15.0
+Pillow==12.2.0
+PyYAML==6.0.3
+cloudpickle==3.1.2
+cattrs==1.5.0
+attrs==26.1.0
+tqdm==4.67.3
+packaging==26.2
+
+-e /home/zhaoshuai/workspace_uinty/ml-agents/ml-agents-envs
+-e /home/zhaoshuai/workspace_uinty/ml-agents/ml-agents

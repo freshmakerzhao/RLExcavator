@@ -1289,6 +1289,8 @@ MonoBehaviour:
   swingMaxSpeed: 0.5
   boomAcceleration: 0.7
   bucketAcceleration: 0.7
+  resetRootPoseOnHomeReset: 1
+  clearBodyVelocitiesOnHomeReset: 1
   useInspectorHomePose: 1
   boomHomePose:
   - 0

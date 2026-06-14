@@ -1,5 +1,6 @@
 using UnityEngine;
 using AGXUnity;
+using AGXRigidBody = AGXUnity.RigidBody;
 
 namespace RLExcavator
 {
@@ -49,6 +50,10 @@ namespace RLExcavator
     public float bucketAcceleration = 0.7f;
 
     [Header("初始位姿复位")]
+    [Tooltip("episode 复位时恢复挖掘机根节点的初始位置和旋转")]
+    public bool resetRootPoseOnHomeReset = true;
+    [Tooltip("episode 复位时清零子物体中所有 Unity/AGX 刚体速度")]
+    public bool clearBodyVelocitiesOnHomeReset = true;
     [Tooltip("开启后使用 Inspector 中填写的 home 位姿；关闭则使用 Play 后第一次捕获的位姿")]
     public bool useInspectorHomePose = false;
     [Tooltip("大臂液压缸 home 位移。长度应与 boom 数组一致；两根缸通常填同一组初始读数")]
@@ -77,6 +82,9 @@ namespace RLExcavator
     private float m_boomSpeed = 0f;
     private float m_bucketSpeed = 0f;
     private Coroutine m_homeRoutine = null;
+    private Vector3 m_initialRootPosition = Vector3.zero;
+    private Quaternion m_initialRootRotation = Quaternion.identity;
+    private bool m_rootPoseCaptured = false;
 
     public bool IsHoming { get; private set; } = false;
 
@@ -137,6 +145,14 @@ namespace RLExcavator
       DriveConstraint( stick,  0f );
       DriveConstraint( bucket, 0f );
       DriveConstraint( swing,  0f );
+    }
+
+    /// <summary>清理 episode 之间容易残留的速度和控制器状态。</summary>
+    public void PrepareForEpisodeReset()
+    {
+      StopAll();
+      ClearBodyVelocities();
+      EnsureAllLocksDisabled();
     }
 
     private static float MoveTowardsSpeed( float current, float target, float acceleration, float deltaTime )
@@ -206,6 +222,8 @@ namespace RLExcavator
     /// <summary>抓取当前姿态作为"初始姿态(home)"。播放后第一帧自动调用一次。</summary>
     public void CaptureHomePose()
     {
+      CaptureRootPose();
+
       if ( boom != null ) {
         m_boomHome = new float[ boom.Length ];
         for ( int i = 0; i < boom.Length; i++ )
@@ -282,8 +300,13 @@ namespace RLExcavator
     private System.Collections.IEnumerator HomePoseResetRoutine( int settleSteps )
     {
       IsHoming = true;
-      m_boomSpeed = 0f;
-      m_bucketSpeed = 0f;
+      PrepareForEpisodeReset();
+
+      if ( resetRootPoseOnHomeReset )
+        RestoreRootPose();
+
+      if ( clearBodyVelocitiesOnHomeReset )
+        ClearBodyVelocities();
 
       SetHomeLock( true );
 
@@ -301,9 +324,84 @@ namespace RLExcavator
 
       SetHomeLock( false );
       StopAll();
+      ClearBodyVelocities();
+      EnsureAllLocksDisabled();
 
       IsHoming = false;
       m_homeRoutine = null;
+    }
+
+    private void CaptureRootPose()
+    {
+      if ( m_rootPoseCaptured )
+        return;
+
+      m_initialRootPosition = transform.position;
+      m_initialRootRotation = transform.rotation;
+      m_rootPoseCaptured = true;
+    }
+
+    private void RestoreRootPose()
+    {
+      if ( !m_rootPoseCaptured )
+        CaptureRootPose();
+
+      transform.SetPositionAndRotation( m_initialRootPosition, m_initialRootRotation );
+
+      var agxBodies = GetComponentsInChildren<AGXRigidBody>( true );
+      foreach ( var body in agxBodies ) {
+        if ( body == null )
+          continue;
+
+        body.SyncNativeTransform();
+      }
+
+      Physics.SyncTransforms();
+    }
+
+    private void ClearBodyVelocities()
+    {
+      if ( !clearBodyVelocitiesOnHomeReset )
+        return;
+
+      var unityBodies = GetComponentsInChildren<UnityEngine.Rigidbody>( true );
+      foreach ( var body in unityBodies ) {
+        if ( body == null )
+          continue;
+
+        body.linearVelocity = Vector3.zero;
+        body.angularVelocity = Vector3.zero;
+      }
+
+      var agxBodies = GetComponentsInChildren<AGXRigidBody>( true );
+      foreach ( var body in agxBodies ) {
+        if ( body == null )
+          continue;
+
+        body.LinearVelocity = Vector3.zero;
+        body.AngularVelocity = Vector3.zero;
+      }
+    }
+
+    private void EnsureAllLocksDisabled()
+    {
+      if ( boom != null )
+        foreach ( var c in boom )
+          DisableLockController( c );
+
+      DisableLockController( stick );
+      DisableLockController( bucket );
+      DisableLockController( swing );
+    }
+
+    private static void DisableLockController( Constraint c )
+    {
+      if ( c == null )
+        return;
+
+      var locker = c.GetController<LockController>();
+      if ( locker != null )
+        locker.Enable = false;
     }
 
     private float GetBoomHomePose( int index )

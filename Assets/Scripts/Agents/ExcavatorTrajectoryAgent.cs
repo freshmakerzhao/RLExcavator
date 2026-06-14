@@ -1,7 +1,6 @@
 using UnityEngine;
 using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
-using Unity.MLAgents.Policies;
 using Unity.MLAgents.Sensors;
 
 namespace RLExcavator
@@ -15,7 +14,7 @@ namespace RLExcavator
   /// 【关键设计】
   ///   - Heuristic 和策略推理共用 OnActionReceived 动作入口
   ///   - Episode 只通过 ExcavatorController 复位挖掘机姿态
-  ///   - 与 ExcavatorDigAgent 互斥，避免两个 Agent 同时写控制器
+  ///   - 只控制当前环境中的 Trajectory 挖掘机；与其它 Agent 的互斥由 prefab/scene 配置保证
   /// </summary>
   public class ExcavatorTrajectoryAgent : Agent
   {
@@ -33,6 +32,9 @@ namespace RLExcavator
 
     [Tooltip("成功到达目标点时触发的共享视觉提示（地板变绿等）")]
     public SuccessIndicator successIndicator;
+
+    [Tooltip("当前训练环境根节点。多环境并行时用于把自动查找限制在本环境内；为空则使用当前对象的最顶层父节点。")]
+    public Transform environmentRoot;
 
     // 任务参数
 
@@ -52,23 +54,53 @@ namespace RLExcavator
     [Tooltip("局部位置归一化参考值")]
     public float positionNormalizer = 10.0f;
 
+    [Header("Spinelli-style waypoint tracking")]
+    [Tooltip("前视 waypoint 数量。默认保持 3；如修改，必须同步 Behavior Parameters 的观测维度。")]
+    public int waypointLookahead = 3; // waypointLookahead数量影响了观测维度,规则是waypointLookahead * 3,因为每个waypoint都有x,y,z三个坐标
+    [Tooltip("路径 tube 半径。铲斗尖应尽量保持在相邻 waypoint 连线形成的 tube 内。")]
+    public float tubeRadius = 1.0f;
+
     // 奖励权重
 
     [Header("Reward")]
     [Tooltip("距离惩罚权重：距离目标越远，惩罚越大（鼓励靠近）")]
-    public float wDistance = 0.01f;
+    public float wDistance = 0.005f;
 
-    [Tooltip("进度奖励权重：每步距离减少量（鼓励持续靠近目标）")]
-    public float wProgress = 0.2f;
+    [Tooltip("进度奖励权重：每步距离减少量，单位为米（鼓励持续靠近目标）")]
+    public float wProgress = 1.0f;
 
     [Tooltip("动作惩罚权重：避免关节乱抖（鼓励平滑动作）")]
-    public float wActionCost = 0.001f;
+    public float wActionCost = 0.0002f;
 
     [Tooltip("到达单个路径点的奖励")]
-    public float waypointBonus = 0.2f;
+    public float waypointBonus = 1.0f;
 
     [Tooltip("到达路径终点的奖励（成功完成整条轨迹）")]
-    public float pathCompleteBonus = 1.0f;
+    public float pathCompleteBonus = 5.0f;
+
+    [Tooltip("粗目标势能奖励权重：只有距离 waypoint 变近时才给正奖励，避免停在目标附近刷分")]
+    public float wTargetCoarse = 0.2f;
+
+    [Tooltip("细目标势能奖励权重：只有精确接近 waypoint 的过程才给正奖励，避免静止刷分")]
+    public float wTargetFine = 0.3f;
+
+    [Tooltip("tube 内推进奖励权重：只有在 tube 内并沿当前 waypoint 继续推进时才给正奖励")]
+    public float wTube = 0.2f;
+
+    [Tooltip("tube 外惩罚权重：偏离规划路径时惩罚")]
+    public float wTubeViolation = 0.05f;
+
+    [Tooltip("动作变化惩罚权重：惩罚相邻 action 的突变")]
+    public float wActionDelta = 0.0005f;
+
+    [Tooltip("终点稳定奖励权重：到达最后 waypoint 后鼓励动作变小、减少过冲")]
+    public float wFinalStabilization = 0.05f;
+
+    [Tooltip("单个 waypoint 最多允许消耗的决策步数。超过后结束 episode，避免长期卡点刷无效样本；0 表示关闭。")]
+    public int maxStepsPerWaypoint = 1200;
+
+    [Tooltip("单个 waypoint 超时后的惩罚。")]
+    public float waypointTimeoutPenalty = 1.0f;
 
     // Episode 复位
 
@@ -88,10 +120,7 @@ namespace RLExcavator
     [Tooltip("Agent 启用时自动禁用键盘测试脚本，避免两者同时写关节")]
     public bool disableKeyboardTesterWhenAgentEnabled = true;
 
-    [Tooltip("Agent 启用时自动禁用挖土 Agent，避免两个 Agent 同时接管控制")]
-    public bool disableDigAgentWhenEnabled = true;
-
-    [Tooltip("引用为空时在当前 scene 内自动查找，减少 Inspector 手动绑定错误")]
+    [Tooltip("引用为空时只在 environmentRoot 内自动查找。多环境并行时建议显式绑定引用。")]
     public bool autoFindReferences = true;
 
     [Tooltip("打印前若干次动作，用于确认 Heuristic 或策略是否真的给了动作")]
@@ -99,6 +128,9 @@ namespace RLExcavator
 
     [Tooltip("最多打印的动作次数")]
     public int debugActionPrints = 20;
+
+    [Tooltip("向 TensorBoard 记录轨迹跟踪评价指标")]
+    public bool recordTrainingStats = true;
 
     // 运行时状态
 
@@ -113,6 +145,40 @@ namespace RLExcavator
 
     /// <summary>已打印的动作调试次数计数</summary>
     private int m_debugActionPrintCount = 0;
+
+    /// <summary>当前 episode 是否已经进入有效统计阶段</summary>
+    private bool m_episodeActive = false;
+
+    /// <summary>当前 episode 的统计是否已经写出，避免手动 EndEpisode 后重复记录</summary>
+    private bool m_episodeStatsRecorded = true;
+
+    /// <summary>当前 episode 已到达的路径点数量</summary>
+    private int m_episodeReachedTargets = 0;
+
+    /// <summary>当前 episode 是否已经完成整条路径</summary>
+    private bool m_episodeCompletedPath = false;
+
+    /// <summary>当前 episode 内距离目标最近的一次距离</summary>
+    private float m_episodeMinDistance = 0f;
+
+    /// <summary>当前 waypoint 已消耗的决策步数，用于检测卡点。</summary>
+    private int m_stepsOnCurrentWaypoint = 0;
+
+    /// <summary>当前 episode 是否因为 waypoint 超时结束。</summary>
+    private bool m_episodeTimedOut = false;
+
+    private int m_episodeStepSamples = 0;
+    private float m_episodeActionMagnitudeSum = 0f;
+    private float m_episodePositiveProgressSum = 0f;
+    private float m_episodeSignedProgressSum = 0f;
+
+    private Vector4 m_previousAction = Vector4.zero;
+    private Vector4 m_previousJointPose = Vector4.zero;
+    private Vector4 m_jointVelocity = Vector4.zero;
+    private Vector3 m_previousTipLocal = Vector3.zero;
+    private Vector3 m_tipVelocityLocal = Vector3.zero;
+    private Vector3 m_episodeStartTipPosition = Vector3.zero;
+    private bool m_hasPreviousMotionState = false;
 
     // UI / 调试只读属性
 
@@ -134,41 +200,47 @@ namespace RLExcavator
     /// <summary>路径点总数</summary>
     public int CurrentTargetCount => trajectory != null ? trajectory.TargetCount : HasTarget() ? 1 : 0;
 
+    /// <summary>当前路径完成进度，范围 0 到 1</summary>
+    public float CurrentPathProgress => trajectory != null ? trajectory.Progress : 0f;
+
     public override void Initialize()
     {
       CurrentEpisode = 0;
 
-      if ( autoFindReferences && trajectory == null )
-        trajectory = FindInScene<TrajectoryProvider>();
+      if ( environmentRoot == null )
+        environmentRoot = transform.root;
 
-      if ( autoFindReferences && bucketTip == null ) {
-        var bucketTipObject = FindInSceneByName( "BucketTip" );
-        if ( bucketTipObject != null )
-          bucketTip = bucketTipObject.transform;
-      }
+      if ( autoFindReferences )
+        ResolveMissingReferences();
 
-      if ( autoFindReferences && successIndicator == null )
-        successIndicator = FindOrCreateSuccessIndicator();
+      ValidateReferences();
 
       if ( disableKeyboardTesterWhenAgentEnabled ) {
         var keyboardTester = GetComponent<ExcavatorKeyboardTester>();
         if ( keyboardTester != null )
           keyboardTester.enabled = false;
       }
-
-      if ( disableDigAgentWhenEnabled && IsBehaviorName( "ExcavatorTrajectory" ) ) {
-        var digAgent = GetComponent<ExcavatorDigAgent>();
-        if ( digAgent != null )
-          digAgent.enabled = false;
-      }
     }
 
     public override void OnEpisodeBegin()
     {
+      RecordEpisodeStatsIfNeeded( false );
+
       CurrentEpisode++;
       m_missingReferenceWarned = false;
       m_debugActionPrintCount = 0;
       m_waitingForPoseReset = true;
+      m_episodeActive = false;
+      m_episodeStatsRecorded = false;
+      m_episodeReachedTargets = 0;
+      m_episodeCompletedPath = false;
+      m_episodeMinDistance = float.PositiveInfinity;
+      m_stepsOnCurrentWaypoint = 0;
+      m_episodeTimedOut = false;
+      m_episodeStepSamples = 0;
+      m_episodeActionMagnitudeSum = 0f;
+      m_episodePositiveProgressSum = 0f;
+      m_episodeSignedProgressSum = 0f;
 
       if ( trajectory != null )
         trajectory.ResetPath();
@@ -185,34 +257,43 @@ namespace RLExcavator
     }
 
     /// <summary>
-    /// 15 维观测：
-    /// bucketTip 局部位置(3)、目标局部位置(3)、误差向量(3)、
-    /// 关节位置(4)、路径进度(1)、episode 进度(1)。
+    /// 31 维观测：
+    /// bucketTip 局部位置(3)、bucketTip 局部速度(3)、关节位置(4)、关节速度(4)、
+    /// 上一动作(4)、未来 3 个 waypoint 误差(9)、路径进度(1)、是否最后目标(1)、
+    /// tube signed distance(1)、episode 进度(1)。
     /// </summary>
     public override void CollectObservations( VectorSensor sensor )
     {
       Vector3 tipLocal = Vector3.zero;
-      Vector3 targetLocal = Vector3.zero;
-      Vector3 errorLocal = Vector3.zero;
 
       if ( bucketTip != null )
         tipLocal = transform.InverseTransformPoint( bucketTip.position );
 
-      if ( trajectory != null )
-        targetLocal = transform.InverseTransformPoint( trajectory.CurrentTargetPosition );
-
-      errorLocal = targetLocal - tipLocal;
+      UpdateMotionEstimates( tipLocal );
 
       AddVectorObservation( sensor, tipLocal / Mathf.Max( positionNormalizer, 0.01f ) );
-      AddVectorObservation( sensor, targetLocal / Mathf.Max( positionNormalizer, 0.01f ) );
-      AddVectorObservation( sensor, errorLocal / Mathf.Max( distanceNormalizer, 0.01f ) );
+      AddVectorObservation( sensor, m_tipVelocityLocal );
 
       sensor.AddObservation( controller != null ? controller.BoomNormalizedPosition   : 0f );
       sensor.AddObservation( controller != null ? controller.StickNormalizedPosition  : 0f );
       sensor.AddObservation( controller != null ? controller.BucketNormalizedPosition : 0f );
       sensor.AddObservation( controller != null ? controller.SwingNormalizedPosition  : 0f );
 
+      sensor.AddObservation( m_jointVelocity.x );
+      sensor.AddObservation( m_jointVelocity.y );
+      sensor.AddObservation( m_jointVelocity.z );
+      sensor.AddObservation( m_jointVelocity.w );
+
+      sensor.AddObservation( m_previousAction.x );
+      sensor.AddObservation( m_previousAction.y );
+      sensor.AddObservation( m_previousAction.z );
+      sensor.AddObservation( m_previousAction.w );
+
+      AddLookaheadWaypointObservations( sensor, tipLocal );
+
       sensor.AddObservation( trajectory != null ? trajectory.Progress : 0f );
+      sensor.AddObservation( IsFinalWaypoint() ? 1f : 0f );
+      sensor.AddObservation( NormalizedTubeDistance() );
       sensor.AddObservation( MaxStep > 0 ? (float)StepCount / MaxStep : 0f );
     }
 
@@ -232,6 +313,7 @@ namespace RLExcavator
       float stick = a.Length > 1 ? a[ 1 ] : 0f;
       float bucket = a.Length > 2 ? a[ 2 ] : 0f;
       float swing = a.Length > 3 ? a[ 3 ] : 0f;
+      Vector4 action = new Vector4( boom, stick, bucket, swing );
 
       if ( debugActions && m_debugActionPrintCount < debugActionPrints ) {
         Debug.Log( $"[ExcavatorTrajectoryAgent] action boom={boom:F3}, stick={stick:F3}, bucket={bucket:F3}, swing={swing:F3}" );
@@ -247,24 +329,50 @@ namespace RLExcavator
           m_missingReferenceWarned = true;
         }
         AddReward( -1f );
-        EndEpisode();
+        EndEpisodeWithStats( false );
         return;
       }
 
       float distance = CurrentDistanceToTargetInternal();
-      float progressDelta = m_previousDistance - distance;
+      m_episodeMinDistance = Mathf.Min( m_episodeMinDistance, distance );
+      float previousDistance = m_previousDistance;
+      float progressDelta = previousDistance - distance;
       m_previousDistance = distance;
+      float distanceScale = Mathf.Max( distanceNormalizer, 0.01f );
+      float normalizedDistance = distance / distanceScale;
+      float previousNormalizedDistance = previousDistance / distanceScale;
+      float actionMagnitude = Mathf.Abs( boom ) + Mathf.Abs( stick ) + Mathf.Abs( bucket ) + Mathf.Abs( swing );
+      float actionDelta = ( action - m_previousAction ).sqrMagnitude;
+      float tubeDistance = NormalizedTubeDistance();
+      float clippedProgressDelta = Mathf.Clamp( progressDelta, -0.25f, 0.25f );
+      float positiveProgressDelta = Mathf.Max( clippedProgressDelta, 0f );
+      float coarsePotentialDelta = Mathf.Exp( -normalizedDistance ) - Mathf.Exp( -previousNormalizedDistance );
+      float finePotentialDelta =
+        Mathf.Exp( -normalizedDistance * normalizedDistance * 16f ) -
+        Mathf.Exp( -previousNormalizedDistance * previousNormalizedDistance * 16f );
+      m_stepsOnCurrentWaypoint++;
+      m_episodeStepSamples++;
+      m_episodeActionMagnitudeSum += actionMagnitude;
+      m_episodePositiveProgressSum += positiveProgressDelta;
+      m_episodeSignedProgressSum += clippedProgressDelta;
 
-      AddReward( -wDistance * distance / Mathf.Max( distanceNormalizer, 0.01f ) );
-      AddReward( wProgress * progressDelta / Mathf.Max( distanceNormalizer, 0.01f ) );
-      AddReward( -wActionCost * ( Mathf.Abs( boom ) + Mathf.Abs( stick ) + Mathf.Abs( bucket ) + Mathf.Abs( swing ) ) );
+      AddReward( -wDistance * normalizedDistance );
+      AddReward( wProgress * clippedProgressDelta );
+      AddReward( wTargetCoarse * coarsePotentialDelta );
+      AddReward( wTargetFine * finePotentialDelta );
+      AddReward( tubeDistance >= 0f ? wTube * positiveProgressDelta * Mathf.Clamp01( tubeDistance ) : wTubeViolation * tubeDistance );
+      AddReward( -wActionCost * action.sqrMagnitude );
+      AddReward( -wActionDelta * actionDelta );
       AddReward( -1f / Mathf.Max( MaxStep, 1 ) );
 
-      if ( distance <= CurrentReachThreshold() ) {
+      if ( distance <= CurrentReachThreshold() && !m_episodeCompletedPath ) {
         bool completed = trajectory == null || trajectory.AdvanceTarget();
+        m_episodeReachedTargets++;
+        m_stepsOnCurrentWaypoint = 0;
         AddReward( waypointBonus );
 
         if ( completed ) {
+          m_episodeCompletedPath = true;
           AddReward( pathCompleteBonus );
           if ( debugEpisodeEvents )
             Debug.Log( $"[ExcavatorTrajectoryAgent] Path complete. episode={CurrentEpisode}, score={GetCumulativeReward():F3}" );
@@ -272,8 +380,10 @@ namespace RLExcavator
           if ( successIndicator != null )
             successIndicator.Show();
 
+          AddReward( -wFinalStabilization * actionMagnitude );
+
           if ( endEpisodeOnTargetReached )
-            EndEpisode();
+            EndEpisodeWithStats( true );
         }
         else {
           m_previousDistance = CurrentDistanceToTargetInternal();
@@ -281,6 +391,17 @@ namespace RLExcavator
             Debug.Log( $"[ExcavatorTrajectoryAgent] Waypoint reached. next={trajectory.CurrentIndex}, distance={m_previousDistance:F2}m" );
         }
       }
+      else if ( maxStepsPerWaypoint > 0 && m_stepsOnCurrentWaypoint >= maxStepsPerWaypoint ) {
+        m_episodeTimedOut = true;
+        AddReward( -Mathf.Max( waypointTimeoutPenalty, 0f ) );
+        if ( debugEpisodeEvents )
+          Debug.Log( $"[ExcavatorTrajectoryAgent] Waypoint timeout. episode={CurrentEpisode}, target={CurrentTargetIndex}, distance={distance:F2}m" );
+
+        EndEpisodeWithStats( false );
+        return;
+      }
+
+      m_previousAction = action;
     }
 
     // Heuristic Only 下使用与 DigAgent 相同的键盘映射。
@@ -306,9 +427,46 @@ namespace RLExcavator
     {
       m_waitingForPoseReset = false;
       m_previousDistance = CurrentDistanceToTargetInternal();
+      m_episodeMinDistance = bucketTip != null && trajectory != null ? m_previousDistance : 0f;
+      m_episodeActive = true;
+      m_episodeStartTipPosition = bucketTip != null ? bucketTip.position : transform.position;
+      ResetMotionHistory();
 
       if ( debugEpisodeEvents )
         Debug.Log( $"[ExcavatorTrajectoryAgent] Episode {CurrentEpisode} begin. distance={m_previousDistance:F2}m" );
+    }
+
+    private void EndEpisodeWithStats( bool completed )
+    {
+      RecordEpisodeStatsIfNeeded( completed );
+      EndEpisode();
+    }
+
+    private void RecordEpisodeStatsIfNeeded( bool completed )
+    {
+      if ( !recordTrainingStats || !m_episodeActive || m_episodeStatsRecorded )
+        return;
+
+      m_episodeStatsRecorded = true;
+
+      float finalDistance = CurrentDistanceToTargetInternal();
+      float minDistance = float.IsPositiveInfinity( m_episodeMinDistance ) ? finalDistance : m_episodeMinDistance;
+      float pathProgress = trajectory != null ? trajectory.Progress : 0f;
+      float targetCount = Mathf.Max( CurrentTargetCount, 1 );
+
+      var stats = Academy.Instance.StatsRecorder;
+      stats.Add( "Trajectory/SuccessRate", completed || m_episodeCompletedPath ? 1f : 0f, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/WaypointsReached", m_episodeReachedTargets, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/WaypointReachRate", m_episodeReachedTargets / targetCount, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/WaypointTimeoutRate", m_episodeTimedOut ? 1f : 0f, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/PathProgress", pathProgress, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/FinalDistance", finalDistance, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/MinDistance", minDistance, StatAggregationMethod.Average );
+
+      float sampleCount = Mathf.Max( m_episodeStepSamples, 1 );
+      stats.Add( "Trajectory/MeanActionMagnitude", m_episodeActionMagnitudeSum / sampleCount, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/MeanPositiveProgress", m_episodePositiveProgressSum / sampleCount, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/SignedProgress", m_episodeSignedProgressSum, StatAggregationMethod.Average );
     }
 
     private float CurrentDistanceToTargetInternal()
@@ -340,45 +498,145 @@ namespace RLExcavator
       return threshold;
     }
 
-    // Scene 查找工具。优先在 Inspector 显式拖引用，自动查找只作为兜底。
-    private T FindInScene<T>() where T : Component
+    private void AddLookaheadWaypointObservations( VectorSensor sensor, Vector3 tipLocal )
     {
-      var roots = gameObject.scene.GetRootGameObjects();
-      foreach ( var root in roots ) {
-        var component = root.GetComponentInChildren<T>( true );
-        if ( component != null )
-          return component;
+      int lookahead = Mathf.Clamp( waypointLookahead, 1, 3 );
+      int baseIndex = trajectory != null ? trajectory.CurrentIndex : 0;
+
+      for ( int i = 0; i < lookahead; i++ ) {
+        Vector3 waypointLocal = Vector3.zero;
+        if ( trajectory != null )
+          waypointLocal = transform.InverseTransformPoint( trajectory.GetWaypointPosition( baseIndex + i ) );
+
+        AddVectorObservation( sensor, ( waypointLocal - tipLocal ) / Mathf.Max( distanceNormalizer, 0.01f ) );
       }
-      return null;
+
+      for ( int i = lookahead; i < 3; i++ )
+        AddVectorObservation( sensor, Vector3.zero );
     }
 
-    private bool IsBehaviorName( string behaviorName )
+    private bool IsFinalWaypoint()
     {
-      var behavior = GetComponent<BehaviorParameters>();
-      return behavior != null && behavior.BehaviorName == behaviorName;
+      return trajectory == null || trajectory.CurrentIndex >= trajectory.TargetCount - 1;
     }
 
-    private GameObject FindInSceneByName( string objectName )
+    private float NormalizedTubeDistance()
     {
-      var roots = gameObject.scene.GetRootGameObjects();
-      foreach ( var root in roots ) {
-        var match = FindChildByName( root.transform, objectName );
-        if ( match != null )
-          return match.gameObject;
+      if ( bucketTip == null || trajectory == null || trajectory.TargetCount <= 1 )
+        return 0f;
+
+      Vector3 tip = bucketTip.position;
+      int current = trajectory.CurrentIndex;
+      Vector3 from = current > 0 ? trajectory.GetWaypointPosition( current - 1 ) : m_episodeStartTipPosition;
+      Vector3 to = trajectory.GetWaypointPosition( current );
+      float signedDistance = TubeSignedDistance( tip, from, to, Mathf.Max( tubeRadius, 0.01f ) );
+      return signedDistance / Mathf.Max( tubeRadius, 0.01f );
+    }
+
+    private static float TubeSignedDistance( Vector3 point, Vector3 from, Vector3 to, float radius )
+    {
+      Vector3 segment = to - from;
+      float lengthSq = segment.sqrMagnitude;
+      if ( lengthSq < 1e-6f )
+        return radius - Vector3.Distance( point, to );
+
+      float t = Mathf.Clamp01( Vector3.Dot( point - from, segment ) / lengthSq );
+      Vector3 closest = from + segment * t;
+      return radius - Vector3.Distance( point, closest );
+    }
+
+    private void UpdateMotionEstimates( Vector3 tipLocal )
+    {
+      Vector4 jointPose = new Vector4(
+        controller != null ? controller.BoomNormalizedPosition   : 0f,
+        controller != null ? controller.StickNormalizedPosition  : 0f,
+        controller != null ? controller.BucketNormalizedPosition : 0f,
+        controller != null ? controller.SwingNormalizedPosition  : 0f
+      );
+
+      if ( m_hasPreviousMotionState ) {
+        float dt = Mathf.Max( Time.fixedDeltaTime, 0.001f );
+        m_jointVelocity = ( jointPose - m_previousJointPose ) / dt;
+        m_tipVelocityLocal = ( tipLocal - m_previousTipLocal ) / dt / Mathf.Max( positionNormalizer, 0.01f );
       }
-      return null;
+      else {
+        m_jointVelocity = Vector4.zero;
+        m_tipVelocityLocal = Vector3.zero;
+        m_hasPreviousMotionState = true;
+      }
+
+      m_previousJointPose = jointPose;
+      m_previousTipLocal = tipLocal;
+    }
+
+    private void ResetMotionHistory()
+    {
+      m_previousAction = Vector4.zero;
+      m_previousJointPose = new Vector4(
+        controller != null ? controller.BoomNormalizedPosition   : 0f,
+        controller != null ? controller.StickNormalizedPosition  : 0f,
+        controller != null ? controller.BucketNormalizedPosition : 0f,
+        controller != null ? controller.SwingNormalizedPosition  : 0f
+      );
+      m_previousTipLocal = bucketTip != null ? transform.InverseTransformPoint( bucketTip.position ) : Vector3.zero;
+      m_jointVelocity = Vector4.zero;
+      m_tipVelocityLocal = Vector3.zero;
+      m_hasPreviousMotionState = true;
+    }
+
+    // 环境内查找工具。优先在 Inspector 显式拖引用，自动查找只作为兜底。
+    private void ResolveMissingReferences()
+    {
+      if ( controller == null )
+        controller = FindInEnvironment<ExcavatorController>();
+
+      if ( trajectory == null )
+        trajectory = FindInEnvironment<TrajectoryProvider>();
+
+      if ( bucketTip == null ) {
+        var bucketTipObject = FindInEnvironmentByName( "Traj_BucketTip" ) ?? FindInEnvironmentByName( "BucketTip" );
+        if ( bucketTipObject != null )
+          bucketTip = bucketTipObject.transform;
+      }
+
+      if ( successIndicator == null )
+        successIndicator = FindOrCreateSuccessIndicator();
+    }
+
+    private void ValidateReferences()
+    {
+      if ( controller == null || bucketTip == null || trajectory == null ) {
+        Debug.LogWarning(
+          $"[ExcavatorTrajectoryAgent] Missing references on {name}. " +
+          "For multi-environment training, bind controller, bucketTip, trajectory, and successIndicator inside each environment prefab." );
+      }
+    }
+
+    // 在环境中查找指定类型的组件。
+    private T FindInEnvironment<T>() where T : Component
+    {
+      // 这里需要在运行开始之前,在unity上为每一个environment的agent绑定对应的environmentRoot
+      Transform root = environmentRoot != null ? environmentRoot : transform.root;
+      return root != null ? root.GetComponentInChildren<T>( true ) : null;
+    }
+
+    private GameObject FindInEnvironmentByName( string objectName )
+    {
+      Transform root = environmentRoot != null ? environmentRoot : transform.root;
+      var match = root != null ? FindChildByName( root, objectName ) : null;
+      return match != null ? match.gameObject : null;
     }
 
     /// <summary>
-    /// 自动查找成功提示器。轨迹环境最好显式绑定，避免多环境时拿到错误对象。
+    /// 自动查找成功提示器。查找范围限定在当前环境根节点内，避免多环境时拿到别的环境对象。
     /// </summary>
     private SuccessIndicator FindOrCreateSuccessIndicator()
     {
-      var existing = FindInScene<SuccessIndicator>();
+      var existing = FindInEnvironment<SuccessIndicator>();
       if ( existing != null )
         return existing;
 
-      var frame = FindInSceneByName( "Frame" );
+      var frame = FindInEnvironmentByName( "TrajBox" ) ?? FindInEnvironmentByName( "Frame" );
       if ( frame == null )
         return null;
 

@@ -2,7 +2,7 @@
 
 > 目的：让接手者（人或 Codex 等 AI agent）无需追溯历史对话即可继续工作。
 > 项目：用 Unity + AGX Dynamics + ML-Agents 训练挖掘机学会“挖一斗土并抬起”。
-> 最后更新：2026-06-05。
+> 最后更新：2026-06-12。
 
 ---
 
@@ -116,6 +116,92 @@ ExcavatorKeyboardTester、ExcavatorDigAgent、Behavior Parameters、Decision Req
 | bucket | J / L（代码中 J 为正向，L 为反向） |
 
 注意：Agent 第一版动作空间是 3 维，只控制 boom/stick/bucket，不控制 swing。
+
+### TrajectoryAgent 接线与训练指标（2026-06-11）
+
+`RLExcavatorTraj` 已与 dig 环境隔离。当前路线开始向 Spinelli 等 2026 的
+waypoint-following controller 靠拢：策略不再只跟踪一个当前点，而是根据未来
+3 个 waypoint、管道约束和关节/动作历史跟踪一条路径。
+
+- `ExcavatorTrajectoryAgent`
+  - `controller` -> Traj 挖掘机上的 `ExcavatorController`
+  - `bucketTip` -> `Traj_BucketTip`
+  - `trajectory` -> `TrajectoryProvider`
+  - `environmentRoot` -> 当前 `TrajectoryEnvironment` 或该环境 prefab 的根节点
+  - 动作空间：4 维连续动作，boom / stick / bucket / swing
+  - 观测空间：31 维
+  - 观测内容：bucketTip 局部位置/速度、关节位置/速度、上一动作、未来 3 个 waypoint 误差、路径进度、是否最后 waypoint、tube signed distance、episode 进度
+  - `waypointLookahead` 默认保持 3；如果修改，必须同步 Behavior Parameters 的 Vector Observation Space Size
+  - `tubeRadius` 只用于 tube 奖励/惩罚；waypoint 到达使用独立的 `targetThreshold`
+- `TrajectoryProvider`
+  - 支持单点目标和多点路径
+  - `randomizePathOnReset = true` 时，每个 episode 自动生成随机 waypoint 路径
+  - `randomWaypointCount = 5` 对齐论文 waypoint-following 训练中的 5 点短路径
+  - `TrajectoryGroup` 下手动摆放的 waypoint 是基准轨迹；建议先摆成“左 -> 中 -> 右”的目标轨迹
+  - `randomPathMode = Trend` 会围绕基准轨迹的每个 waypoint 加随机扰动，适合常规训练
+  - `randomPathMode = Independent` 会生成更分散的随机点，适合压力测试
+  - `randomLocalMin/randomLocalMax` 仅限制 `Independent` 模式的随机路径生成范围
+  - `randomMinSegmentLength/randomMaxSegmentLength` 仅用于 `Independent` 模式的相邻 waypoint 距离限制
+  - `trendLateralJitter/trendVerticalJitter` 控制基准轨迹周围的水平扰动和高度扰动
+  - Play 时可自动给 waypoint 添加小球可视化
+  - 当前目标、待到达目标、已完成目标使用不同颜色
+  - 会在随机路径 reset 时自动修复空 waypoint、重复 waypoint、引用到其它环境的 waypoint
+- 多环境并行训练
+  - 优先在同一个 scene 中复制多个完整 `TrajectoryEnvironment`
+  - 每个环境内的 `ExcavatorTrajectoryAgent.environmentRoot` 必须指向自己的环境根节点
+  - 每个环境内的 `UITargetTracking.environmentRoot` 也应指向自己的环境根节点，避免 UI 显示其它 agent
+  - `autoFindReferences` 只会在 `environmentRoot` 内查找；训练前仍建议显式绑定 `controller/bucketTip/trajectory/successIndicator`
+  - `ExcavatorTrajectoryAgent` 不会自动禁用 `ExcavatorDigAgent`；不同任务环境的启停由 prefab/scene 配置负责
+  - 后台训练通过 Unity Project Settings 中的 Run In Background 配置，不再使用额外脚本控制
+  - 所有 trajectory agent 保持同一个 Behavior Name：`ExcavatorTrajectory`
+- 训练配置
+  - `config/trajectory_ppo.yaml`
+  - Behavior Name = `ExcavatorTrajectory`
+  - Vector Observation Space Size 必须设置为 31
+  - Continuous Actions = 4
+  - 训练环境优先保持稳定；ONNX 导出暂时不作为短期任务
+- 每次代码修改后的快速验证配置
+  - `config/trajectory_smoke.yaml`
+  - 网络和 buffer 较小，`summary_freq` 更高，用于检查是否能连接、跑 episode、写指标
+  - 不用于判断最终策略性能
+
+`ExcavatorTrajectoryAgent` 的 reward 当前由以下部分组成：
+
+- 到当前 waypoint 的距离惩罚和距离减少量奖励
+- 粗目标/细目标势能差奖励：只有距离当前 waypoint 变近时才给正奖励，静止靠近目标不会持续刷分
+- tube 内推进奖励、tube 外惩罚：在 tube 内但不继续接近当前 waypoint 时不再给持续正奖励
+- 动作平方惩罚和相邻动作变化惩罚；当前权重较小，避免策略把“完全不动”学成局部最优
+- waypoint 到达奖励和整条路径完成奖励；这是推进路径的主要奖励
+- 单个 waypoint 超时惩罚；默认 1200 个决策步仍未到达当前 waypoint 就结束 episode
+- 终点稳定惩罚，避免到达最后点后动作过大
+
+`ExcavatorTrajectoryAgent` 会向 TensorBoard 写入以下评价指标：
+
+| 指标 | 含义 |
+|---|---|
+| `Trajectory/SuccessRate` | episode 是否完成整条轨迹，完成为 1，否则为 0 |
+| `Trajectory/WaypointsReached` | episode 内到达的路径点数量 |
+| `Trajectory/WaypointReachRate` | 到达路径点数量 / 总路径点数量 |
+| `Trajectory/WaypointTimeoutRate` | episode 是否因单个 waypoint 长时间未到达而超时结束 |
+| `Trajectory/PathProgress` | episode 结束时路径进度，范围 0 到 1 |
+| `Trajectory/FinalDistance` | episode 结束时 bucketTip 到当前目标的距离 |
+| `Trajectory/MinDistance` | episode 内 bucketTip 到目标的最近距离 |
+| `Trajectory/MeanActionMagnitude` | episode 内平均动作幅值，用于判断策略是否学成完全不动 |
+| `Trajectory/MeanPositiveProgress` | episode 内平均正向接近距离，用于判断是否真的向 waypoint 推进 |
+| `Trajectory/SignedProgress` | episode 内累计有符号进度，负值说明整体远离目标 |
+
+后续判断 trajectory 策略是否真的学会，不应只看 `Environment/Cumulative Reward`，
+还要同时看 `Trajectory/SuccessRate` 和 `Trajectory/WaypointReachRate`。
+
+快速 smoke test 命令：
+
+```bash
+cd /home/zhaoshuai/workspace_uinty/RL_prj/RLExcavator
+mlagents-learn config/trajectory_smoke.yaml --run-id=traj_smoke_$(date +%m%d_%H%M)
+```
+
+通过标准：Unity Console 无红错；终端能稳定输出 summary；TensorBoard 里出现
+`Trajectory/SuccessRate`、`Trajectory/WaypointReachRate`、`Trajectory/FinalDistance` 等指标。
 
 ---
 
