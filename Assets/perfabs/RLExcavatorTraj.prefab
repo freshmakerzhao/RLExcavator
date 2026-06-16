@@ -75,7 +75,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 229525805274597013, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_toothDirection.m_end.m_localPosition.x
-      value: -0.0000004757792
+      value: -0.0000004757793
       objectReference: {fileID: 0}
     - target: {fileID: 229525805274597013, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_toothDirection.m_end.m_localPosition.y
@@ -83,7 +83,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 229525805274597013, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_toothDirection.m_end.m_localPosition.z
-      value: 0.00000023841858
+      value: 0.00000011920929
       objectReference: {fileID: 0}
     - target: {fileID: 506942795540513605, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
@@ -205,6 +205,74 @@ PrefabInstance:
       propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
       value: -78.32009
       objectReference: {fileID: 0}
+    - target: {fileID: 1646581837973451558, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 83723.08
+      objectReference: {fileID: 0}
+    - target: {fileID: 1646581837973451558, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
+      value: 102998.484
+      objectReference: {fileID: 0}
+    - target: {fileID: 1646581837973451558, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: 0.38336104
+      objectReference: {fileID: 0}
+    - target: {fileID: 1646581837973451558, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: 0.15374894
+      objectReference: {fileID: 0}
+    - target: {fileID: 1646581837973451558, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: -3039.1086
+      objectReference: {fileID: 0}
+    - target: {fileID: 1646581837973451558, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: 2648.6997
+      objectReference: {fileID: 0}
+    - target: {fileID: 1646581837973451558, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: 95.13283
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
+      value: 48.518063
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
+      value: 0.6946489
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 95.29709
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
+      value: 95.33564
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.x
+      value: 0.00030750057
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: -0.00000078643717
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: 0.000000060717504
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: -0.0000049384707
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: -0.000000656157
+      objectReference: {fileID: 0}
+    - target: {fileID: 1720088880312104026, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: 0.0000015287142
+      objectReference: {fileID: 0}
     - target: {fileID: 1821683981073131305, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
       value: -1.6352776
@@ -224,6 +292,14 @@ PrefabInstance:
     - target: {fileID: 1960907596899414561, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.z
       value: 0.000000834465
+      objectReference: {fileID: 0}
+    - target: {fileID: 2227281969467669899, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2285956853551936921, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2435340129024673798, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
@@ -268,6 +344,10 @@ PrefabInstance:
     - target: {fileID: 2791552496138355447, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.z
       value: 0.20149088
+      objectReference: {fileID: 0}
+    - target: {fileID: 2831331220708418886, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 2879705091739798497, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
@@ -381,6 +461,46 @@ PrefabInstance:
       propertyPath: m_inertiaOffDiagonal.m_defaultValue.z
       value: -78.32009
       objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
+      value: 32.786774
+      objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
+      value: 1.4595488
+      objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 86.2951
+      objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
+      value: 86.38292
+      objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.x
+      value: -0.000100613484
+      objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: -0.000002383328
+      objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: 0.00000029696983
+      objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: -0.00019793745
+      objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: -0.0000022486188
+      objectReference: {fileID: 0}
+    - target: {fileID: 3645331411783462355, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: 0.0000068078016
+      objectReference: {fileID: 0}
     - target: {fileID: 3677338564231821008, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.y
       value: 1.1199105
@@ -388,6 +508,42 @@ PrefabInstance:
     - target: {fileID: 3677338564231821008, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.z
       value: -0.95836216
+      objectReference: {fileID: 0}
+    - target: {fileID: 3791211126921708313, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
+      value: 6570.9346
+      objectReference: {fileID: 0}
+    - target: {fileID: 3791211126921708313, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
+      value: 602.1461
+      objectReference: {fileID: 0}
+    - target: {fileID: 3791211126921708313, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 12259.773
+      objectReference: {fileID: 0}
+    - target: {fileID: 3791211126921708313, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
+      value: 12652.818
+      objectReference: {fileID: 0}
+    - target: {fileID: 3791211126921708313, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: -0.006681234
+      objectReference: {fileID: 0}
+    - target: {fileID: 3791211126921708313, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: -0.0028674677
+      objectReference: {fileID: 0}
+    - target: {fileID: 3791211126921708313, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: -334.61755
+      objectReference: {fileID: 0}
+    - target: {fileID: 3791211126921708313, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: -8.859017
+      objectReference: {fileID: 0}
+    - target: {fileID: 3791211126921708313, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: -0.09102968
       objectReference: {fileID: 0}
     - target: {fileID: 3931628366678524706, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
@@ -404,6 +560,50 @@ PrefabInstance:
     - target: {fileID: 4317898335301858528, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.y
       value: 0.0000034498437
+      objectReference: {fileID: 0}
+    - target: {fileID: 4427558951447277105, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
+      value: 3420.715
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
+      value: 91.31905
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 1793.4408
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
+      value: 1842.9354
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.x
+      value: -0.12836906
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: 0.023500917
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: -0.00000003860099
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: 29.525414
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: 0.000053771157
+      objectReference: {fileID: 0}
+    - target: {fileID: 4753835722829284182, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: 0.000012314283
       objectReference: {fileID: 0}
     - target: {fileID: 4756335977797013890, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_inertiaDiagonal.m_defaultValue.x
@@ -437,6 +637,10 @@ PrefabInstance:
       propertyPath: m_inertiaOffDiagonal.m_defaultValue.z
       value: 0.08247811
       objectReference: {fileID: 0}
+    - target: {fileID: 5082691421616152414, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5319639479726016093, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
       value: 0.9979844
@@ -444,6 +648,90 @@ PrefabInstance:
     - target: {fileID: 5319639479726016093, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.y
       value: 0.00000062584877
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
+      value: 39.614037
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
+      value: 0.6793477
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 60.500843
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
+      value: 60.54598
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.x
+      value: 0.00029414796
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: -0.00000037964824
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: 0.00000026574304
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: 0.00002897861
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: 0.0000029779558
+      objectReference: {fileID: 0}
+    - target: {fileID: 5393115901503455893, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: 0.00000053158465
+      objectReference: {fileID: 0}
+    - target: {fileID: 5475642217305663431, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
+      value: 33.742645
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
+      value: 1.4270684
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 91.274796
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
+      value: 91.35825
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.x
+      value: -0.00009774123
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: -0.0000021502121
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: -0.00000043343175
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: -0.00021219462
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: -0.000040350285
+      objectReference: {fileID: 0}
+    - target: {fileID: 5675720022788653713, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: 0.0000038337043
       objectReference: {fileID: 0}
     - target: {fileID: 5700112687933997222, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
@@ -455,7 +743,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5849840552920208004, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
-      value: 707.163
+      value: 707.1629
+      objectReference: {fileID: 0}
+    - target: {fileID: 5849840552920208004, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 1091.1927
       objectReference: {fileID: 0}
     - target: {fileID: 5849840552920208004, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
@@ -463,27 +755,27 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5849840552920208004, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.x
-      value: 0.20840675
+      value: 0.2084069
       objectReference: {fileID: 0}
     - target: {fileID: 5849840552920208004, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
-      value: -0.0012810787
+      value: -0.0012811816
       objectReference: {fileID: 0}
     - target: {fileID: 5849840552920208004, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
-      value: 0.16525246
+      value: 0.16525255
       objectReference: {fileID: 0}
     - target: {fileID: 5849840552920208004, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
-      value: 0.24672782
+      value: 0.24660498
       objectReference: {fileID: 0}
     - target: {fileID: 5849840552920208004, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
-      value: 1.5324081
+      value: 1.5324665
       objectReference: {fileID: 0}
     - target: {fileID: 5849840552920208004, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
-      value: 0.08247811
+      value: 0.08252057
       objectReference: {fileID: 0}
     - target: {fileID: 5934537519162114579, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.y
@@ -500,6 +792,10 @@ PrefabInstance:
     - target: {fileID: 6018690093940283148, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.z
       value: 0.47449985
+      objectReference: {fileID: 0}
+    - target: {fileID: 6067615831997218534, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6071114913642336852, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
@@ -544,6 +840,126 @@ PrefabInstance:
     - target: {fileID: 7343277330217382562, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.z
       value: 0.4310235
+      objectReference: {fileID: 0}
+    - target: {fileID: 7478050961833354996, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
+      value: 53.316532
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
+      value: 0.80601627
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 134.9566
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
+      value: 134.99771
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.x
+      value: 0.00031216486
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: -0.000000052370137
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: -0.00000007808128
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: 0.000014749847
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: -0.000016272994
+      objectReference: {fileID: 0}
+    - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: 0.0000006537173
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
+      value: 33.74265
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
+      value: 1.4270685
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 91.27479
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.z
+      value: 91.35824
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.x
+      value: -0.000098000775
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: -0.0000022642919
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: -0.00000069383174
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: -0.00021197423
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: -0.00003985732
+      objectReference: {fileID: 0}
+    - target: {fileID: 8470483296109178379, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: 0.00000383719
+      objectReference: {fileID: 0}
+    - target: {fileID: 8712029123866544328, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
+      value: 41.89558
+      objectReference: {fileID: 0}
+    - target: {fileID: 8712029123866544328, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.x
+      value: 1.3862054
+      objectReference: {fileID: 0}
+    - target: {fileID: 8712029123866544328, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaDiagonal.m_defaultValue.y
+      value: 154.88069
+      objectReference: {fileID: 0}
+    - target: {fileID: 8712029123866544328, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.x
+      value: -0.00008742382
+      objectReference: {fileID: 0}
+    - target: {fileID: 8712029123866544328, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.y
+      value: -0.0000035408007
+      objectReference: {fileID: 0}
+    - target: {fileID: 8712029123866544328, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_centerOfMassOffset.m_defaultValue.z
+      value: 0.00000066762084
+      objectReference: {fileID: 0}
+    - target: {fileID: 8712029123866544328, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.x
+      value: -0.00027055712
+      objectReference: {fileID: 0}
+    - target: {fileID: 8712029123866544328, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.y
+      value: 0.000020266645
+      objectReference: {fileID: 0}
+    - target: {fileID: 8712029123866544328, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
+      value: 0.000004560364
       objectReference: {fileID: 0}
     - target: {fileID: 8849909774514111527, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
@@ -1320,7 +1736,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Policies.BehaviorParameters
   m_BrainParameters:
-    VectorObservationSize: 15
+    VectorObservationSize: 37
     NumStackedVectorObservations: 1
     m_ActionSpec:
       m_NumContinuousActions: 4
@@ -1356,6 +1772,8 @@ MonoBehaviour:
   MaxStep: 5000
   controller: {fileID: 8387008117009763877}
   bucketTip: {fileID: 9222632453387520791}
+  bucketAttitudeReference: {fileID: 0}
+  bucketPitchFrame: {fileID: 0}
   trajectory: {fileID: 0}
   successIndicator: {fileID: 0}
   environmentRoot: {fileID: 0}
@@ -1366,6 +1784,12 @@ MonoBehaviour:
   positionNormalizer: 10
   waypointLookahead: 3
   tubeRadius: 1
+  taskMode: 0
+  randomizeTaskModeOnEpisodeBegin: 1
+  bucketPitchAxisLocal: {x: 0, y: 0, z: 1}
+  moveToDigTargetBucketPitchDeg: -90
+  carryMaterialTargetBucketPitchDeg: 0
+  bucketPitchNormalizerDeg: 90
   wDistance: 0.005
   wProgress: 1
   wActionCost: 0.0002
@@ -1377,14 +1801,16 @@ MonoBehaviour:
   wTubeViolation: 0.05
   wActionDelta: 0.0005
   wFinalStabilization: 0.05
+  wBucketAttitude: 0.1
+  wBucketAngularVelocity: 0.0005
   maxStepsPerWaypoint: 1200
   waypointTimeoutPenalty: 1
   resetPoseOnEpisodeBegin: 1
   poseResetSettleSteps: -1
-  debugEpisodeEvents: 1
+  debugEpisodeEvents: 0
   disableKeyboardTesterWhenAgentEnabled: 1
   autoFindReferences: 1
-  debugActions: 1
+  debugActions: 0
   debugActionPrints: 20
   recordTrainingStats: 1
   CurrentEpisode: 0

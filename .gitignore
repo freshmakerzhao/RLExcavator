@@ -21,6 +21,7 @@
 # IDE and editor caches
 .vs/
 .idea/
+__pycache__/
 *.csproj
 *.sln
 *.slnx
@@ -48,3 +49,8 @@ il2cppOutput/
 results/
 Assets/ML-Agents/
 Assets/ML-Agents.meta
+
+# Large local CAD/model imports. Use Git LFS or a shared artifact store if these
+# assets need to be versioned.
+Assets/models/*.obj
+Assets/models/*.obj.meta

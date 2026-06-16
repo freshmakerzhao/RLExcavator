@@ -1,18 +1,20 @@
-# RLExcavator ONNX export environment.
+# RLExcavator legacy ONNX export environment.
 #
-# Use this in a separate clean Python 3.10 conda environment, not in the
-# training environment:
-#   conda create -n ml_agents_export python=3.10
+# This environment mirrors the ML-Agents training dependency constraints.
+# ONNX export uses tools/mlagents_export_legacy_onnx.py to force
+# torch.onnx.export(..., dynamo=False), so onnxscript is not required.
+#
+# Optional clean environment:
+#   conda create -n ml_agents_export python=3.10.12 pip
 #   conda activate ml_agents_export
 #   pip install -r requirements-export.txt
 #
-# This environment is allowed to use newer ONNX tooling. Do not train with it.
+# Do not install onnxscript here. It pulls newer protobuf versions that conflict
+# with mlagents-envs 1.2.0.dev0.
 
 numpy==1.23.5
-protobuf==7.35.0
-onnx==1.21.0
-onnx-ir==0.2.1
-onnxscript==0.7.0
+protobuf==3.20.3
+onnx==1.15.0
 torch==2.12.0
 
 grpcio==1.53.2

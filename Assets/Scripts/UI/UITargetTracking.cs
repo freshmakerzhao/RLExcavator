@@ -1,6 +1,5 @@
 using UnityEngine;
 using UnityEngine.UI;
-using System.Linq;
 
 public class UITargetTracking : MonoBehaviour
 {
@@ -12,16 +11,29 @@ public class UITargetTracking : MonoBehaviour
 
   protected void Awake()
   {
-    var texts = GetComponentsInChildren<Text>();
-    m_infoText = texts.First( t => t.name == "Information" );
-
-    Debug.Assert( m_infoText );
+    m_infoText = FindInformationText();
+    if ( m_infoText == null ) {
+      Debug.LogWarning( $"[{nameof( UITargetTracking )}] No child Text named 'Information' found under {name}. UI updates disabled.", this );
+      enabled = false;
+      return;
+    }
 
     if ( environmentRoot == null )
       environmentRoot = transform.root;
 
     if ( trajectoryAgent == null )
       trajectoryAgent = FindActiveInEnvironment<RLExcavator.ExcavatorTrajectoryAgent>() ?? FindInEnvironment<RLExcavator.ExcavatorTrajectoryAgent>();
+  }
+
+  private Text FindInformationText()
+  {
+    var texts = GetComponentsInChildren<Text>( true );
+    foreach ( var text in texts ) {
+      if ( text.name == "Information" )
+        return text;
+    }
+
+    return null;
   }
 
   private T FindInEnvironment<T>() where T : Component
@@ -47,6 +59,11 @@ public class UITargetTracking : MonoBehaviour
 
   private void Update()
   {
+    if ( m_infoText == null ) {
+      enabled = false;
+      return;
+    }
+
     if ( trajectoryAgent == null || !trajectoryAgent.isActiveAndEnabled )
       trajectoryAgent = FindActiveInEnvironment<RLExcavator.ExcavatorTrajectoryAgent>();
 
@@ -61,7 +78,10 @@ public class UITargetTracking : MonoBehaviour
         string.Format( "Target: \t\t{0}/{1}\n", targetNumber, targetCount ) +
         string.Format( "Distance: \t\t{0:f3} m\n", trajectoryAgent.CurrentDistanceToTarget ) +
         string.Format( "Threshold: \t\t{0:f3} m\n", trajectoryAgent.CurrentTargetThreshold ) +
-        string.Format( "Progress: \t\t{0:P0}", trajectoryAgent.CurrentPathProgress );
+        string.Format( "Progress: \t\t{0:P0}\n", trajectoryAgent.CurrentPathProgress ) +
+        string.Format( "Mode: \t\t{0}\n", trajectoryAgent.CurrentTaskMode ) +
+        string.Format( "Bucket pitch: \t{0:f1}/{1:f1} deg\n", trajectoryAgent.CurrentBucketPitchDeg, trajectoryAgent.CurrentTargetBucketPitchDeg ) +
+        string.Format( "Pitch error: \t{0:f1} deg", trajectoryAgent.CurrentBucketPitchErrorDeg );
       return;
     }
 

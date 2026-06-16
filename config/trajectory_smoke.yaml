@@ -4,12 +4,15 @@
 #   Use this after code changes to verify that Unity connects, episodes run,
 #   rewards are computed, and TensorBoard stats are written.
 #
+# Current observation size: 37
+#   trajectory tracking observations + task mode + bucket pitch conditioning.
+#
 # Not for final training:
 #   The network and buffer are intentionally small. For real training, use
 #   config/trajectory_ppo.yaml instead.
 #
 # Usage:
-#   mlagents-learn config/trajectory_smoke.yaml --run-id=traj_smoke_$(date +%m%d_%H%M)
+#   python tools/mlagents_train_no_onnx.py config/trajectory_smoke.yaml --run-id=traj_smoke_$(date +%m%d_%H%M)
 #   Then press Play in Unity.
 
 behaviors:
@@ -33,10 +36,10 @@ behaviors:
         gamma: 0.99
         strength: 1.0
 
-    # Keep this higher than max_steps so smoke tests do not repeatedly trigger
-    # checkpoint export. Stop manually after several summaries if ONNX export is
-    # not needed.
-    checkpoint_interval: 1000000
+    # Deliberately low so smoke tests exercise checkpoint saving. Use the
+    # no-ONNX wrapper above so the checkpoint path saves .pt without exporting
+    # .onnx.
+    checkpoint_interval: 5000
     keep_checkpoints: 1
 
     max_steps: 50000

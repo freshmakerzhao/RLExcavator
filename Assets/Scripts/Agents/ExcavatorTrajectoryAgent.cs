@@ -18,6 +18,12 @@ namespace RLExcavator
   /// </summary>
   public class ExcavatorTrajectoryAgent : Agent
   {
+    public enum TrajectoryTaskMode
+    {
+      MoveToDig = 0,
+      CarryMaterial = 1
+    }
+
     // Inspector 引用
 
     [Header("References")]
@@ -26,6 +32,12 @@ namespace RLExcavator
 
     [Tooltip("铲斗尖的 Transform，用于计算到目标的距离")]
     public Transform bucketTip;
+
+    [Tooltip("用于计算铲斗姿态的 Transform。为空时自动查找 Traj_Bucket/Bucket，找不到则退回 bucketTip。")]
+    public Transform bucketAttitudeReference;
+
+    [Tooltip("铲斗 pitch 的参考坐标系。应绑定到随 swing 一起旋转的上车/驾驶室/回转平台节点，避免 swing 污染 pitch。为空时退回当前 Agent 根坐标系。")]
+    public Transform bucketPitchFrame;
 
     [Tooltip("轨迹路径点提供器。可以是单点目标，也可以是多点路径")]
     public TrajectoryProvider trajectory;
@@ -59,6 +71,25 @@ namespace RLExcavator
     public int waypointLookahead = 3; // waypointLookahead数量影响了观测维度,规则是waypointLookahead * 3,因为每个waypoint都有x,y,z三个坐标
     [Tooltip("路径 tube 半径。铲斗尖应尽量保持在相邻 waypoint 连线形成的 tube 内。")]
     public float tubeRadius = 1.0f;
+
+    [Header("Bucket attitude conditioning")]
+    [Tooltip("当前轨迹任务模式。MoveToDig 要求铲斗接近入铲姿态；CarryMaterial 要求铲斗接近运输姿态。")]
+    public TrajectoryTaskMode taskMode = TrajectoryTaskMode.MoveToDig;
+
+    [Tooltip("每个 episode 开始时随机采样任务模式。关闭后使用 Inspector 中的固定 taskMode。")]
+    public bool randomizeTaskModeOnEpisodeBegin = true;
+
+    [Tooltip("用于定义铲斗 pitch 的铲斗局部参考轴。需要与真机 FK 中使用的参考轴保持一致。")]
+    public Vector3 bucketPitchAxisLocal = Vector3.forward;
+
+    [Tooltip("MoveToDig 模式下的目标铲斗 pitch，单位：度。需要按当前模型坐标系标定。")]
+    public float moveToDigTargetBucketPitchDeg = -90f;
+
+    [Tooltip("CarryMaterial 模式下的目标铲斗 pitch，单位：度。通常为水平或略微后仰。")]
+    public float carryMaterialTargetBucketPitchDeg = 0f;
+
+    [Tooltip("铲斗 pitch 归一化角度，单位：度。观测和统计使用。")]
+    public float bucketPitchNormalizerDeg = 90f;
 
     // 奖励权重
 
@@ -95,6 +126,12 @@ namespace RLExcavator
 
     [Tooltip("终点稳定奖励权重：到达最后 waypoint 后鼓励动作变小、减少过冲")]
     public float wFinalStabilization = 0.05f;
+
+    [Tooltip("铲斗姿态误差惩罚权重。误差越大惩罚越大，用于条件化不同任务姿态。")]
+    public float wBucketAttitude = 0.1f;
+
+    [Tooltip("铲斗姿态角速度惩罚权重，防止姿态抖动。")]
+    public float wBucketAngularVelocity = 0.0005f;
 
     [Tooltip("单个 waypoint 最多允许消耗的决策步数。超过后结束 episode，避免长期卡点刷无效样本；0 表示关闭。")]
     public int maxStepsPerWaypoint = 1200;
@@ -178,6 +215,9 @@ namespace RLExcavator
     private Vector3 m_previousTipLocal = Vector3.zero;
     private Vector3 m_tipVelocityLocal = Vector3.zero;
     private Vector3 m_episodeStartTipPosition = Vector3.zero;
+    private float m_previousBucketPitchDeg = 0f;
+    private float m_bucketPitchVelocityNormalized = 0f;
+    private float m_episodeBucketPitchErrorSum = 0f;
     private bool m_hasPreviousMotionState = false;
 
     // UI / 调试只读属性
@@ -202,6 +242,11 @@ namespace RLExcavator
 
     /// <summary>当前路径完成进度，范围 0 到 1</summary>
     public float CurrentPathProgress => trajectory != null ? trajectory.Progress : 0f;
+
+    public TrajectoryTaskMode CurrentTaskMode => taskMode;
+    public float CurrentBucketPitchDeg => CurrentBucketPitchDegrees();
+    public float CurrentTargetBucketPitchDeg => TargetBucketPitchDegrees();
+    public float CurrentBucketPitchErrorDeg => BucketPitchErrorDegrees();
 
     public override void Initialize()
     {
@@ -241,6 +286,10 @@ namespace RLExcavator
       m_episodeActionMagnitudeSum = 0f;
       m_episodePositiveProgressSum = 0f;
       m_episodeSignedProgressSum = 0f;
+      m_episodeBucketPitchErrorSum = 0f;
+
+      if ( randomizeTaskModeOnEpisodeBegin )
+        taskMode = Random.value < 0.5f ? TrajectoryTaskMode.MoveToDig : TrajectoryTaskMode.CarryMaterial;
 
       if ( trajectory != null )
         trajectory.ResetPath();
@@ -257,10 +306,11 @@ namespace RLExcavator
     }
 
     /// <summary>
-    /// 31 维观测：
-    /// bucketTip 局部位置(3)、bucketTip 局部速度(3)、关节位置(4)、关节速度(4)、
+    /// 37 维观测：
+    /// bucketTip 局部位置(3)、bucketTip 局部速度(3)、执行器位置(4)、执行器速度(4)、
     /// 上一动作(4)、未来 3 个 waypoint 误差(9)、路径进度(1)、是否最后目标(1)、
-    /// tube signed distance(1)、episode 进度(1)。
+    /// tube signed distance(1)、episode 进度(1)、任务模式 one-hot(2)、
+    /// 当前/目标/误差 bucket pitch(3)、bucket pitch 速度(1)。
     /// </summary>
     public override void CollectObservations( VectorSensor sensor )
     {
@@ -295,6 +345,7 @@ namespace RLExcavator
       sensor.AddObservation( IsFinalWaypoint() ? 1f : 0f );
       sensor.AddObservation( NormalizedTubeDistance() );
       sensor.AddObservation( MaxStep > 0 ? (float)StepCount / MaxStep : 0f );
+      AddBucketAttitudeObservations( sensor );
     }
 
     /// <summary>
@@ -344,6 +395,7 @@ namespace RLExcavator
       float actionMagnitude = Mathf.Abs( boom ) + Mathf.Abs( stick ) + Mathf.Abs( bucket ) + Mathf.Abs( swing );
       float actionDelta = ( action - m_previousAction ).sqrMagnitude;
       float tubeDistance = NormalizedTubeDistance();
+      float bucketPitchError = Mathf.Abs( BucketPitchErrorDegrees() ) / Mathf.Max( bucketPitchNormalizerDeg, 1f );
       float clippedProgressDelta = Mathf.Clamp( progressDelta, -0.25f, 0.25f );
       float positiveProgressDelta = Mathf.Max( clippedProgressDelta, 0f );
       float coarsePotentialDelta = Mathf.Exp( -normalizedDistance ) - Mathf.Exp( -previousNormalizedDistance );
@@ -355,6 +407,7 @@ namespace RLExcavator
       m_episodeActionMagnitudeSum += actionMagnitude;
       m_episodePositiveProgressSum += positiveProgressDelta;
       m_episodeSignedProgressSum += clippedProgressDelta;
+      m_episodeBucketPitchErrorSum += bucketPitchError;
 
       AddReward( -wDistance * normalizedDistance );
       AddReward( wProgress * clippedProgressDelta );
@@ -363,6 +416,8 @@ namespace RLExcavator
       AddReward( tubeDistance >= 0f ? wTube * positiveProgressDelta * Mathf.Clamp01( tubeDistance ) : wTubeViolation * tubeDistance );
       AddReward( -wActionCost * action.sqrMagnitude );
       AddReward( -wActionDelta * actionDelta );
+      AddReward( -wBucketAttitude * bucketPitchError );
+      AddReward( -wBucketAngularVelocity * Mathf.Abs( m_bucketPitchVelocityNormalized ) );
       AddReward( -1f / Mathf.Max( MaxStep, 1 ) );
 
       if ( distance <= CurrentReachThreshold() && !m_episodeCompletedPath ) {
@@ -467,6 +522,8 @@ namespace RLExcavator
       stats.Add( "Trajectory/MeanActionMagnitude", m_episodeActionMagnitudeSum / sampleCount, StatAggregationMethod.Average );
       stats.Add( "Trajectory/MeanPositiveProgress", m_episodePositiveProgressSum / sampleCount, StatAggregationMethod.Average );
       stats.Add( "Trajectory/SignedProgress", m_episodeSignedProgressSum, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/TaskMode", taskMode == TrajectoryTaskMode.CarryMaterial ? 1f : 0f, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/BucketPitchErrorDeg", m_episodeBucketPitchErrorSum / sampleCount * Mathf.Max( bucketPitchNormalizerDeg, 1f ), StatAggregationMethod.Average );
     }
 
     private float CurrentDistanceToTargetInternal()
@@ -515,6 +572,17 @@ namespace RLExcavator
         AddVectorObservation( sensor, Vector3.zero );
     }
 
+    private void AddBucketAttitudeObservations( VectorSensor sensor )
+    {
+      float normalizer = Mathf.Max( bucketPitchNormalizerDeg, 1f );
+      sensor.AddObservation( taskMode == TrajectoryTaskMode.MoveToDig ? 1f : 0f );
+      sensor.AddObservation( taskMode == TrajectoryTaskMode.CarryMaterial ? 1f : 0f );
+      sensor.AddObservation( CurrentBucketPitchDegrees() / normalizer );
+      sensor.AddObservation( TargetBucketPitchDegrees() / normalizer );
+      sensor.AddObservation( BucketPitchErrorDegrees() / normalizer );
+      sensor.AddObservation( m_bucketPitchVelocityNormalized );
+    }
+
     private bool IsFinalWaypoint()
     {
       return trajectory == null || trajectory.CurrentIndex >= trajectory.TargetCount - 1;
@@ -554,19 +622,25 @@ namespace RLExcavator
         controller != null ? controller.SwingNormalizedPosition  : 0f
       );
 
+      float bucketPitchDeg = CurrentBucketPitchDegrees();
+
       if ( m_hasPreviousMotionState ) {
         float dt = Mathf.Max( Time.fixedDeltaTime, 0.001f );
         m_jointVelocity = ( jointPose - m_previousJointPose ) / dt;
         m_tipVelocityLocal = ( tipLocal - m_previousTipLocal ) / dt / Mathf.Max( positionNormalizer, 0.01f );
+        m_bucketPitchVelocityNormalized =
+          Mathf.DeltaAngle( m_previousBucketPitchDeg, bucketPitchDeg ) / dt / Mathf.Max( bucketPitchNormalizerDeg, 1f );
       }
       else {
         m_jointVelocity = Vector4.zero;
         m_tipVelocityLocal = Vector3.zero;
+        m_bucketPitchVelocityNormalized = 0f;
         m_hasPreviousMotionState = true;
       }
 
       m_previousJointPose = jointPose;
       m_previousTipLocal = tipLocal;
+      m_previousBucketPitchDeg = bucketPitchDeg;
     }
 
     private void ResetMotionHistory()
@@ -579,9 +653,40 @@ namespace RLExcavator
         controller != null ? controller.SwingNormalizedPosition  : 0f
       );
       m_previousTipLocal = bucketTip != null ? transform.InverseTransformPoint( bucketTip.position ) : Vector3.zero;
+      m_previousBucketPitchDeg = CurrentBucketPitchDegrees();
+      m_bucketPitchVelocityNormalized = 0f;
       m_jointVelocity = Vector4.zero;
       m_tipVelocityLocal = Vector3.zero;
       m_hasPreviousMotionState = true;
+    }
+
+    private float TargetBucketPitchDegrees()
+    {
+      return taskMode == TrajectoryTaskMode.CarryMaterial ? carryMaterialTargetBucketPitchDeg : moveToDigTargetBucketPitchDeg;
+    }
+
+    private float BucketPitchErrorDegrees()
+    {
+      return Mathf.DeltaAngle( CurrentBucketPitchDegrees(), TargetBucketPitchDegrees() );
+    }
+
+    private float CurrentBucketPitchDegrees()
+    {
+      Transform reference = bucketAttitudeReference != null ? bucketAttitudeReference : bucketTip;
+      if ( reference == null )
+        return 0f;
+
+      Transform frame = bucketPitchFrame != null ? bucketPitchFrame : transform;
+      Vector3 localAxis = bucketPitchAxisLocal.sqrMagnitude > 1e-6f ? bucketPitchAxisLocal.normalized : Vector3.forward;
+      Vector3 bucketAxis = reference.TransformDirection( localAxis );
+      Vector3 pitchAxis = frame.right;
+      Vector3 forwardInPitchPlane = Vector3.ProjectOnPlane( frame.forward, pitchAxis );
+      Vector3 bucketInPitchPlane = Vector3.ProjectOnPlane( bucketAxis, pitchAxis );
+
+      if ( forwardInPitchPlane.sqrMagnitude < 1e-6f || bucketInPitchPlane.sqrMagnitude < 1e-6f )
+        return 0f;
+
+      return Vector3.SignedAngle( forwardInPitchPlane.normalized, bucketInPitchPlane.normalized, pitchAxis );
     }
 
     // 环境内查找工具。优先在 Inspector 显式拖引用，自动查找只作为兜底。
@@ -599,16 +704,31 @@ namespace RLExcavator
           bucketTip = bucketTipObject.transform;
       }
 
+      if ( bucketAttitudeReference == null ) {
+        var bucketObject = FindInEnvironmentByName( "Traj_Bucket" ) ?? FindInEnvironmentByName( "Bucket" );
+        bucketAttitudeReference = bucketObject != null ? bucketObject.transform : bucketTip;
+      }
+
+      if ( bucketPitchFrame == null ) {
+        var frameObject =
+          FindInEnvironmentByName( "Traj_Cabin" ) ??
+          FindInEnvironmentByName( "Cabin" ) ??
+          FindInEnvironmentByName( "UpperCarriage" ) ??
+          FindInEnvironmentByName( "Chassisbody" ) ??
+          FindInEnvironmentByName( "excavator_CAT365" );
+        bucketPitchFrame = frameObject != null ? frameObject.transform : transform;
+      }
+
       if ( successIndicator == null )
         successIndicator = FindOrCreateSuccessIndicator();
     }
 
     private void ValidateReferences()
     {
-      if ( controller == null || bucketTip == null || trajectory == null ) {
+      if ( controller == null || bucketTip == null || trajectory == null || bucketAttitudeReference == null || bucketPitchFrame == null ) {
         Debug.LogWarning(
           $"[ExcavatorTrajectoryAgent] Missing references on {name}. " +
-          "For multi-environment training, bind controller, bucketTip, trajectory, and successIndicator inside each environment prefab." );
+          "For multi-environment training, bind controller, bucketTip, bucketAttitudeReference, bucketPitchFrame, trajectory, and successIndicator inside each environment prefab." );
       }
     }
 

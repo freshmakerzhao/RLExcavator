@@ -1,7 +1,12 @@
-# ML-Agents PPO training config for bucket-tip trajectory tracking.
-# Usage: mlagents-learn config/trajectory_ppo.yaml --run-id=traj_smoke_01
+# ML-Agents PPO training config for bucket-tip trajectory tracking with
+# task-conditioned bucket attitude.
+# Usage:
+#   python tools/mlagents_train_no_onnx.py config/trajectory_ppo.yaml --run-id=traj_smoke_01
+# Use the wrapper for training so checkpoint saves do not try to export ONNX.
 #
 # The behavior name must match the Behavior Parameters component in Unity.
+# The current agent observation size is 37. Do not resume older 31-dim
+# trajectory-only checkpoints with this config.
 behaviors:
   ExcavatorTrajectory:
     trainer_type: ppo
@@ -23,6 +28,6 @@ behaviors:
         gamma: 0.99
         strength: 1.0
     keep_checkpoints: 5
-    max_steps: 1200000
+    max_steps: 2000000
     time_horizon: 128
     summary_freq: 5000

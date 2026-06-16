@@ -1,17 +1,72 @@
 # RLExcavator 交接文档（Handoff）
 
 > 目的：让接手者（人或 Codex 等 AI agent）无需追溯历史对话即可继续工作。
-> 项目：用 Unity + AGX Dynamics + ML-Agents 训练挖掘机学会“挖一斗土并抬起”。
-> 最后更新：2026-06-12。
+> 项目：用 Unity + AGX Dynamics + ML-Agents 复现挖掘机低层轨迹跟踪控制，并逐步扩展到自主挖装任务。
+> 最后更新：2026-06-16。
+
+---
+
+## 0. 2026-06-15 快速接手快照
+
+当前主线已经从早期 `ExcavatorDigAgent` 挖土 demo 转向 `ExcavatorTrajectoryAgent`
+低层轨迹跟踪控制，目标是复现 Spinelli 等 2026 工作中的 waypoint-following controller，
+后续把它作为论文/系统 baseline。
+
+当前最重要的状态：
+
+- 训练环境不要直接运行 `mlagents-learn` 长训。当前 PyTorch ONNX 导出默认会走
+  dynamo 路径并依赖 `onnxscript`，与训练环境固定的 `onnx==1.15.0` /
+  `protobuf==3.20.3` 冲突。使用项目内 wrapper：
+  `python tools/mlagents_train_no_onnx.py config/trajectory_ppo.yaml --run-id=<id> ...`。
+  该脚本只跳过训练过程中的 ONNX 导出，仍保存 `.pt` checkpoint，不修改第三方包或
+  `site-packages`。详细说明见 `docs/mlagents_training_environment.md`。
+  如果需要 ONNX，使用 `tools/mlagents_export_legacy_onnx.py`，它只在当前进程中
+  强制 `torch.onnx.export(..., dynamo=False)`，并连接 Unity 后立即导出退出，
+  同样不修改第三方包。
+
+- `traj_4env_reward_movement_0614_0930` 是当前效果较好的 trajectory 模型。
+  - Unity 中观察效果较好。
+  - TensorBoard 中 `SuccessRate=1`、`WaypointReachRate=1`、`PathProgress=1`。
+  - 不加 `--deterministic` 推理时 4 个环境都能动；加 `--deterministic` 会出现部分环境卡住，说明当前策略分布学到了可用动作，但 mean action 还不够稳定。
+- 2026-06-14 起开始加入 bucket attitude conditioning：
+  - `MoveToDig`：移动到挖掘点，要求铲斗接近入铲/垂直姿态。
+  - `CarryMaterial`：带土运输，要求铲斗接近水平或略后仰姿态。
+  - 两种模式本质上都是轨迹跟踪，差异主要是目标铲斗 pitch 不同。
+- 当前姿态条件版本观测维度为 37，不能 resume 旧的 31 维 checkpoint。
+- 姿态 smoke `traj_attitude_smoke_0614_1147` 已确认链路跑通、指标写入、无 NaN，但效果不适合长训：
+  - `SuccessRate=0`
+  - `WaypointReachRate=0`
+  - `WaypointTimeoutRate=1`
+  - `BucketPitchErrorDeg` 很大，说明 `bucketPitchAxisLocal` / 目标 pitch 还未完成标定。
+- 真机部署观测需求已单独整理到 `docs/real_machine_observation_requirements.md`。
+
+当前最该做的事情：
+
+1. 在 Unity `Heuristic Only` 模式下手动操控铲斗，标定 bucket pitch。
+2. 确认 `bucketAttitudeReference` 显式绑定到真正随铲斗旋转的对象，例如 `Traj_Bucket`。
+3. 确认 `bucketPitchFrame` 显式绑定到随 swing 一起旋转的上车/驾驶室/回转平台节点，避免 swing 污染 bucket pitch。
+4. 确认只按 `F/H` 控制 swing 时，UI 中 `Bucket pitch` 基本不变；只按 `J/L` 控制铲斗液压缸时，`Bucket pitch` 明显变化。
+5. 如果上一步不成立，先不要训练，继续修 `bucketPitchFrame` / `bucketAttitudeReference` / `bucketPitchAxisLocal`。
+6. 分别记录合理的 `MoveToDig` 和 `CarryMaterial` 目标 pitch，写入：
+   - `moveToDigTargetBucketPitchDeg`
+   - `carryMaterialTargetBucketPitchDeg`
+7. 先固定单一模式跑 smoke，再混合两种模式训练。
+
+建议 skills：
+
+- `diagnose`：Unity 行为异常、训练卡死、reward 不符合预期时使用。
+- `handoff`：继续阶段性压缩当前上下文，避免训练/实验细节遗忘。
+- `academic-research-suite`：需要把当前路线整理成论文实验设计或对齐 ETH/Spinelli baseline 时使用。
+- `grill-me`：在确定论文贡献、baseline 或实验设计前做审稿人式压力测试。
 
 ---
 
 ## 1. 一句话现状
 
-代码骨架（控制器 + RL Agent + 键盘测试 + PPO 配置）已全部写好并通过 AGX API 核对；
-Unity 里已确认官方 Excavator 组件的受控约束映射，已接入 ExcavatorController、
-ExcavatorKeyboardTester、ExcavatorDigAgent、Behavior Parameters、Decision Requester 和 BucketTip。
-下一步是做一次干净的 Heuristic 验证，然后启动 PPO 训练。
+低层轨迹跟踪主链路已跑通：Unity + AGX 挖掘机通过 `ExcavatorController`
+接收 4 维归一化速度动作，`ExcavatorTrajectoryAgent` 根据 future waypoints、
+执行器状态、铲斗尖状态和任务模式输出 boom / stick / bucket / swing。
+下一步不是盲目长训，而是先把 bucket pitch 的参考轴和两种目标角度校准好。
 
 ---
 
@@ -122,15 +177,23 @@ ExcavatorKeyboardTester、ExcavatorDigAgent、Behavior Parameters、Decision Req
 `RLExcavatorTraj` 已与 dig 环境隔离。当前路线开始向 Spinelli 等 2026 的
 waypoint-following controller 靠拢：策略不再只跟踪一个当前点，而是根据未来
 3 个 waypoint、管道约束和关节/动作历史跟踪一条路径。
+2026-06-14 起增加 task mode + bucket attitude conditioning，用同一个低层策略
+同时支持“移动到挖掘点”和“带土运输”两类轨迹跟踪姿态需求。
 
 - `ExcavatorTrajectoryAgent`
   - `controller` -> Traj 挖掘机上的 `ExcavatorController`
   - `bucketTip` -> `Traj_BucketTip`
+  - `bucketAttitudeReference` -> `Traj_Bucket` 或等价铲斗姿态参考 Transform；为空时自动查找
+  - `bucketPitchFrame` -> 随 swing 一起旋转的上车/驾驶室/回转平台 Transform；pitch 会相对该坐标系计算
   - `trajectory` -> `TrajectoryProvider`
   - `environmentRoot` -> 当前 `TrajectoryEnvironment` 或该环境 prefab 的根节点
   - 动作空间：4 维连续动作，boom / stick / bucket / swing
-  - 观测空间：31 维
-  - 观测内容：bucketTip 局部位置/速度、关节位置/速度、上一动作、未来 3 个 waypoint 误差、路径进度、是否最后 waypoint、tube signed distance、episode 进度
+  - 观测空间：37 维
+  - 观测内容：bucketTip 局部位置/速度、执行器位置/速度、上一动作、未来 3 个 waypoint 误差、路径进度、是否最后 waypoint、tube signed distance、episode 进度、task mode one-hot、当前/目标/误差 bucket pitch、bucket pitch 速度
+  - `taskMode` 支持 `MoveToDig` 和 `CarryMaterial`
+  - `randomizeTaskModeOnEpisodeBegin = true` 时，每个 episode 随机采样任务模式
+  - `moveToDigTargetBucketPitchDeg` / `carryMaterialTargetBucketPitchDeg` 是姿态目标，需要按当前铲斗坐标系标定
+  - `bucketPitchAxisLocal` 定义用于计算 pitch 的铲斗局部参考轴；`bucketPitchFrame` 定义 pitch 参考坐标系，真机 FK 必须使用同一语义
   - `waypointLookahead` 默认保持 3；如果修改，必须同步 Behavior Parameters 的 Vector Observation Space Size
   - `tubeRadius` 只用于 tube 奖励/惩罚；waypoint 到达使用独立的 `targetThreshold`
 - `TrajectoryProvider`
@@ -157,8 +220,9 @@ waypoint-following controller 靠拢：策略不再只跟踪一个当前点，�
 - 训练配置
   - `config/trajectory_ppo.yaml`
   - Behavior Name = `ExcavatorTrajectory`
-  - Vector Observation Space Size 必须设置为 31
+  - Vector Observation Space Size 必须设置为 37
   - Continuous Actions = 4
+  - 37 维姿态条件版本不能 resume 旧 31 维 trajectory 模型，需要新 run 或从兼容结构重新初始化
   - 训练环境优先保持稳定；ONNX 导出暂时不作为短期任务
 - 每次代码修改后的快速验证配置
   - `config/trajectory_smoke.yaml`
@@ -171,6 +235,7 @@ waypoint-following controller 靠拢：策略不再只跟踪一个当前点，�
 - 粗目标/细目标势能差奖励：只有距离当前 waypoint 变近时才给正奖励，静止靠近目标不会持续刷分
 - tube 内推进奖励、tube 外惩罚：在 tube 内但不继续接近当前 waypoint 时不再给持续正奖励
 - 动作平方惩罚和相邻动作变化惩罚；当前权重较小，避免策略把“完全不动”学成局部最优
+- bucket pitch 姿态误差惩罚和姿态角速度惩罚；用于在 `MoveToDig` / `CarryMaterial` 中保持不同铲斗姿态
 - waypoint 到达奖励和整条路径完成奖励；这是推进路径的主要奖励
 - 单个 waypoint 超时惩罚；默认 1200 个决策步仍未到达当前 waypoint 就结束 episode
 - 终点稳定惩罚，避免到达最后点后动作过大
@@ -189,6 +254,8 @@ waypoint-following controller 靠拢：策略不再只跟踪一个当前点，�
 | `Trajectory/MeanActionMagnitude` | episode 内平均动作幅值，用于判断策略是否学成完全不动 |
 | `Trajectory/MeanPositiveProgress` | episode 内平均正向接近距离，用于判断是否真的向 waypoint 推进 |
 | `Trajectory/SignedProgress` | episode 内累计有符号进度，负值说明整体远离目标 |
+| `Trajectory/TaskMode` | episode 任务模式，0 为 MoveToDig，1 为 CarryMaterial |
+| `Trajectory/BucketPitchErrorDeg` | episode 内平均 bucket pitch 误差，单位为度 |
 
 后续判断 trajectory 策略是否真的学会，不应只看 `Environment/Cumulative Reward`，
 还要同时看 `Trajectory/SuccessRate` 和 `Trajectory/WaypointReachRate`。

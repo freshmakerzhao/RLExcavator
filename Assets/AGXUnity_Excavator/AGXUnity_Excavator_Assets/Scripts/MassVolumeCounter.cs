@@ -1,7 +1,6 @@
 using UnityEngine;
 using AGXUnity;
 using UnityEngine.UI;
-using System.Linq;
 
 #if ENABLE_INPUT_SYSTEM
 using UnityEngine.InputSystem;
@@ -48,10 +47,9 @@ public class MassVolumeCounter : ScriptComponent
     sensor = new agxControl.EventSensor( m_geometry );
     GetSimulation().add( sensor );
 
-    var texts = GetComponentsInChildren<Text>();
-    m_infoText = texts.First( t => t.name == "Information" );
-
-    Debug.Assert( m_infoText );
+    m_infoText = FindInformationText();
+    if ( m_infoText == null )
+      Debug.LogWarning( $"[{nameof( MassVolumeCounter )}] No child Text named 'Information' found under {name}. UI text updates disabled.", this );
 
     if ( agent == null )
       agent = FindInScene<RLExcavator.ExcavatorDigAgent>();
@@ -61,6 +59,17 @@ public class MassVolumeCounter : ScriptComponent
 
     return base.Initialize();
 
+  }
+
+  private Text FindInformationText()
+  {
+    var texts = GetComponentsInChildren<Text>( true );
+    foreach ( var text in texts ) {
+      if ( text.name == "Information" )
+        return text;
+    }
+
+    return null;
   }
   public TerrainData TerrainData { get { return m_unityTerrain?.terrainData; } }
 
@@ -116,7 +125,8 @@ public class MassVolumeCounter : ScriptComponent
     if ( sensor == null || GetSimulation() == null ) {
       info += string.Format( "Excavated mass: \t{0:f} kg\n", m_excavatedMass );
       info += string.Format( "Excavated volume: \t{0:f} m^3", m_excavatedVolume );
-      m_infoText.text = info;
+      if ( m_infoText != null )
+        m_infoText.text = info;
       return;
     }
 
@@ -139,6 +149,7 @@ public class MassVolumeCounter : ScriptComponent
     // Update text
     info += string.Format( "Excavated mass: \t{0:f} kg\n", m_excavatedMass );
     info += string.Format( "Excavated volume: \t{0:f} m^3", m_excavatedVolume );
-    m_infoText.text = info;
+    if ( m_infoText != null )
+      m_infoText.text = info;
   }
 }
