@@ -11,7 +11,7 @@ GameObject:
   - component: {fileID: 9222632453387520791}
   - component: {fileID: 6914136738534566239}
   m_Layer: 0
-  m_Name: BucketTip
+  m_Name: Traj_BucketTip
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -75,11 +75,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 229525805274597013, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_toothDirection.m_end.m_localPosition.x
-      value: -0.0000004757793
+      value: -0.0000003565691
       objectReference: {fileID: 0}
     - target: {fileID: 229525805274597013, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_toothDirection.m_end.m_localPosition.y
-      value: 1.0000004
+      value: 0.99999994
       objectReference: {fileID: 0}
     - target: {fileID: 229525805274597013, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_toothDirection.m_end.m_localPosition.z
@@ -152,6 +152,10 @@ PrefabInstance:
     - target: {fileID: 1492631998169861061, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.y
       value: 0.0000030100346
+      objectReference: {fileID: 0}
+    - target: {fileID: 1550450941413857058, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_Name
+      value: Traj_ArmPrismatic
       objectReference: {fileID: 0}
     - target: {fileID: 1621701616973842334, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
@@ -333,6 +337,10 @@ PrefabInstance:
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.z
       value: 0.00000024214387
       objectReference: {fileID: 0}
+    - target: {fileID: 2713457543235659476, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_Name
+      value: Traj_BoomPrismatic2
+      objectReference: {fileID: 0}
     - target: {fileID: 2791552496138355447, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
       value: -0.83905864
@@ -379,7 +387,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2994998943355307603, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_LocalPosition.x
-      value: -7.5
+      value: -5
       objectReference: {fileID: 0}
     - target: {fileID: 2994998943355307603, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_LocalPosition.y
@@ -387,7 +395,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 2994998943355307603, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 9.534
+      value: 3.5
       objectReference: {fileID: 0}
     - target: {fileID: 2994998943355307603, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_LocalRotation.x
@@ -413,6 +421,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2994998943355307603, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2994998943355307605, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_Enabled
       value: 0
@@ -424,6 +436,10 @@ PrefabInstance:
     - target: {fileID: 2994998944126416464, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_IsActive
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 3144802371804755058, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_Name
+      value: Traj_BoomPrismatic1
       objectReference: {fileID: 0}
     - target: {fileID: 3571355250355682705, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_mass.m_defaultValue
@@ -842,8 +858,16 @@ PrefabInstance:
       value: 0.4310235
       objectReference: {fileID: 0}
     - target: {fileID: 7478050961833354996, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_Name
+      value: Traj_ChassieBody
+      objectReference: {fileID: 0}
+    - target: {fileID: 7478050961833354996, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 7755094459020354946, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_Name
+      value: Traj_Bucket
       objectReference: {fileID: 0}
     - target: {fileID: 8467117476217670494, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: <MassProperties>k__BackingField.m_mass.m_defaultValue
@@ -961,6 +985,10 @@ PrefabInstance:
       propertyPath: <MassProperties>k__BackingField.m_inertiaOffDiagonal.m_defaultValue.z
       value: 0.000004560364
       objectReference: {fileID: 0}
+    - target: {fileID: 8752933690180477029, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_Name
+      value: Traj_BucketPrismatic
+      objectReference: {fileID: 0}
     - target: {fileID: 8849909774514111527, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.x
       value: 4.196219
@@ -972,6 +1000,10 @@ PrefabInstance:
     - target: {fileID: 8849909774514111527, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
       propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localPosition.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9182272566824818569, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+      propertyPath: m_Name
+      value: Traj_CabinHinge
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 7496290165728242345, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
@@ -1643,6 +1675,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b9b4d0f676963d549beea62f91bc1976, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+--- !u!4 &5918852697985229111 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 658056202092516876, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
+  m_PrefabInstance: {fileID: 6557838686224004923}
+  m_PrefabAsset: {fileID: 0}
 --- !u!114 &6243544403580374960 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 983923287681366155, guid: 645e3612d8c8a1844bbf147c2fe19181, type: 3}
@@ -1694,6 +1731,7 @@ MonoBehaviour:
   swingMaxSpeed: 0.5
   boomAcceleration: 0.7
   bucketAcceleration: 0.7
+  commandInputEnabled: 1
   resetRootPoseOnHomeReset: 1
   clearBodyVelocitiesOnHomeReset: 1
   useInspectorHomePose: 1
@@ -1747,7 +1785,7 @@ MonoBehaviour:
     hasUpgradedBrainParametersWithActionSpec: 1
   m_Model: {fileID: 0}
   m_InferenceDevice: 0
-  m_BehaviorType: 1
+  m_BehaviorType: 0
   m_BehaviorName: ExcavatorTrajectory
   TeamId: 0
   m_UseChildSensors: 1
@@ -1772,8 +1810,8 @@ MonoBehaviour:
   MaxStep: 5000
   controller: {fileID: 8387008117009763877}
   bucketTip: {fileID: 9222632453387520791}
-  bucketAttitudeReference: {fileID: 0}
-  bucketPitchFrame: {fileID: 0}
+  bucketAttitudeReference: {fileID: 1897629007973079470}
+  bucketPitchFrame: {fileID: 5918852697985229111}
   trajectory: {fileID: 0}
   successIndicator: {fileID: 0}
   environmentRoot: {fileID: 0}
@@ -1784,12 +1822,12 @@ MonoBehaviour:
   positionNormalizer: 10
   waypointLookahead: 3
   tubeRadius: 1
-  taskMode: 0
+  taskMode: 1
   randomizeTaskModeOnEpisodeBegin: 1
   bucketPitchAxisLocal: {x: 0, y: 0, z: 1}
-  moveToDigTargetBucketPitchDeg: -90
-  carryMaterialTargetBucketPitchDeg: 0
-  bucketPitchNormalizerDeg: 90
+  moveToDigTargetBucketPitchDeg: -30
+  carryMaterialTargetBucketPitchDeg: -170
+  bucketPitchNormalizerDeg: 180
   wDistance: 0.005
   wProgress: 1
   wActionCost: 0.0002
@@ -1801,8 +1839,13 @@ MonoBehaviour:
   wTubeViolation: 0.05
   wActionDelta: 0.0005
   wFinalStabilization: 0.05
-  wBucketAttitude: 0.1
-  wBucketAngularVelocity: 0.0005
+  wBucketAttitude: 0.02
+  wBucketAttitudeProgress: 0.2
+  wBucketAngularVelocity: 0.0001
+  scaleWaypointBonusByBucketAttitude: 1
+  waypointBonusPitchToleranceDeg: 30
+  minWaypointBonusScaleWhenPitchBad: 0.2
+  badPitchWaypointPenalty: 0.25
   maxStepsPerWaypoint: 1200
   waypointTimeoutPenalty: 1
   resetPoseOnEpisodeBegin: 1

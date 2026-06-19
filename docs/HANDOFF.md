@@ -86,7 +86,7 @@
 
 | 文件 | 作用 | 状态 |
 |---|---|---|
-| Assets/Scripts/Control/ExcavatorController.cs | 关节控制器：归一化动作→AGX 目标速度；读关节位置；home 复位 | 写完，API 核对过 |
+| Assets/Scripts/Control/ExcavatorController.cs | 关节控制器：归一化动作→AGX 目标速度；读关节位置；home 复位；demo 命令输入闸门 | 写完，API 核对过 |
 | Assets/Scripts/Agents/ExcavatorDigAgent.cs | ML-Agents Agent：观测/连续动作/奖励/episode/Heuristic | 写完，未在编辑器验证 |
 | Assets/Scripts/Testing/ExcavatorKeyboardTester.cs | 键盘手动驱动，接 RL 前验证连线 | 写完，按键已按当前场景调过 |
 | config/excavator_ppo.yaml | PPO 训练超参（behavior 名 ExcavatorDig） | 写完 |
@@ -203,12 +203,61 @@ waypoint-following controller 靠拢：策略不再只跟踪一个当前点，�
   - `TrajectoryGroup` 下手动摆放的 waypoint 是基准轨迹；建议先摆成“左 -> 中 -> 右”的目标轨迹
   - `randomPathMode = Trend` 会围绕基准轨迹的每个 waypoint 加随机扰动，适合常规训练
   - `randomPathMode = Independent` 会生成更分散的随机点，适合压力测试
+  - `randomPathMode = CalibratedFan` 会在 15 个手动标定的扇形可达空间点内连续采样 waypoint，适合覆盖 180 度工作范围和多方向轨迹续训
   - `randomLocalMin/randomLocalMax` 仅限制 `Independent` 模式的随机路径生成范围
   - `randomMinSegmentLength/randomMaxSegmentLength` 仅用于 `Independent` 模式的相邻 waypoint 距离限制
   - `trendLateralJitter/trendVerticalJitter` 控制基准轨迹周围的水平扰动和高度扰动
+  - `calibratedFanFrame` 是 CalibratedFan 标定点所属参考系；为空时默认使用 `TrajectoryGroup` 的父物体，通常就是当前 `TrajectoryEnvironment`
+  - `calibratedFanMinDirectionSpan` 控制 CalibratedFan 路径起终点在左右方向上的最小跨度；调大可迫使训练见到更多横向/斜向轨迹
+  - `calibratedFanDirectionJitter` / `calibratedFanRangeJitter` / `calibratedFanVerticalJitter` 控制 CalibratedFan 内部 waypoint 的随机扰动
+  - `calibratedFanUseCurvedPaths` 和 `calibratedFanCurveStrength` 用于让路径不是简单直线插值，增加方向变化
+  - 注意：15 个标定点不是 `TrajectoryGroup.localPosition`，而是环境局部坐标；生成时必须先从 `calibratedFanFrame` 转世界，再转回 `TrajectoryGroup` 局部坐标
+  - `SetPlannedPath(Vector3[] worldPoints)` 可在推理/demo 中立即注入 planner 输出的世界坐标 waypoint，内部会转换到 `TrajectoryProvider` 局部系并刷新可视化
+  - `QueuePlannedPath(Vector3[] worldPoints)` 可暂存下一段路径，在下一次 `ResetPath()` 生效，用于状态机切段
+  - `SetPathVisualsVisible(bool visible)` 可隐藏/显示当前 waypoint 可视化；demo 启动时用于隐藏训练残留路径
+  - `TrajectoryGroup` 仍是模块三的 waypoint 缓冲区：训练时承载基准/随机路径，demo 推理时接收 planner 输出
   - Play 时可自动给 waypoint 添加小球可视化
   - 当前目标、待到达目标、已完成目标使用不同颜色
   - 会在随机路径 reset 时自动修复空 waypoint、重复 waypoint、引用到其它环境的 waypoint
+- `SimpleTrajectoryPlanner`
+  - 第一版最小 planner，位于 `Assets/Scripts/Planning/SimpleTrajectoryPlanner.cs`
+  - 输入 `startPoint/endPoint`，生成一条起点到终点的 waypoint 路径；demo 展示中两者都应绑定为可见场景物体
+  - 默认 `waypointCount = 5`，对齐当前策略训练尺度；`arcHeight` 可让路径中段略微抬高
+  - 不再支持 `bucketTip` 作为规划起点；StartPoint / EndPoint 是唯一规划控制点
+  - UI 可调用 `SelectStartPoint()` / `SelectEndPoint()` 切换当前编辑控制点
+  - UI 可调用 `MoveSelectedPointForward/Backward/Left/Right/Up/Down()` 按 `endpointMoveStep` 移动当前控制点
+  - Play 后总会给 StartPoint / EndPoint 添加可见标记，不再提供显示开关
+  - `endpointMoveFrame` 控制控制点前后左右移动参考系；为空时使用 planner 物体坐标系
+  - `PlanConfiguredPath()` 可从 Inspector Context Menu 触发；`Plan(startWorld, goalWorld)` 供后续 UI / TaskManager 调用
+  - 当前版本不做避障；后续 RRT* 应保持输出 `Vector3[] worldPoints`，继续写入 `TrajectoryProvider`
+- `ReachableWorkspaceVisualizer`
+  - 可达空间可视化组件，位于 `Assets/Scripts/Planning/ReachableWorkspaceVisualizer.cs`
+  - 当前默认内置 15 个 `env01` 坐标系下的铲斗尖标定点：5 个方向（左、左前、正前、右前、右）x 3 个距离层（近、中、远）
+  - 只用于检查扇形可达区域，不参与训练、推理或路径生成
+  - 推荐挂在 `TrajectoryEnvironment_01` 或与 `env01` 完全重合的空物体上；若挂在其它对象上，必须把 `Workspace Frame` 绑定到 `env01`
+  - Scene 中会显示半透明网格、边界线、内部网格和锚点球；如果区域明显偏移，优先检查挂载对象/`Workspace Frame` 是否使用了正确参考系
+- `ExcavationDemoTaskManager`
+  - 第一版交互 demo 操作台，位于 `Assets/Scripts/Planning/ExcavationDemoTaskManager.cs`
+  - Play 后可自动关闭 `ExcavatorController.commandInputEnabled`，让挖掘机静止等待按钮操作
+  - UI Button 可绑定 `SetModeMoveToDig`、`SetModeCarryMaterial`、`SelectPlanStartPoint`、`SelectPlanEndPoint`、`MoveSelectedPlanPoint*`、`PlanPath`、`StartTracking`、`StopTracking`、`PlanAndStartTracking`
+  - `PlanMoveToDigAndStart` / `PlanCarryMaterialAndStart` 可作为一键测试按钮
+  - `bucketTipLocalFrame` 用于状态栏显示 `铲斗尖局部`；建议绑定 `TrajectoryEnvironment` 或 `RLExcavatorTraj`，用于手动标定可达空间范围
+  - 组件只做流程编排，不直接写关节；训练/推理仍由 `ExcavatorTrajectoryAgent -> ExcavatorController` 完成
+  - demo 启停只通过 `ExcavatorController.SetCommandInputEnabled(...)` 控制，不再向 `ExcavatorTrajectoryAgent` 增加 demo 专用开关
+  - 默认 `requireInferenceOnlyBehavior=true`；训练场景 `Behavior Type=Default` 时不关闭 controller、不改随机 task mode，避免误影响训练
+  - 默认 `hideTrajectoryUntilPlannedOnStart=true`，demo Play 后隐藏旧 waypoint 可视化；点击生成轨迹后重新显示
+  - 默认 `requirePathBeforeTracking=true`，没有规划路径时不会启动追踪，避免策略追踪 prefab 残留路径
+  - 默认 `disableDecisionRequesterWhenStopped=true`，demo 空闲、停止或路径完成后禁用 `DecisionRequester`；开始追踪时再启用
+- `ExcavationDemoRuntimeUI`
+  - 展示用 runtime UI，位于 `Assets/Scripts/UI/ExcavationDemoRuntimeUI.cs`
+  - Play 时自动生成完整 HUD：顶部信息栏、中间三段功能导航、左侧随 tab 切换的控制菜单、右上角态势监控窗口
+  - `感知建图` 当前是占位按钮；`生成轨迹` 可通过 UI 选择编辑起点/终点、移动当前控制点、生成轨迹、生成并追踪
+  - `轨迹追踪` 绑定 `赴挖掘点模式`、`运土保持模式`、`生成轨迹`、`开始追踪`、`停止追踪`、`生成并追踪`、`重置演示`
+  - `重置演示` 调用 `ExcavationDemoTaskManager.ResetDemo()`，会先停 controller，再重载当前 demo scene
+  - `Minimap Camera` 可选绑定俯视相机；为空时显示占位态势示意图；已按显示窗口比例创建 RenderTexture 并保持画面比例，避免拉伸变形
+  - 当前 HUD 是 runtime 代码生成，适合快速 demo；正式展示阶段建议迁移为 Canvas Prefab 或 UI Toolkit，代码只做事件绑定和数据刷新
+  - 只调用 `ExcavationDemoTaskManager` 的 public 方法，不直接控制关节、不影响训练脚本
+  - 不自动查找或禁用训练 UI；demo scene 中不需要的训练 Canvas 由场景配置手动删除或禁用
 - 多环境并行训练
   - 优先在同一个 scene 中复制多个完整 `TrajectoryEnvironment`
   - 每个环境内的 `ExcavatorTrajectoryAgent.environmentRoot` 必须指向自己的环境根节点
@@ -224,6 +273,21 @@ waypoint-following controller 靠拢：策略不再只跟踪一个当前点，�
   - Continuous Actions = 4
   - 37 维姿态条件版本不能 resume 旧 31 维 trajectory 模型，需要新 run 或从兼容结构重新初始化
   - 训练环境优先保持稳定；ONNX 导出暂时不作为短期任务
+  - mixed task-mode 训练时不要只看总的 `Trajectory/SuccessRate` 和 `Trajectory/BucketPitchErrorDeg`
+  - Agent 会额外记录分任务指标：
+    - `Trajectory/MoveToDig/SuccessRate`
+    - `Trajectory/MoveToDig/WaypointReachRate`
+    - `Trajectory/MoveToDig/WaypointTimeoutRate`
+    - `Trajectory/MoveToDig/PathProgress`
+    - `Trajectory/MoveToDig/BucketPitchErrorDeg`
+    - `Trajectory/MoveToDig/FinalDistance`
+    - `Trajectory/CarryMaterial/SuccessRate`
+    - `Trajectory/CarryMaterial/WaypointReachRate`
+    - `Trajectory/CarryMaterial/WaypointTimeoutRate`
+    - `Trajectory/CarryMaterial/PathProgress`
+    - `Trajectory/CarryMaterial/BucketPitchErrorDeg`
+    - `Trajectory/CarryMaterial/FinalDistance`
+  - mixed policy 达标时，两组分任务指标都应接近各自 expert；如果总 reward 上升但某一组分任务指标不动，说明策略在偏向其中一个 mode
 - 每次代码修改后的快速验证配置
   - `config/trajectory_smoke.yaml`
   - 网络和 buffer 较小，`summary_freq` 更高，用于检查是否能连接、跑 episode、写指标
@@ -236,6 +300,8 @@ waypoint-following controller 靠拢：策略不再只跟踪一个当前点，�
 - tube 内推进奖励、tube 外惩罚：在 tube 内但不继续接近当前 waypoint 时不再给持续正奖励
 - 动作平方惩罚和相邻动作变化惩罚；当前权重较小，避免策略把“完全不动”学成局部最优
 - bucket pitch 姿态误差惩罚和姿态角速度惩罚；用于在 `MoveToDig` / `CarryMaterial` 中保持不同铲斗姿态
+- bucket pitch 姿态进步奖励：当 pitch error 变小时给小额正反馈，帮助策略主动调整铲斗姿态
+- waypoint/path bonus 姿态缩放：到达 waypoint 时如果 pitch error 仍然很大，只给一部分 waypoint/path 完成奖励，并给小额额外惩罚，避免策略只追点不管姿态
 - waypoint 到达奖励和整条路径完成奖励；这是推进路径的主要奖励
 - 单个 waypoint 超时惩罚；默认 1200 个决策步仍未到达当前 waypoint 就结束 episode
 - 终点稳定惩罚，避免到达最后点后动作过大
@@ -256,6 +322,8 @@ waypoint-following controller 靠拢：策略不再只跟踪一个当前点，�
 | `Trajectory/SignedProgress` | episode 内累计有符号进度，负值说明整体远离目标 |
 | `Trajectory/TaskMode` | episode 任务模式，0 为 MoveToDig，1 为 CarryMaterial |
 | `Trajectory/BucketPitchErrorDeg` | episode 内平均 bucket pitch 误差，单位为度 |
+| `Trajectory/BucketPitchProgress` | episode 内累计 pitch error 改善量，越大说明姿态在向目标靠近 |
+| `Trajectory/WaypointBonusScale` | waypoint/path bonus 因姿态误差保留的平均比例，接近 1 表示到点时姿态也接近目标 |
 
 后续判断 trajectory 策略是否真的学会，不应只看 `Environment/Cumulative Reward`，
 还要同时看 `Trajectory/SuccessRate` 和 `Trajectory/WaypointReachRate`。

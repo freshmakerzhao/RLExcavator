@@ -161,7 +161,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -208,7 +208,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -260,8 +260,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -336,16 +336,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
   faceCamera: 0
---- !u!4 &80099973 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1897629007973079470, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-  m_PrefabInstance: {fileID: 1963491799}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &110803168
 GameObject:
   m_ObjectHideFlags: 0
@@ -388,7 +383,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -436,8 +431,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -473,7 +468,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e1d5063f7b24d26a1f0748d9f33eefe, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.SuccessIndicator
   targetRenderer: {fileID: 700998325}
   successColor: {r: 0.1, g: 0.85, b: 0.25, a: 1}
@@ -488,8 +483,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -506,7 +501,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f04503ea4c58173e9a1c1ac83aea2d6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UITargetTracking
   trajectoryAgent: {fileID: 1963491801}
   environmentRoot: {fileID: 0}
@@ -569,7 +564,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1952818046289714103, guid: d1cc48490668cb68bbfaaa4810cdbf5a, type: 3}
       propertyPath: terrain
-      value:
+      value: 
       objectReference: {fileID: 394290804}
     - target: {fileID: 1952818046289714103, guid: d1cc48490668cb68bbfaaa4810cdbf5a, type: 3}
       propertyPath: m_Enabled
@@ -577,11 +572,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1952818046289714103, guid: d1cc48490668cb68bbfaaa4810cdbf5a, type: 3}
       propertyPath: episodeResetter
-      value:
+      value: 
       objectReference: {fileID: 394290809}
     - target: {fileID: 1952818046289714103, guid: d1cc48490668cb68bbfaaa4810cdbf5a, type: 3}
       propertyPath: successIndicator
-      value:
+      value: 
       objectReference: {fileID: 968973187}
     - target: {fileID: 2484497545744848734, guid: d1cc48490668cb68bbfaaa4810cdbf5a, type: 3}
       propertyPath: m_Name
@@ -694,8 +689,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 18a7ca203b9a47f4b98af78a42b50311, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!114 &230438255 stripped
 MonoBehaviour:
   m_CorrespondingSourceObject: {fileID: 1952818046289714103, guid: d1cc48490668cb68bbfaaa4810cdbf5a, type: 3}
@@ -705,7 +700,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a6171f28cea2ae8eb89651ab13c14d35, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorDigAgent
 --- !u!114 &230438256 stripped
 MonoBehaviour:
@@ -716,7 +711,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c6ef4816f8ff65f9abd3833058aa9a95, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorController
 --- !u!1 &253892970
 GameObject:
@@ -747,7 +742,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e1d5063f7b24d26a1f0748d9f33eefe, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.SuccessIndicator
   targetRenderer: {fileID: 1584573094}
   successColor: {r: 0.1, g: 0.85, b: 0.25, a: 1}
@@ -762,8 +757,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -780,7 +775,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f04503ea4c58173e9a1c1ac83aea2d6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UITargetTracking
   trajectoryAgent: {fileID: 1606909206}
   environmentRoot: {fileID: 0}
@@ -843,7 +838,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -895,8 +890,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -958,7 +953,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e1d5063f7b24d26a1f0748d9f33eefe, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.SuccessIndicator
   targetRenderer: {fileID: 1052215774}
   successColor: {r: 0.1, g: 0.85, b: 0.25, a: 1}
@@ -973,8 +968,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -991,7 +986,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f04503ea4c58173e9a1c1ac83aea2d6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UITargetTracking
   trajectoryAgent: {fileID: 1809785815}
   environmentRoot: {fileID: 0}
@@ -1038,7 +1033,7 @@ Transform:
   m_GameObject: {fileID: 329050116}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.75, y: 2.31, z: 6.729}
+  m_LocalPosition: {x: 0.47, y: 2.31, z: 6.729}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -1059,7 +1054,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7280653dc774625b47a330733dc1950, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TrajectoryProvider
   waypoints:
   - {fileID: 426548545}
@@ -1070,13 +1065,36 @@ MonoBehaviour:
   fallbackLocalTarget: {x: 0, y: 0, z: 2}
   randomizePathOnReset: 1
   randomWaypointCount: 5
-  randomPathMode: 1
+  randomPathMode: 2
   randomLocalMin: {x: -4, y: 0.5, z: -2}
   randomLocalMax: {x: 4, y: 4.5, z: 5.5}
   randomMinSegmentLength: 1
   randomMaxSegmentLength: 2.4
   trendLateralJitter: 0.8
   trendVerticalJitter: 0.45
+  calibratedFanFrame: {fileID: 0}
+  calibratedFanLocalPoints:
+  - {x: -4.98, y: 3.48, z: 9.2}
+  - {x: -5.1, y: 3.08, z: 10.95}
+  - {x: -4.77, y: 4.23, z: 12.18}
+  - {x: -0.34, y: 3.46, z: 7}
+  - {x: 0.03, y: 3.1, z: 9.15}
+  - {x: 1.7, y: 4.19, z: 9.2}
+  - {x: 1.03, y: 3.45, z: 3.24}
+  - {x: 2.82, y: 3.15, z: 3.39}
+  - {x: 3.95, y: 2.82, z: 2.41}
+  - {x: -0.36, y: 3.44, z: -0.63}
+  - {x: 0.64, y: 3.18, z: -2.23}
+  - {x: -0.1, y: 2.78, z: -4.24}
+  - {x: -5.13, y: 3.42, z: -2.8}
+  - {x: -4.94, y: 3.22, z: -4.64}
+  - {x: -4.94, y: 2.75, z: -5.68}
+  calibratedFanMinDirectionSpan: 0.35
+  calibratedFanDirectionJitter: 0.08
+  calibratedFanRangeJitter: 0.12
+  calibratedFanVerticalJitter: 0.15
+  calibratedFanUseCurvedPaths: 1
+  calibratedFanCurveStrength: 0.18
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -1127,7 +1145,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -1174,7 +1192,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -1210,8 +1228,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3038d02bd858d564b9d69ee70340f3da, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_material: {fileID: 11400000, guid: b157c84e3fb6f10468ec8b6c30925b67, type: 2}
   m_particleMaterial: {fileID: 11400000, guid: a28b71474335c0844ba12517515c5d9f, type: 2}
@@ -1304,8 +1322,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5af01e76dbdc5af4d9cd5b8c0bd272c5, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_renderMode: 1
   m_syncMode: 0
@@ -1321,8 +1339,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 32ba13c68cf6d734bbedb06bdb5f4a8f, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   ExcavatorController: {fileID: 230438256}
   Agent: {fileID: 230438255}
   MassCounter: {fileID: 968973186}
@@ -1373,8 +1391,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -1448,16 +1466,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
   faceCamera: 0
---- !u!4 &436085682 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5918852697985229111, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-  m_PrefabInstance: {fileID: 1963491799}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1001 &462879679
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1466,117 +1479,25 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1621917969}
     m_Modifications:
-    - target: {fileID: 691241024364026535, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2484497545744848734, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BucketPrismatic
-      objectReference: {fileID: 0}
-    - target: {fileID: 2625567477443748018, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_CabinHinge
-      objectReference: {fileID: 0}
-    - target: {fileID: 2625567477443748018, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 2702694008650098321, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 2949279574250907476, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 3503165921012224697, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_Bucket
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: taskMode
-      value: 0
-      objectReference: {fileID: 0}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: trajectory
-      value:
+      value: 
       objectReference: {fileID: 1693912726}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: environmentRoot
-      value:
+      value: 
       objectReference: {fileID: 1621917969}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: wBucketAttitude
-      value: 0.02
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketPitchFrame
-      value:
-      objectReference: {fileID: 2103242183}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: successIndicator
-      value:
+      value: 
       objectReference: {fileID: 942933451}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: wBucketAngularVelocity
-      value: 0.0001
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketAttitudeReference
-      value:
-      objectReference: {fileID: 1074982762}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketPitchNormalizerDeg
-      value: 180
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: moveToDigTargetBucketPitchDeg
-      value: -30
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: randomizeTaskModeOnEpisodeBegin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: carryMaterialTargetBucketPitchDeg
-      value: -170
-      objectReference: {fileID: 0}
-    - target: {fileID: 4378976791665725903, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_ChassieBody
-      objectReference: {fileID: 0}
-    - target: {fileID: 4378976791665725903, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_Model
-      value:
-      objectReference: {fileID: 0}
+      value: 
+      objectReference: {fileID: 5022602860645237092, guid: 504339cfbf5d4563f8545646bb981a57, type: 3}
     - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_DeterministicInference
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_BrainParameters.VectorObservationSize
-      value: 37
-      objectReference: {fileID: 0}
-    - target: {fileID: 5452554978683563142, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BucketTip
-      objectReference: {fileID: 0}
-    - target: {fileID: 5658299458590777369, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_ArmPrismatic
-      objectReference: {fileID: 0}
-    - target: {fileID: 6323582235054101973, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_IsActive
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_toothDirection.m_end.m_localPosition.x
@@ -1585,14 +1506,6 @@ PrefabInstance:
     - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_toothDirection.m_end.m_localPosition.y
       value: 1.0000004
-      objectReference: {fileID: 0}
-    - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_toothDirection.m_end.m_localPosition.z
-      value: 0.00000011920929
-      objectReference: {fileID: 0}
-    - target: {fileID: 8117327738832438089, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BoomPrismatic1
       objectReference: {fileID: 0}
     - target: {fileID: 8255731581494178152, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_LocalPosition.x
@@ -1634,21 +1547,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8255731581494178152, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 8255731581494178155, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_Name
       value: RLExcavatorTraj
-      objectReference: {fileID: 0}
-    - target: {fileID: 8322301417657460364, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_IsActive
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 9127174424965435887, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BoomPrismatic2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -1669,7 +1570,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1182bf9c73b0498ea588875ee5f2eddb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorTrajectoryAgent
 --- !u!1 &480112498
 GameObject:
@@ -1713,7 +1614,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -1822,8 +1723,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2c594bc96cd514e4db1ee4ebb52cbcab, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   Enabled: 1
   Forward: {x: -1.06, y: -0.31, z: -0.53}
   Distance: 0.5
@@ -1839,7 +1740,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a79441f348de89743a2939f4d699eac1, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalCameraData
   m_RenderShadows: 1
   m_RequiresDepthTextureOption: 2
@@ -1915,7 +1816,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -1967,8 +1868,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -2093,8 +1994,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3c061fdc43e36bb40ad5a8efc08ce6a9, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_contactMaterials:
   - ContactMaterial: {fileID: 11400000, guid: 7d489cb22d2862a4abfdb41d09b8544f, type: 2}
@@ -2211,8 +2112,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
   m_BlockingMask:
@@ -2228,8 +2129,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
@@ -2290,7 +2191,7 @@ Transform:
   m_GameObject: {fileID: 614928622}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.75, y: 2.31, z: 6.729}
+  m_LocalPosition: {x: -0.17, y: 2.31, z: 6.729}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2311,7 +2212,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7280653dc774625b47a330733dc1950, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TrajectoryProvider
   waypoints:
   - {fileID: 917422727}
@@ -2322,13 +2223,36 @@ MonoBehaviour:
   fallbackLocalTarget: {x: 0, y: 0, z: 2}
   randomizePathOnReset: 1
   randomWaypointCount: 5
-  randomPathMode: 1
+  randomPathMode: 2
   randomLocalMin: {x: -4, y: 0.5, z: -2}
   randomLocalMax: {x: 4, y: 4.5, z: 5.5}
   randomMinSegmentLength: 1
   randomMaxSegmentLength: 2.4
   trendLateralJitter: 0.8
   trendVerticalJitter: 0.45
+  calibratedFanFrame: {fileID: 0}
+  calibratedFanLocalPoints:
+  - {x: -4.98, y: 3.48, z: 9.2}
+  - {x: -5.1, y: 3.08, z: 10.95}
+  - {x: -4.77, y: 4.23, z: 12.18}
+  - {x: -0.34, y: 3.46, z: 7}
+  - {x: 0.03, y: 3.1, z: 9.15}
+  - {x: 1.7, y: 4.19, z: 9.2}
+  - {x: 1.03, y: 3.45, z: 3.24}
+  - {x: 2.82, y: 3.15, z: 3.39}
+  - {x: 3.95, y: 2.82, z: 2.41}
+  - {x: -0.36, y: 3.44, z: -0.63}
+  - {x: 0.64, y: 3.18, z: -2.23}
+  - {x: -0.1, y: 2.78, z: -4.24}
+  - {x: -5.13, y: 3.42, z: -2.8}
+  - {x: -4.94, y: 3.22, z: -4.64}
+  - {x: -4.94, y: 2.75, z: -5.68}
+  calibratedFanMinDirectionSpan: 0.35
+  calibratedFanDirectionJitter: 0.08
+  calibratedFanRangeJitter: 0.12
+  calibratedFanVerticalJitter: 0.15
+  calibratedFanUseCurvedPaths: 1
+  calibratedFanCurveStrength: 0.18
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -2379,7 +2303,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -2463,8 +2387,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 229918224}
 --- !u!114 &700998327
@@ -2477,8 +2401,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 229918224}
 --- !u!33 &700998328
@@ -2547,8 +2471,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -2597,7 +2521,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -2628,7 +2552,7 @@ Transform:
   m_GameObject: {fileID: 770127380}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.75, y: 2.31, z: 6.729}
+  m_LocalPosition: {x: 1.36, y: 2.31, z: 6.729}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -2649,7 +2573,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7280653dc774625b47a330733dc1950, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TrajectoryProvider
   waypoints:
   - {fileID: 1453269604}
@@ -2660,13 +2584,36 @@ MonoBehaviour:
   fallbackLocalTarget: {x: 0, y: 0, z: 2}
   randomizePathOnReset: 1
   randomWaypointCount: 5
-  randomPathMode: 1
+  randomPathMode: 2
   randomLocalMin: {x: -4, y: 0.5, z: -2}
   randomLocalMax: {x: 4, y: 4.5, z: 5.5}
   randomMinSegmentLength: 1
   randomMaxSegmentLength: 2.4
   trendLateralJitter: 0.8
   trendVerticalJitter: 0.45
+  calibratedFanFrame: {fileID: 0}
+  calibratedFanLocalPoints:
+  - {x: -4.98, y: 3.48, z: 9.2}
+  - {x: -5.1, y: 3.08, z: 10.95}
+  - {x: -4.77, y: 4.23, z: 12.18}
+  - {x: -0.34, y: 3.46, z: 7}
+  - {x: 0.03, y: 3.1, z: 9.15}
+  - {x: 1.7, y: 4.19, z: 9.2}
+  - {x: 1.03, y: 3.45, z: 3.24}
+  - {x: 2.82, y: 3.15, z: 3.39}
+  - {x: 3.95, y: 2.82, z: 2.41}
+  - {x: -0.36, y: 3.44, z: -0.63}
+  - {x: 0.64, y: 3.18, z: -2.23}
+  - {x: -0.1, y: 2.78, z: -4.24}
+  - {x: -5.13, y: 3.42, z: -2.8}
+  - {x: -4.94, y: 3.22, z: -4.64}
+  - {x: -4.94, y: 2.75, z: -5.68}
+  calibratedFanMinDirectionSpan: 0.35
+  calibratedFanDirectionJitter: 0.08
+  calibratedFanRangeJitter: 0.12
+  calibratedFanVerticalJitter: 0.15
+  calibratedFanUseCurvedPaths: 1
+  calibratedFanCurveStrength: 0.18
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -2702,8 +2649,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -2753,8 +2700,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8a5998c969dd9204aa1368c51f6ffad8, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_disabledPairs:
   - First:
@@ -7023,8 +6970,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -7094,8 +7041,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -7149,7 +7096,7 @@ Material:
     RenderType: Opaque
   disabledShaderPasses:
   - MOTIONVECTORS
-  m_LockedProperties:
+  m_LockedProperties: 
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
@@ -7259,7 +7206,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -7310,8 +7257,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -7328,7 +7275,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e1d5063f7b24d26a1f0748d9f33eefe, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.SuccessIndicator
   targetRenderer: {fileID: 1517451040}
   successColor: {r: 0.1, g: 0.85, b: 0.25, a: 1}
@@ -7343,7 +7290,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 2f04503ea4c58173e9a1c1ac83aea2d6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UITargetTracking
   trajectoryAgent: {fileID: 462879681}
   environmentRoot: {fileID: 0}
@@ -7376,8 +7323,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -7411,8 +7358,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1058c20eac63dbf4bae20c2b0743030a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   shovel: {fileID: 230438254}
   m_terrain: {fileID: 394290804}
@@ -7427,21 +7374,11 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e1d5063f7b24d26a1f0748d9f33eefe, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.SuccessIndicator
   targetRenderer: {fileID: 1994713538}
   successColor: {r: 0.1, g: 0.85, b: 0.25, a: 1}
   durationSeconds: 1
---- !u!4 &977417287 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1897629007973079470, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-  m_PrefabInstance: {fileID: 1606909204}
-  m_PrefabAsset: {fileID: 0}
---- !u!4 &999012893 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1897629007973079470, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-  m_PrefabInstance: {fileID: 1809785813}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1040632932
 GameObject:
   m_ObjectHideFlags: 0
@@ -7489,8 +7426,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -7601,8 +7538,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 286281591}
 --- !u!114 &1052215776
@@ -7615,8 +7552,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 286281591}
 --- !u!33 &1052215777
@@ -7642,11 +7579,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 286281593}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!4 &1074982762 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 1897629007973079470, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-  m_PrefabInstance: {fileID: 462879679}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &1084186165
 GameObject:
   m_ObjectHideFlags: 0
@@ -7689,7 +7621,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -7745,8 +7677,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
   m_BlockingMask:
@@ -7762,8 +7694,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
@@ -7864,8 +7796,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -7967,8 +7899,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 154205512}
 --- !u!114 &1194834072
@@ -7981,8 +7913,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 154205512}
 --- !u!23 &1194834073
@@ -8084,7 +8016,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -8170,8 +8102,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -8251,8 +8183,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -8331,8 +8263,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -8415,8 +8347,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
   m_BlockingMask:
@@ -8432,8 +8364,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
@@ -8513,8 +8445,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 1484272488}
 --- !u!114 &1445735979
@@ -8527,8 +8459,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 1484272488}
 --- !u!23 &1445735980
@@ -8665,7 +8597,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -8715,8 +8647,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 776443344}
 --- !u!114 &1459123330
@@ -8729,8 +8661,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 776443344}
 --- !u!23 &1459123331
@@ -8833,8 +8765,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -8886,8 +8818,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 942933450}
 --- !u!114 &1517451039
@@ -8900,8 +8832,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 942933450}
 --- !u!23 &1517451040
@@ -9006,8 +8938,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 740677675}
 --- !u!114 &1543297553
@@ -9020,8 +8952,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 740677675}
 --- !u!23 &1543297554
@@ -9132,8 +9064,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
   m_BlockingMask:
@@ -9149,8 +9081,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
@@ -9227,7 +9159,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -9311,8 +9243,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 253892972}
 --- !u!114 &1584573096
@@ -9325,8 +9257,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 253892972}
 --- !u!33 &1584573097
@@ -9360,102 +9292,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1959772676}
     m_Modifications:
-    - target: {fileID: 2484497545744848734, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BucketPrismatic
-      objectReference: {fileID: 0}
-    - target: {fileID: 2625567477443748018, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_CabinHinge
-      objectReference: {fileID: 0}
-    - target: {fileID: 3503165921012224697, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_Bucket
-      objectReference: {fileID: 0}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: trajectory
-      value:
+      value: 
       objectReference: {fileID: 770127382}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: environmentRoot
-      value:
+      value: 
       objectReference: {fileID: 1959772676}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: wBucketAttitude
-      value: 0.02
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketPitchFrame
-      value:
-      objectReference: {fileID: 2053993484}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: successIndicator
-      value:
+      value: 
       objectReference: {fileID: 253892971}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: wBucketAngularVelocity
-      value: 0.0001
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketAttitudeReference
-      value:
-      objectReference: {fileID: 977417287}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketPitchNormalizerDeg
-      value: 180
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: moveToDigTargetBucketPitchDeg
-      value: -30
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: randomizeTaskModeOnEpisodeBegin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: carryMaterialTargetBucketPitchDeg
-      value: -170
-      objectReference: {fileID: 0}
-    - target: {fileID: 4378976791665725903, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_ChassieBody
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Model
-      value:
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_BehaviorType
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_DeterministicInference
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_BrainParameters.VectorObservationSize
-      value: 37
-      objectReference: {fileID: 0}
-    - target: {fileID: 5452554978683563142, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BucketTip
-      objectReference: {fileID: 0}
-    - target: {fileID: 5658299458590777369, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_ArmPrismatic
-      objectReference: {fileID: 0}
-    - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_toothDirection.m_end.m_localPosition.x
-      value: -0.0000003565691
-      objectReference: {fileID: 0}
-    - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_toothDirection.m_end.m_localPosition.y
-      value: 0.99999994
-      objectReference: {fileID: 0}
-    - target: {fileID: 8117327738832438089, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BoomPrismatic1
-      objectReference: {fileID: 0}
     - target: {fileID: 8255731581494178152, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5
@@ -9496,17 +9344,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8255731581494178152, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 8255731581494178155, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_Name
       value: RLExcavatorTraj
-      objectReference: {fileID: 0}
-    - target: {fileID: 9127174424965435887, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BoomPrismatic2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -9527,7 +9367,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1182bf9c73b0498ea588875ee5f2eddb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorTrajectoryAgent
 --- !u!1 &1616410428
 GameObject:
@@ -9580,8 +9420,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: dc42784cf147c0c48a680349fa168899, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_IgnoreReversedGraphics: 1
   m_BlockingObjects: 0
   m_BlockingMask:
@@ -9597,8 +9437,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 0cd44c1031e13a943bb63640046fad76, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_UiScaleMode: 1
   m_ReferencePixelsPerUnit: 100
   m_ScaleFactor: 1
@@ -9712,8 +9552,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 1979500931}
 --- !u!114 &1622282449
@@ -9726,8 +9566,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 1979500931}
 --- !u!23 &1622282450
@@ -9834,8 +9674,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -9909,7 +9749,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -9941,7 +9781,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7280653dc774625b47a330733dc1950, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TrajectoryProvider
   waypoints:
   - {fileID: 110803169}
@@ -9952,13 +9792,36 @@ MonoBehaviour:
   fallbackLocalTarget: {x: 0, y: 0, z: 2}
   randomizePathOnReset: 1
   randomWaypointCount: 5
-  randomPathMode: 1
+  randomPathMode: 2
   randomLocalMin: {x: -4, y: 0.5, z: -2}
   randomLocalMax: {x: 4, y: 4.5, z: 5.5}
   randomMinSegmentLength: 1
   randomMaxSegmentLength: 2.4
   trendLateralJitter: 0.8
   trendVerticalJitter: 0.45
+  calibratedFanFrame: {fileID: 0}
+  calibratedFanLocalPoints:
+  - {x: -4.98, y: 3.48, z: 9.2}
+  - {x: -5.1, y: 3.08, z: 10.95}
+  - {x: -4.77, y: 4.23, z: 12.18}
+  - {x: -0.34, y: 3.46, z: 7}
+  - {x: 0.03, y: 3.1, z: 9.15}
+  - {x: 1.7, y: 4.19, z: 9.2}
+  - {x: 1.03, y: 3.45, z: 3.24}
+  - {x: 2.82, y: 3.15, z: 3.39}
+  - {x: 3.95, y: 2.82, z: 2.41}
+  - {x: -0.36, y: 3.44, z: -0.63}
+  - {x: 0.64, y: 3.18, z: -2.23}
+  - {x: -0.1, y: 2.78, z: -4.24}
+  - {x: -5.13, y: 3.42, z: -2.8}
+  - {x: -4.94, y: 3.22, z: -4.64}
+  - {x: -4.94, y: 2.75, z: -5.68}
+  calibratedFanMinDirectionSpan: 0.5
+  calibratedFanDirectionJitter: 0.08
+  calibratedFanRangeJitter: 0.12
+  calibratedFanVerticalJitter: 0.15
+  calibratedFanUseCurvedPaths: 1
+  calibratedFanCurveStrength: 0.18
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -9976,7 +9839,7 @@ Transform:
   m_GameObject: {fileID: 1693912725}
   serializedVersion: 2
   m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 1.75, y: 2.31, z: 6.729}
+  m_LocalPosition: {x: 0.46, y: 2.31, z: 7.9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -10032,8 +9895,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 1729087195}
 --- !u!114 &1701424848
@@ -10046,8 +9909,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 1729087195}
 --- !u!23 &1701424849
@@ -10150,8 +10013,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -10203,8 +10066,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 1128461968}
 --- !u!114 &1736954195
@@ -10217,8 +10080,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 1128461968}
 --- !u!23 &1736954196
@@ -10386,7 +10249,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 474bcb49853aa07438625e644c072ee6, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Unity.RenderPipelines.Universal.Runtime::UnityEngine.Rendering.Universal.UniversalAdditionalLightData
   m_UsePipelineSettings: 1
   m_AdditionalLightsShadowResolutionTier: 2
@@ -10452,8 +10315,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -10528,7 +10391,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -10541,102 +10404,22 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 566558360}
     m_Modifications:
-    - target: {fileID: 2484497545744848734, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BucketPrismatic
-      objectReference: {fileID: 0}
-    - target: {fileID: 2625567477443748018, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_CabinHinge
-      objectReference: {fileID: 0}
-    - target: {fileID: 3503165921012224697, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_Bucket
-      objectReference: {fileID: 0}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: trajectory
-      value:
+      value: 
       objectReference: {fileID: 614928624}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: environmentRoot
-      value:
+      value: 
       objectReference: {fileID: 566558360}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: wBucketAttitude
-      value: 0.02
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: bucketPitchFrame
-      value:
+      value: 
       objectReference: {fileID: 2103242183}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: successIndicator
-      value:
+      value: 
       objectReference: {fileID: 286281590}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: wBucketAngularVelocity
-      value: 0.0001
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketAttitudeReference
-      value:
-      objectReference: {fileID: 999012893}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketPitchNormalizerDeg
-      value: 180
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: moveToDigTargetBucketPitchDeg
-      value: -30
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: randomizeTaskModeOnEpisodeBegin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: carryMaterialTargetBucketPitchDeg
-      value: -170
-      objectReference: {fileID: 0}
-    - target: {fileID: 4378976791665725903, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_ChassieBody
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Model
-      value:
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_BehaviorType
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_DeterministicInference
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_BrainParameters.VectorObservationSize
-      value: 37
-      objectReference: {fileID: 0}
-    - target: {fileID: 5452554978683563142, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BucketTip
-      objectReference: {fileID: 0}
-    - target: {fileID: 5658299458590777369, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_ArmPrismatic
-      objectReference: {fileID: 0}
-    - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_toothDirection.m_end.m_localPosition.x
-      value: 0.000000001057856
-      objectReference: {fileID: 0}
-    - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_toothDirection.m_end.m_localPosition.y
-      value: 0.99999994
-      objectReference: {fileID: 0}
-    - target: {fileID: 8117327738832438089, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BoomPrismatic1
-      objectReference: {fileID: 0}
     - target: {fileID: 8255731581494178152, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5
@@ -10677,17 +10460,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8255731581494178152, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 8255731581494178155, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_Name
       value: RLExcavatorTraj
-      objectReference: {fileID: 0}
-    - target: {fileID: 9127174424965435887, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BoomPrismatic2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -10708,7 +10483,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1182bf9c73b0498ea588875ee5f2eddb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorTrajectoryAgent
 --- !u!1 &1841577562
 GameObject:
@@ -10755,8 +10530,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 873489626}
 --- !u!114 &1841577565
@@ -10769,8 +10544,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 873489626}
 --- !u!23 &1841577566
@@ -10877,8 +10652,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -11038,8 +10813,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -11165,8 +10940,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: feb891306a5f40346bef21f52668170e, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_autoSteppingMode: 0
   m_fixedUpdateRealTimeFactor: 0
@@ -11180,9 +10955,9 @@ MonoBehaviour:
   m_displayMemoryAllocations: 0
   m_enableMergeSplitHandler: 0
   m_savePreFirstStep: 0
-  m_savePreFirstStepPath:
+  m_savePreFirstStepPath: 
   m_logEnabled: 0
-  m_logPath:
+  m_logPath: 
   m_logToUnityConsole: 0
   m_agxUnityLogLevel: 2
   m_disableMeshCreationWarnings: 0
@@ -11245,102 +11020,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1300372199}
     m_Modifications:
-    - target: {fileID: 2484497545744848734, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BucketPrismatic
-      objectReference: {fileID: 0}
-    - target: {fileID: 2625567477443748018, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_CabinHinge
-      objectReference: {fileID: 0}
-    - target: {fileID: 3503165921012224697, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_Bucket
-      objectReference: {fileID: 0}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: trajectory
-      value:
+      value: 
       objectReference: {fileID: 329050118}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: environmentRoot
-      value:
+      value: 
       objectReference: {fileID: 1300372199}
     - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: wBucketAttitude
-      value: 0.02
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketPitchFrame
-      value:
-      objectReference: {fileID: 436085682}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: successIndicator
-      value:
+      value: 
       objectReference: {fileID: 229918223}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: wBucketAngularVelocity
-      value: 0.0001
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketAttitudeReference
-      value:
-      objectReference: {fileID: 80099973}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: bucketPitchNormalizerDeg
-      value: 180
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: moveToDigTargetBucketPitchDeg
-      value: -30
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: randomizeTaskModeOnEpisodeBegin
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4098932406258371789, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: carryMaterialTargetBucketPitchDeg
-      value: -170
-      objectReference: {fileID: 0}
-    - target: {fileID: 4378976791665725903, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_ChassieBody
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Model
-      value:
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_BehaviorType
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_DeterministicInference
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_BrainParameters.VectorObservationSize
-      value: 37
-      objectReference: {fileID: 0}
-    - target: {fileID: 5452554978683563142, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BucketTip
-      objectReference: {fileID: 0}
-    - target: {fileID: 5658299458590777369, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_ArmPrismatic
-      objectReference: {fileID: 0}
-    - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_toothDirection.m_end.m_localPosition.x
-      value: -0.0000003565691
-      objectReference: {fileID: 0}
-    - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_toothDirection.m_end.m_localPosition.y
-      value: 0.99999994
-      objectReference: {fileID: 0}
-    - target: {fileID: 8117327738832438089, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BoomPrismatic1
-      objectReference: {fileID: 0}
     - target: {fileID: 8255731581494178152, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_LocalPosition.x
       value: -5
@@ -11381,17 +11072,9 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
-    - target: {fileID: 8255731581494178152, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
     - target: {fileID: 8255731581494178155, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_Name
       value: RLExcavatorTraj
-      objectReference: {fileID: 0}
-    - target: {fileID: 9127174424965435887, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-      propertyPath: m_Name
-      value: Traj_BoomPrismatic2
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -11412,7 +11095,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1182bf9c73b0498ea588875ee5f2eddb, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorTrajectoryAgent
 --- !u!1 &1979500930
 GameObject:
@@ -11441,8 +11124,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
   m_isSensor: 0
@@ -11510,8 +11193,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 968973184}
 --- !u!114 &1994713537
@@ -11524,8 +11207,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 968973184}
 --- !u!23 &1994713538
@@ -11585,11 +11268,6 @@ MeshFilter:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1994713534}
   m_Mesh: {fileID: 10202, guid: 0000000000000000e000000000000000, type: 0}
---- !u!4 &2053993484 stripped
-Transform:
-  m_CorrespondingSourceObject: {fileID: 5918852697985229111, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
-  m_PrefabInstance: {fileID: 1606909204}
-  m_PrefabAsset: {fileID: 0}
 --- !u!1 &2089129017
 GameObject:
   m_ObjectHideFlags: 0
@@ -11632,7 +11310,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name:
+  m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -11689,8 +11367,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
@@ -11769,8 +11447,8 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5f7201a12d95ffc409449d95f23cf332, type: 3}
-  m_Name:
-  m_EditorClassIdentifier:
+  m_Name: 
+  m_EditorClassIdentifier: 
   m_Material: {fileID: 0}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1

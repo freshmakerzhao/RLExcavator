@@ -49,6 +49,10 @@ namespace RLExcavator
     [Tooltip("铲斗目标速度每秒最大变化量(m/s^2)，越小越柔和")]
     public float bucketAcceleration = 0.7f;
 
+    [Header("命令输入闸门")]
+    [Tooltip("关闭后忽略 SetNormalizedSpeeds 写入，并保持所有关节目标速度为 0。训练时保持开启；交互 demo 可由 TaskManager 控制。")]
+    public bool commandInputEnabled = true;
+
     [Header("初始位姿复位")]
     [Tooltip("episode 复位时恢复挖掘机根节点的初始位置和旋转")]
     public bool resetRootPoseOnHomeReset = true;
@@ -96,6 +100,8 @@ namespace RLExcavator
     private float   m_swingHome;
     private bool    m_homeCaptured = false;
 
+    public bool CommandInputEnabled => commandInputEnabled;
+
     // ---------- 生命周期 ----------
 
     // 在第一次物理步之后再抓初始姿态（此时 AGX 关节已实例化）。
@@ -115,7 +121,7 @@ namespace RLExcavator
     /// </summary>
     public void SetNormalizedSpeeds( float boomCmd, float stickCmd, float bucketCmd, float swingCmd = 0f )
     {
-      if ( IsHoming )
+      if ( !commandInputEnabled || IsHoming )
         return;
 
       float dt = Time.fixedDeltaTime;
@@ -145,6 +151,23 @@ namespace RLExcavator
       DriveConstraint( stick,  0f );
       DriveConstraint( bucket, 0f );
       DriveConstraint( swing,  0f );
+    }
+
+    public void SetCommandInputEnabled( bool enabled )
+    {
+      commandInputEnabled = enabled;
+      if ( !commandInputEnabled )
+        StopAll();
+    }
+
+    public void EnableCommandInput()
+    {
+      SetCommandInputEnabled( true );
+    }
+
+    public void DisableCommandInput()
+    {
+      SetCommandInputEnabled( false );
     }
 
     /// <summary>清理 episode 之间容易残留的速度和控制器状态。</summary>

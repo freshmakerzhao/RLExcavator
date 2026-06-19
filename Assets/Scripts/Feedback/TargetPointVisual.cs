@@ -1,4 +1,5 @@
 using UnityEngine;
+using UnityEngine.Rendering;
 
 namespace RLExcavator
 {
@@ -13,6 +14,7 @@ namespace RLExcavator
     public bool faceCamera = false;
 
     private Transform m_visual;
+    private Material m_material;
 
     private void Awake()
     {
@@ -48,6 +50,17 @@ namespace RLExcavator
         EnsureVisual();
       else
         UpdateVisualProperties();
+    }
+
+    public void SetVisible( bool visible )
+    {
+      if ( visible && Application.isPlaying )
+        EnsureVisual();
+      else
+        CacheExistingVisual();
+
+      if ( m_visual != null )
+        m_visual.gameObject.SetActive( visible );
     }
 
     private void CacheExistingVisual()
@@ -87,12 +100,45 @@ namespace RLExcavator
 
       var renderer = m_visual.GetComponent<Renderer>();
       if ( renderer != null ) {
+        EnsureMaterial( renderer );
+        renderer.shadowCastingMode = ShadowCastingMode.Off;
+        renderer.receiveShadows = false;
+
         var block = new MaterialPropertyBlock();
         renderer.GetPropertyBlock( block );
         block.SetColor( "_BaseColor", color );
         block.SetColor( "_Color", color );
         renderer.SetPropertyBlock( block );
       }
+    }
+
+    private void EnsureMaterial( Renderer renderer )
+    {
+      if ( m_material == null ) {
+        Shader shader = Shader.Find( "Universal Render Pipeline/Unlit" );
+        if ( shader == null )
+          shader = Shader.Find( "Universal Render Pipeline/Lit" );
+        if ( shader == null )
+          shader = Shader.Find( "Unlit/Color" );
+        if ( shader == null )
+          shader = Shader.Find( "Standard" );
+
+        if ( shader != null ) {
+          m_material = new Material( shader ) {
+            name = "TargetPointVisualMaterial"
+          };
+        }
+      }
+
+      if ( m_material == null )
+        return;
+
+      if ( m_material.HasProperty( "_BaseColor" ) )
+        m_material.SetColor( "_BaseColor", color );
+      if ( m_material.HasProperty( "_Color" ) )
+        m_material.SetColor( "_Color", color );
+
+      renderer.sharedMaterial = m_material;
     }
   }
 }

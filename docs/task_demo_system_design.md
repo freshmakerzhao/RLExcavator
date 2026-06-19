@@ -418,7 +418,7 @@ Bucket Pitch Frame        = <随 swing 旋转的上车节点>   # 见下方警�
 - `m_episodeCompletedPath`：上一段完成后为 `true`，不重置会让新路径的 `AdvanceTarget` 永远不推进（受 `!m_episodeCompletedPath` 守卫）。
 - `m_stepsOnCurrentWaypoint` / `m_previousDistance` / 运动历史等。
 
-→ 推荐模式：**`endEpisodeOnTargetReached=true` + `resetPoseOnEpisodeBegin=false`**。完成一段 → 自然 `EndEpisode` → `OnEpisodeBegin` 干净清理所有 episode 标志，但因 reset=false 不做 home 复位、机器保持当前姿态。TaskManager 在新 episode 的 `OnEpisodeBegin` 之前把下一段 waypoints 和 `taskMode` 准备好（通过 `SetPlannedPath` + pending 路径机制，第 11 节）。
+→ 推荐模式：**`endEpisodeOnTargetReached=true` + `resetPoseOnEpisodeBegin=false`**。完成一段 → 自然 `EndEpisode` → `OnEpisodeBegin` 干净清理所有 episode 标志，但因 reset=false 不做 home 复位、机器保持当前姿态。TaskManager 在新 episode 的 `OnEpisodeBegin` 之前把下一段 waypoints 和 `taskMode` 准备好（通过 `QueuePlannedPath` 的 pending 路径机制，第 11 节）。
 
 ### 7.3 maxStepsPerWaypoint 是训练超时，语义不等于阶段超时
 
@@ -434,8 +434,8 @@ Bucket Pitch Frame        = <随 swing 旋转的上车节点>   # 见下方警�
 ```text
 进入 TrackToDig / TrackToDump:
   1. agent.taskMode = (MoveToDig | CarryMaterial)        # 不随机
-  2. trajectory.SetPlannedPath(planner.waypoints_world)  # 注入规划路径（pending）
-  3. 启动/解除 gate，让 Agent 接管控制器（control_owner = Agent）
+  2. trajectory.QueuePlannedPath(planner.waypoints_world) # 注入下一段规划路径（pending）
+  3. 打开 `ExcavatorController.commandInputEnabled`，允许 Agent 写入控制器
   4. 等待 trajectory.PathCompleted == true（或阶段超时 → Recover）
   5. PathCompleted → 进入对应 Fixed* 状态；Agent 完成段后自然 EndEpisode（无 home 复位）
 ```
@@ -446,18 +446,20 @@ Bucket Pitch Frame        = <随 swing 旋转的上车节点>   # 见下方警�
 
 `ExcavatorController.SetNormalizedSpeeds()` 是动作进入物理世界的唯一入口。闭环里有多个潜在写入源：Agent（`TrackTo*`）、Fixed primitive（`FixedDig/FixedDump`）、（调试期）键盘。**同一物理步多个源写入会互相打架**（与 HANDOFF 中“键盘 vs Agent 同时写关节”同类问题）。
 
-约定单一写入权：
+第一版先约定一个最小命令闸门：
 
 | 状态 | 唯一写入者 | 其它源处置 |
 |---|---|---|
-| `Idle` / `Plan*` / `Recover` / `Done` | 无（`StopAll` 或保持锁定） | Agent gate 关闭 |
+| `Idle` / `Plan*` / `Recover` / `Done` | 无（`StopAll` 或保持锁定） | `commandInputEnabled=false` |
 | `TrackToDig` / `TrackToDump` | Agent | primitive 不运行；键盘禁用 |
-| `FixedDig` / `FixedDump` | Fixed primitive | **Agent gate 关闭**（停止决策或不写控制器） |
+| `FixedDig` / `FixedDump` | Fixed primitive | **先关闭 Agent/命令闸门**，后续 primitive 独占控制器 |
 
-落地建议（择一，第 11 节给接口）：
+当前已落地的是简单版本：`ExcavatorController.SetNormalizedSpeeds()` 内部检查
+`commandInputEnabled`。训练场景默认保持 `true`；demo 场景由
+`ExcavationDemoTaskManager` 在 Play 后关闭，在点击“开始追踪”后打开。
 
-- **方案 A（推荐）**：给 `ExcavatorController` 加 `controlOwner` 字段；`SetNormalizedSpeeds` 仅接受当前 owner 的写入，非 owner 调用被忽略。TaskManager 切状态时切 owner。
-- **方案 B**：进入 `Fixed*` 前 `agent.enabled=false`（或停 `DecisionRequester`），primitive 直接驱动 controller；退出后再启用 Agent。注意 Agent 重新启用会触发 `OnEpisodeBegin`，需配合第 7 节的 reset=false。
+后续如果固定挖掘/放土 primitive 也要直接调用 `SetNormalizedSpeeds()`，再升级为
+`controlOwner` 仲裁：`Agent` / `Primitive` / `None` 三种 owner，TaskManager 切状态时切 owner。
 
 > Agent 内部已有一层保护：`OnActionReceived` 在 `controller.IsHoming` 时直接 return。但这只覆盖 home 复位期间，不覆盖 `Fixed*` primitive 期间，所以仍需上面的显式仲裁。
 
@@ -518,7 +520,8 @@ public class FixedExcavationPrimitive : MonoBehaviour {
 }
 ```
 
-第一版 planner：`输入当前 bucket tip 和 goal → 生成 5 个 waypoint → SetPlannedPath 写入 TrajectoryProvider`。
+第一版 planner：`输入当前 bucket tip 和 goal → 生成 5 个 waypoint → SetPlannedPath 写入 TrajectoryProvider`。当前代码已提供
+`SimpleTrajectoryPlanner`，用于把起点/终点转换为一条带可选中段抬高的 waypoint 路径。
 第二版 planner：`替换为 RRT*，但保持 Planner -> Tracker 的 TrajectoryCommand 接口不变`。
 
 ---
@@ -529,33 +532,209 @@ public class FixedExcavationPrimitive : MonoBehaviour {
 
 ### 11.1 `TrajectoryProvider`：运行时注入规划路径
 
-现状只支持编辑器摆点或随机生成，planner 算出的点无法推进去。新增：
+`TrajectoryProvider` 支持编辑器摆点、随机训练路径，以及 planner 在运行时注入的路径：
 
 ```csharp
-// 接受世界坐标 waypoint，内部转 localPosition 并刷新可视化；
-// 设一个 pending 标志，在下一次 ResetPath()（即 OnEpisodeBegin）时生效，
-// 以配合第 7 节“EndEpisode 切段但不 home 复位”的时序。
+// 接受世界坐标 waypoint，内部转 localPosition，立即重置当前路径并刷新可视化；
+// 适合推理/demo 中当前段马上开始跟踪。
 public void SetPlannedPath(Vector3[] worldPoints);
+
+// 接受世界坐标 waypoint，暂存到下一次 ResetPath() 生效；
+// 适合“本段完成 -> EndEpisode -> 下一段开始”的状态机时序。
+public void QueuePlannedPath(Vector3[] worldPoints);
+
+// Demo 启动时可隐藏 prefab 中残留的默认轨迹；新规划路径写入后会重新显示。
+public void SetPathVisualsVisible(bool visible);
 ```
 
 并在 demo 场景中关闭 `randomizePathOnReset`（否则 `ResetPath` 会用随机路径覆盖 planner 路径）。
+`TrajectoryGroup` 不应理解为“训练轨迹对象”，而应理解为模块三的 waypoint 缓冲区：
+训练时它可以提供基准/随机路径；demo 推理时它接收 planner 输出并给 RL policy 提供当前目标。
 
-### 11.2 `ExcavatorController`：写入权仲裁（方案 A）
+`SimpleTrajectoryPlanner` 第一版接口：
 
 ```csharp
-public enum ControlOwner { None, Agent, Primitive }
-public ControlOwner Owner { get; private set; } = ControlOwner.Agent;
-public void SetOwner(ControlOwner owner);
-// SetNormalizedSpeeds 增加判定：调用方与 Owner 不符则忽略；
-// 现有签名不变，Agent 侧无需改动（默认 Owner=Agent）。
+public TrajectoryProvider trajectory;
+public Transform startPoint;
+public Transform endPoint;
+public int waypointCount = 5;
+public float arcHeight = 0.5f;
+public float endpointMoveStep = 0.5f;
+public Transform endpointMoveFrame;
+
+public void SelectStartPoint();
+public void SelectEndPoint();
+public void MoveSelectedPointForward();
+public void MoveSelectedPointBackward();
+public void MoveSelectedPointLeft();
+public void MoveSelectedPointRight();
+public void MoveSelectedPointUp();
+public void MoveSelectedPointDown();
+public void PlanConfiguredPath();
+public bool TryPlanConfiguredPath();
+public void Plan(Vector3 startWorld, Vector3 goalWorld);
+public Vector3[] GeneratePath(Vector3 startWorld, Vector3 goalWorld);
 ```
 
-（若采用方案 B 的 `agent.enabled=false`，则不需要本项，但要处理重新启用触发 `OnEpisodeBegin` 的副作用，见 7.2。）
+第一版只做“起点 -> 终点”的光滑 waypoint 生成；后续替换 RRT* 时保持 `Plan(...) -> Vector3[] -> TrajectoryProvider` 这条接口不变。
+交互 demo 中 `StartPoint` 和 `EndPoint` 都应是场景中的可见控制点。UI 先选择当前编辑的是起点还是终点，
+再按 `endpointMoveFrame` 的前/后/左/右/上/下方向移动当前控制点；`endpointMoveFrame` 为空时使用 planner 物体坐标系。
+控制点总是可见，不再提供“是否显示控制点”的开关；demo 也不再支持把 `bucketTip` 作为规划起点。
 
-### 11.3 `ExcavatorTrajectoryAgent`：demo 推理态参数
+`ReachableWorkspaceVisualizer` 用于把手动标定的铲斗尖可达空间画成扇形区域，第一版只做可视化检查，不参与训练、
+轨迹规划或策略推理。当前默认内置 15 个 `env01` 局部坐标标定点，排列方式为 5 个方向（左、左前、正前、
+右前、右）乘 3 个距离层（近、中、远）。推荐把该组件挂在 `TrajectoryEnvironment_01` 或与 `env01`
+完全重合的空物体上；如果挂在其它物体上，则需要把 `Workspace Frame` 显式绑定到 `env01`。确认区域不偏后，
+后续 planner/random path 才应复用这组点作为可达空间边界。
 
-无需改代码，按第 4.3 节表格设置 Inspector/Behavior 参数即可（`resetPoseOnEpisodeBegin=false`、`randomizeTaskModeOnEpisodeBegin=false`、`taskMode` 由 TaskManager 写、Behavior Type=Inference）。
-TaskManager 通过公开字段 `agent.taskMode` 在每段开始前设置模式。
+训练用随机轨迹现在推荐使用 `TrajectoryProvider.randomPathMode = CalibratedFan`。该模式使用同一组 15 个
+标定点做双线性插值，在扇形可达区域内采样起点、终点和中间 waypoint，并通过
+`calibratedFanMinDirectionSpan` 强制起终点具有足够左右跨度。与旧的 `Trend` 模式相比，它不再围绕一条固定
+“左到右”基准轨迹抖动，更适合训练方向多变的轨迹跟踪策略；与 `Independent` 模式相比，它不会在矩形盒子里采到
+明显不可达的点。后续 RRT* 或感知规划模块也应优先复用同一可达空间边界。
+注意：15 个标定点是环境局部坐标，不是 `TrajectoryGroup` 局部坐标。`calibratedFanFrame` 为空时默认使用
+`TrajectoryGroup` 的父物体作为参考系；如果手动绑定，应绑定当前 `TrajectoryEnvironment`，不要绑定
+`TrajectoryGroup` 本身，否则会把 `TrajectoryGroup` 的偏移重复叠加到 waypoint 上，导致目标点飞出平台。
+
+### 11.2 `ExcavatorController`：demo 命令输入闸门
+
+```csharp
+public bool commandInputEnabled = true;
+public bool CommandInputEnabled { get; }
+public void SetCommandInputEnabled(bool enabled);
+public void EnableCommandInput();
+public void DisableCommandInput();
+```
+
+`SetNormalizedSpeeds(...)` 会先检查 `commandInputEnabled`。关闭后立即 `StopAll()`，后续所有
+Agent/键盘写入都会被忽略。训练场景保持默认 `true`，交互 demo 由 TaskManager 控制。
+
+### 11.3 `ExcavatorTrajectoryAgent`：训练/推理策略脚本
+
+`ExcavatorTrajectoryAgent` 不再承载 demo 专用开关，避免训练脚本和 demo 脚本耦合。
+它只负责：
+
+```csharp
+public TrajectoryTaskMode taskMode;
+public bool randomizeTaskModeOnEpisodeBegin;
+public bool resetPoseOnEpisodeBegin;
+```
+
+按第 4.3 节表格设置 Inspector/Behavior 参数即可（`resetPoseOnEpisodeBegin=false`、`randomizeTaskModeOnEpisodeBegin=false`、`taskMode` 由 TaskManager 写、Behavior Type=Inference）。
+TaskManager 在每段开始前直接写 `agent.taskMode`，并保持 `randomizeTaskModeOnEpisodeBegin=false`。
+
+训练 reward 中姿态项分为两层：每步 `wBucketAttitude` 按 pitch error 给惩罚，
+`wBucketAttitudeProgress` 在 pitch error 变小时给进步奖励；到达 waypoint 和完成路径时，
+`scaleWaypointBonusByBucketAttitude=true` 会根据当前 pitch error 缩放 `waypointBonus/pathCompleteBonus`。
+这样模型仍然能通过接近目标获得进度奖励，但不能长期只靠追点拿满 waypoint/path bonus。
+
+### 11.4 `ExcavationDemoTaskManager`：交互 demo 操作台
+
+新增 `Assets/Scripts/Planning/ExcavationDemoTaskManager.cs`，用于把 UI 按钮和底层模块解耦。
+
+推荐接线：
+
+```text
+agent      -> ExcavatorTrajectoryAgent
+controller -> ExcavatorController
+planner    -> SimpleTrajectoryPlanner
+trajectory -> TrajectoryProvider
+bucketTipLocalFrame -> 用于显示铲斗尖局部坐标的参考系，建议绑定 TrajectoryEnvironment 或 RLExcavatorTraj
+statusText -> 可选 Text，用于显示状态
+```
+
+默认 `requireInferenceOnlyBehavior=true`，只有当绑定的 Agent `Behavior Type=Inference Only`
+时才会执行 demo 启停控制。这样即使误把该组件留在训练场景中，`Behavior Type=Default`
+时也不会关闭 controller 命令输入或修改随机 task mode。
+
+默认 `hideTrajectoryUntilPlannedOnStart=true`，Play 后会隐藏 `TrajectoryProvider` 中残留的默认
+waypoint 可视化，避免 demo 一开始显示训练用路径。点击“生成轨迹”后，新轨迹会重新显示。
+默认 `requirePathBeforeTracking=true`，没有规划路径时点击“开始追踪”不会启动控制。
+默认 `disableDecisionRequesterWhenStopped=true`，demo 空闲、停止或轨迹完成后会禁用
+`DecisionRequester`，开始追踪时再启用，避免策略在停止状态持续推理。
+状态栏会显示 `铲斗尖局部`，计算方式为
+`bucketTipLocalFrame.InverseTransformPoint(agent.bucketTip.position)`。该值用于手动标定可达空间范围；
+如果 `bucketTipLocalFrame` 为空，会自动优先使用 `agent.environmentRoot`，再退到 `TrajectoryProvider`。
+
+可绑定到 Unity UI Button 的 public 方法：
+
+```csharp
+SetModeMoveToDig()
+SetModeCarryMaterial()
+SelectPlanStartPoint()
+SelectPlanEndPoint()
+MoveSelectedPlanPointForward()
+MoveSelectedPlanPointBackward()
+MoveSelectedPlanPointLeft()
+MoveSelectedPlanPointRight()
+MoveSelectedPlanPointUp()
+MoveSelectedPlanPointDown()
+PlanPath()
+StartTracking()
+StopTracking()
+PlanAndStartTracking()
+PlanMoveToDigAndStart()
+PlanCarryMaterialAndStart()
+```
+
+### 11.5 `ExcavationDemoRuntimeUI`：展示用 HUD
+
+新增 `Assets/Scripts/UI/ExcavationDemoRuntimeUI.cs`，用于在 Play 时自动生成一个演示 HUD。
+推荐把它挂在 `DemoSystem` 上，并把 `Task Manager` 指向同一个物体上的
+`ExcavationDemoTaskManager`。
+
+HUD 结构：
+
+```text
+顶部信息栏：
+  左侧标题 = 算法验证
+  右侧单位/Logo 文本 = organizationText
+
+中间功能导航：
+  感知建图 / 生成轨迹 / 轨迹追踪
+  当前 tab 使用蓝色高亮和发光边框
+
+左侧控制菜单：
+  随当前 tab 切换。
+  感知建图暂为占位按钮。
+  生成轨迹可通过 UI 选择编辑 StartPoint / EndPoint，并对当前控制点进行前/后/左/右/上/下移动。
+  生成轨迹可直接调用 SimpleTrajectoryPlanner 生成 waypoint，也可一键生成并进入追踪。
+  轨迹追踪绑定“生成轨迹 / 开始追踪 / 停止追踪 / 重置演示”等功能。
+
+右上角态势监控窗口：
+  绑定 Minimap Camera 后显示俯视画面。
+  未绑定时显示占位态势示意图。
+```
+
+该脚本只调用 `ExcavationDemoTaskManager` 的 public 方法，不直接控制关节，也不修改训练
+Agent。若场景中没有 `EventSystem`，它会自动创建一个，避免按钮无法点击。小地图如需显示真实俯视画面，
+在 Inspector 中把 `Minimap Camera` 绑定到一个俯视相机即可。
+小地图使用与显示窗口一致的宽高比例创建 RenderTexture，并在 UI 中保持画面比例显示，避免俯视画面被拉伸变形。
+
+当前 HUD 仍采用 runtime 代码生成，优点是便于快速迭代和保持 demo 脚本自包含；如果后续进入正式展示阶段，
+更推荐把布局迁移为 Canvas Prefab 或 UI Toolkit 资产，代码只负责绑定事件和刷新数据。
+
+“重置演示”由 `ExcavationDemoTaskManager.ResetDemo()` 提供，语义是重载当前 demo scene，
+尽量接近“重新启动一次演示”。进入 reset 前会先关闭 controller 命令输入并停止关节目标速度。
+
+为保证模块解耦，`ExcavationDemoRuntimeUI` 不会自动查找或禁用训练 UI。展示场景中如果
+不需要训练指标和键盘说明，应在 `ExcavatorDemoScene` 内手动删除或禁用对应 Canvas，例如：
+
+- `UITargetTracking` 所在的训练指标 Canvas
+- 包含 `Keyboard controls` / `Gamepad controls` 文本的说明 Canvas
+
+第一版 demo 操作流程：
+
+```text
+Play
+  -> controller.commandInputEnabled=false，挖掘机静止
+  -> 进入“生成轨迹”tab
+  -> 点击“编辑起点”，通过控制点前/后/左/右/上/下按钮调整 StartPoint
+  -> 点击“编辑终点”，通过控制点前/后/左/右/上/下按钮调整 EndPoint
+  -> 点击“生成轨迹”或“生成并追踪”
+  -> 如只生成轨迹，再进入“轨迹追踪”tab 点击“开始追踪”
+  -> 轨迹完成后自动 Stop
+```
 
 ---
 

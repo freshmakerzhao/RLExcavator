@@ -11,7 +11,8 @@ namespace RLExcavator
     public enum RandomPathMode
     {
       Independent,
-      Trend
+      Trend,
+      CalibratedFan
     }
 
     [Header("Path")]
@@ -39,6 +40,35 @@ namespace RLExcavator
     public float trendLateralJitter = 0.8f;
     [Tooltip("Trend 模式下基准路径点在高度 Y 方向的随机扰动。")]
     public float trendVerticalJitter = 0.45f;
+
+    [Header("Calibrated fan path")]
+    [Tooltip("CalibratedFan 标定点所属参考系。为空时使用当前 TrajectoryGroup 的父物体，通常就是 TrajectoryEnvironment。")]
+    public Transform calibratedFanFrame;
+
+    [Tooltip("CalibratedFan 模式下使用的铲斗尖可达空间标定点。默认是 env01 的 5方向 x 3距离层标定。")]
+    public Vector3[] calibratedFanLocalPoints = ReachableWorkspaceVisualizer.Env01CalibrationAnchors();
+
+    [Tooltip("CalibratedFan 模式下起点和终点在左右方向上的最小跨度，0 表示不限制，1 表示必须从最左到最右。")]
+    [Range( 0f, 1f )]
+    public float calibratedFanMinDirectionSpan = 0.35f;
+
+    [Tooltip("CalibratedFan 模式下每个 waypoint 在扇形方向参数上的随机扰动。")]
+    [Range( 0f, 0.35f )]
+    public float calibratedFanDirectionJitter = 0.08f;
+
+    [Tooltip("CalibratedFan 模式下每个 waypoint 在近远距离参数上的随机扰动。")]
+    [Range( 0f, 0.35f )]
+    public float calibratedFanRangeJitter = 0.12f;
+
+    [Tooltip("CalibratedFan 模式下高度额外扰动，单位米。")]
+    public float calibratedFanVerticalJitter = 0.15f;
+
+    [Tooltip("CalibratedFan 模式下是否允许路径中段带弧度，增加轨迹形状多样性。")]
+    public bool calibratedFanUseCurvedPaths = true;
+
+    [Tooltip("CalibratedFan 模式下路径弧度强度。数值越大，路径越不接近直线插值。")]
+    [Range( 0f, 0.5f )]
+    public float calibratedFanCurveStrength = 0.18f;
 
     [Header("Debug visual")]
     public bool drawGizmos = true;
@@ -73,6 +103,8 @@ namespace RLExcavator
 
     private Transform m_fallbackVisualTarget = null;
     private Vector3[] m_baseLocalWaypoints = null;
+    private Vector3[] m_pendingLocalWaypoints = null;
+    private bool m_pathVisualsVisible = true;
 
     private void Start()
     {
@@ -133,12 +165,47 @@ namespace RLExcavator
 
     public void ResetPath()
     {
-      if ( randomizePathOnReset )
+      if ( m_pendingLocalWaypoints != null ) {
+        ApplyLocalPath( m_pendingLocalWaypoints );
+        m_pendingLocalWaypoints = null;
+      }
+      else if ( randomizePathOnReset )
         GenerateRandomPath();
 
       CurrentIndex = 0;
       PathCompleted = false;
       RefreshWaypointVisuals();
+    }
+
+    public void SetPathVisualsVisible( bool visible )
+    {
+      m_pathVisualsVisible = visible;
+      RefreshWaypointVisuals();
+    }
+
+    /// <summary>
+    /// 立即使用 planner 输出的世界坐标路径。适合推理/demo 中当前段马上开始跟踪。
+    /// </summary>
+    public void SetPlannedPath( Vector3[] worldPoints )
+    {
+      Vector3[] localPoints = WorldToLocalPath( worldPoints );
+      if ( localPoints == null )
+        return;
+
+      ApplyLocalPath( localPoints );
+      CurrentIndex = 0;
+      PathCompleted = false;
+      m_pathVisualsVisible = true;
+      RefreshWaypointVisuals();
+    }
+
+    /// <summary>
+    /// 暂存 planner 输出的世界坐标路径，在下一次 ResetPath() 时生效。
+    /// 适合“本段结束 -> EndEpisode -> 下一段开始”这样的状态机时序。
+    /// </summary>
+    public void QueuePlannedPath( Vector3[] worldPoints )
+    {
+      m_pendingLocalWaypoints = WorldToLocalPath( worldPoints );
     }
 
     /// <summary>前进到下一个路径点；返回 true 表示整条路径已经完成。</summary>
@@ -170,6 +237,11 @@ namespace RLExcavator
         return;
       }
 
+      if ( randomPathMode == RandomPathMode.CalibratedFan ) {
+        GenerateCalibratedFanPath( count );
+        return;
+      }
+
       Vector3 previous = RandomPathPoint();
       for ( int i = 0; i < count; i++ ) {
         Vector3 candidate = i == 0 ? previous : RandomPathPointNear( previous );
@@ -196,6 +268,129 @@ namespace RLExcavator
         if ( waypoints[ i ] != null )
           waypoints[ i ].localPosition = basePoint + jitter;
       }
+    }
+
+    private void GenerateCalibratedFanPath( int count )
+    {
+      EnsureCalibratedFanAnchorArray();
+
+      float startDirection = Random.value;
+      float endDirection = Random.value;
+      float minSpan = Mathf.Clamp01( calibratedFanMinDirectionSpan );
+
+      for ( int i = 0; i < 16 && Mathf.Abs( endDirection - startDirection ) < minSpan; i++ )
+        endDirection = Random.value;
+
+      if ( Mathf.Abs( endDirection - startDirection ) < minSpan )
+        endDirection = startDirection < 0.5f ? Mathf.Min( 1f, startDirection + minSpan ) : Mathf.Max( 0f, startDirection - minSpan );
+
+      float startRange = Random.Range( 0.05f, 0.95f );
+      float endRange = Random.Range( 0.05f, 0.95f );
+      float curvePhase = Random.value < 0.5f ? -1f : 1f;
+      float curveStrength = calibratedFanUseCurvedPaths ? calibratedFanCurveStrength : 0f;
+
+      for ( int i = 0; i < count; i++ ) {
+        float t = count <= 1 ? 1f : (float)i / ( count - 1 );
+        float endpointScale = i == 0 || i == count - 1 ? 0.35f : 1f;
+        float arc = Mathf.Sin( Mathf.PI * t );
+
+        float direction =
+          Mathf.Lerp( startDirection, endDirection, t ) +
+          curvePhase * arc * curveStrength +
+          Random.Range( -calibratedFanDirectionJitter, calibratedFanDirectionJitter ) * endpointScale;
+
+        float range =
+          Mathf.Lerp( startRange, endRange, t ) -
+          arc * curveStrength * 0.35f +
+          Random.Range( -calibratedFanRangeJitter, calibratedFanRangeJitter ) * endpointScale;
+
+        Vector3 candidate = SampleCalibratedFan( Mathf.Clamp01( direction ), Mathf.Clamp01( range ) );
+        candidate.y += Random.Range( -calibratedFanVerticalJitter, calibratedFanVerticalJitter ) * endpointScale;
+
+        if ( waypoints[ i ] != null )
+          waypoints[ i ].localPosition = CalibratedFanLocalToWaypointLocal( candidate );
+      }
+    }
+
+    private Vector3 CalibratedFanLocalToWaypointLocal( Vector3 fanLocalPoint )
+    {
+      Transform frame = calibratedFanFrame != null ? calibratedFanFrame : transform.parent;
+      if ( frame == null || frame == transform )
+        return fanLocalPoint;
+
+      Vector3 worldPoint = frame.TransformPoint( fanLocalPoint );
+      return transform.InverseTransformPoint( worldPoint );
+    }
+
+    private Vector3 SampleCalibratedFan( float direction01, float range01 )
+    {
+      EnsureCalibratedFanAnchorArray();
+
+      const int directionCount = 5;
+      const int radialCount = 3;
+
+      float directionScaled = Mathf.Clamp01( direction01 ) * ( directionCount - 1 );
+      float rangeScaled = Mathf.Clamp01( range01 ) * ( radialCount - 1 );
+      int directionIndex = Mathf.Clamp( Mathf.FloorToInt( directionScaled ), 0, directionCount - 2 );
+      int rangeIndex = Mathf.Clamp( Mathf.FloorToInt( rangeScaled ), 0, radialCount - 2 );
+      float directionT = directionScaled - directionIndex;
+      float rangeT = rangeScaled - rangeIndex;
+
+      Vector3 nearLeft = calibratedFanLocalPoints[ CalibratedFanIndex( directionIndex, rangeIndex ) ];
+      Vector3 farLeft = calibratedFanLocalPoints[ CalibratedFanIndex( directionIndex, rangeIndex + 1 ) ];
+      Vector3 nearRight = calibratedFanLocalPoints[ CalibratedFanIndex( directionIndex + 1, rangeIndex ) ];
+      Vector3 farRight = calibratedFanLocalPoints[ CalibratedFanIndex( directionIndex + 1, rangeIndex + 1 ) ];
+
+      Vector3 left = Vector3.Lerp( nearLeft, farLeft, rangeT );
+      Vector3 right = Vector3.Lerp( nearRight, farRight, rangeT );
+      return Vector3.Lerp( left, right, directionT );
+    }
+
+    private void EnsureCalibratedFanAnchorArray()
+    {
+      if ( calibratedFanLocalPoints != null && calibratedFanLocalPoints.Length == 15 )
+        return;
+
+      calibratedFanLocalPoints = ReachableWorkspaceVisualizer.Env01CalibrationAnchors();
+    }
+
+    private static int CalibratedFanIndex( int direction, int radial )
+    {
+      const int radialCount = 3;
+      return direction * radialCount + radial;
+    }
+
+    private Vector3[] WorldToLocalPath( Vector3[] worldPoints )
+    {
+      if ( worldPoints == null || worldPoints.Length == 0 ) {
+        Debug.LogWarning( "[TrajectoryProvider] Ignored empty planned path." );
+        return null;
+      }
+
+      Vector3[] localPoints = new Vector3[ worldPoints.Length ];
+      for ( int i = 0; i < worldPoints.Length; i++ )
+        localPoints[ i ] = transform.InverseTransformPoint( worldPoints[ i ] );
+
+      return localPoints;
+    }
+
+    private void ApplyLocalPath( Vector3[] localPoints )
+    {
+      if ( localPoints == null || localPoints.Length == 0 )
+        return;
+
+      EnsureWaypointArray( localPoints.Length );
+
+      for ( int i = 0; i < localPoints.Length; i++ )
+        if ( waypoints[ i ] != null )
+          waypoints[ i ].localPosition = localPoints[ i ];
+
+      m_baseLocalWaypoints = new Vector3[ localPoints.Length ];
+      for ( int i = 0; i < localPoints.Length; i++ )
+        m_baseLocalWaypoints[ i ] = localPoints[ i ];
+
+      if ( addRuntimeVisuals )
+        EnsureRuntimeVisuals();
     }
 
     private void CaptureBaseWaypointsIfNeeded( int count )
@@ -339,6 +534,7 @@ namespace RLExcavator
         Color color = TargetColorForIndex( i );
         float radius = i == CurrentIndex && !PathCompleted ? runtimeVisualRadius * 1.25f : runtimeVisualRadius;
         visual.SetStyle( color, radius );
+        visual.SetVisible( m_pathVisualsVisible );
       }
     }
 

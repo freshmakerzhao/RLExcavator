@@ -130,8 +130,24 @@ namespace RLExcavator
     [Tooltip("铲斗姿态误差惩罚权重。误差越大惩罚越大，用于条件化不同任务姿态。")]
     public float wBucketAttitude = 0.1f;
 
+    [Tooltip("铲斗姿态误差减少时的奖励权重，帮助策略主动把铲斗转向目标姿态。")]
+    public float wBucketAttitudeProgress = 0.2f;
+
     [Tooltip("铲斗姿态角速度惩罚权重，防止姿态抖动。")]
     public float wBucketAngularVelocity = 0.0005f;
+
+    [Tooltip("到达 waypoint 和完成路径的奖励是否按铲斗姿态误差缩放，避免只追点不管姿态。")]
+    public bool scaleWaypointBonusByBucketAttitude = true;
+
+    [Tooltip("姿态误差小于该角度时，waypoint/path bonus 基本不衰减。")]
+    public float waypointBonusPitchToleranceDeg = 30f;
+
+    [Tooltip("姿态误差很大时仍保留的 waypoint/path bonus 比例，避免训练初期完全无正反馈。")]
+    [Range( 0f, 1f )]
+    public float minWaypointBonusScaleWhenPitchBad = 0.2f;
+
+    [Tooltip("到达 waypoint 但姿态误差过大时的额外惩罚。")]
+    public float badPitchWaypointPenalty = 0.25f;
 
     [Tooltip("单个 waypoint 最多允许消耗的决策步数。超过后结束 episode，避免长期卡点刷无效样本；0 表示关闭。")]
     public int maxStepsPerWaypoint = 1200;
@@ -216,8 +232,12 @@ namespace RLExcavator
     private Vector3 m_tipVelocityLocal = Vector3.zero;
     private Vector3 m_episodeStartTipPosition = Vector3.zero;
     private float m_previousBucketPitchDeg = 0f;
+    private float m_previousBucketPitchErrorAbsDeg = 0f;
     private float m_bucketPitchVelocityNormalized = 0f;
     private float m_episodeBucketPitchErrorSum = 0f;
+    private float m_episodeBucketPitchProgressSum = 0f;
+    private float m_episodeWaypointBonusScaleSum = 0f;
+    private int m_episodeWaypointBonusScaleSamples = 0;
     private bool m_hasPreviousMotionState = false;
 
     // UI / 调试只读属性
@@ -287,6 +307,9 @@ namespace RLExcavator
       m_episodePositiveProgressSum = 0f;
       m_episodeSignedProgressSum = 0f;
       m_episodeBucketPitchErrorSum = 0f;
+      m_episodeBucketPitchProgressSum = 0f;
+      m_episodeWaypointBonusScaleSum = 0f;
+      m_episodeWaypointBonusScaleSamples = 0;
 
       if ( randomizeTaskModeOnEpisodeBegin )
         taskMode = Random.value < 0.5f ? TrajectoryTaskMode.MoveToDig : TrajectoryTaskMode.CarryMaterial;
@@ -395,7 +418,10 @@ namespace RLExcavator
       float actionMagnitude = Mathf.Abs( boom ) + Mathf.Abs( stick ) + Mathf.Abs( bucket ) + Mathf.Abs( swing );
       float actionDelta = ( action - m_previousAction ).sqrMagnitude;
       float tubeDistance = NormalizedTubeDistance();
-      float bucketPitchError = Mathf.Abs( BucketPitchErrorDegrees() ) / Mathf.Max( bucketPitchNormalizerDeg, 1f );
+      float bucketPitchErrorAbsDeg = Mathf.Abs( BucketPitchErrorDegrees() );
+      float bucketPitchError = bucketPitchErrorAbsDeg / Mathf.Max( bucketPitchNormalizerDeg, 1f );
+      float previousBucketPitchError = m_previousBucketPitchErrorAbsDeg / Mathf.Max( bucketPitchNormalizerDeg, 1f );
+      float bucketAttitudeProgress = Mathf.Clamp( previousBucketPitchError - bucketPitchError, -0.25f, 0.25f );
       float clippedProgressDelta = Mathf.Clamp( progressDelta, -0.25f, 0.25f );
       float positiveProgressDelta = Mathf.Max( clippedProgressDelta, 0f );
       float coarsePotentialDelta = Mathf.Exp( -normalizedDistance ) - Mathf.Exp( -previousNormalizedDistance );
@@ -408,6 +434,7 @@ namespace RLExcavator
       m_episodePositiveProgressSum += positiveProgressDelta;
       m_episodeSignedProgressSum += clippedProgressDelta;
       m_episodeBucketPitchErrorSum += bucketPitchError;
+      m_episodeBucketPitchProgressSum += bucketAttitudeProgress;
 
       AddReward( -wDistance * normalizedDistance );
       AddReward( wProgress * clippedProgressDelta );
@@ -417,6 +444,7 @@ namespace RLExcavator
       AddReward( -wActionCost * action.sqrMagnitude );
       AddReward( -wActionDelta * actionDelta );
       AddReward( -wBucketAttitude * bucketPitchError );
+      AddReward( wBucketAttitudeProgress * bucketAttitudeProgress );
       AddReward( -wBucketAngularVelocity * Mathf.Abs( m_bucketPitchVelocityNormalized ) );
       AddReward( -1f / Mathf.Max( MaxStep, 1 ) );
 
@@ -424,11 +452,17 @@ namespace RLExcavator
         bool completed = trajectory == null || trajectory.AdvanceTarget();
         m_episodeReachedTargets++;
         m_stepsOnCurrentWaypoint = 0;
-        AddReward( waypointBonus );
+        float waypointBonusScale = WaypointBonusAttitudeScale( bucketPitchErrorAbsDeg );
+        AddReward( waypointBonus * waypointBonusScale );
+        m_episodeWaypointBonusScaleSum += waypointBonusScale;
+        m_episodeWaypointBonusScaleSamples++;
+
+        if ( scaleWaypointBonusByBucketAttitude && waypointBonusScale < 0.999f )
+          AddReward( -badPitchWaypointPenalty * ( 1f - waypointBonusScale ) );
 
         if ( completed ) {
           m_episodeCompletedPath = true;
-          AddReward( pathCompleteBonus );
+          AddReward( pathCompleteBonus * waypointBonusScale );
           if ( debugEpisodeEvents )
             Debug.Log( $"[ExcavatorTrajectoryAgent] Path complete. episode={CurrentEpisode}, score={GetCumulativeReward():F3}" );
 
@@ -457,6 +491,7 @@ namespace RLExcavator
       }
 
       m_previousAction = action;
+      m_previousBucketPitchErrorAbsDeg = bucketPitchErrorAbsDeg;
     }
 
     // Heuristic Only 下使用与 DigAgent 相同的键盘映射。
@@ -509,21 +544,41 @@ namespace RLExcavator
       float pathProgress = trajectory != null ? trajectory.Progress : 0f;
       float targetCount = Mathf.Max( CurrentTargetCount, 1 );
 
+      float success = completed || m_episodeCompletedPath ? 1f : 0f;
+      float waypointReachRate = m_episodeReachedTargets / targetCount;
+      float timeout = m_episodeTimedOut ? 1f : 0f;
+      float sampleCount = Mathf.Max( m_episodeStepSamples, 1 );
+      float meanActionMagnitude = m_episodeActionMagnitudeSum / sampleCount;
+      float meanPositiveProgress = m_episodePositiveProgressSum / sampleCount;
+      float meanBucketPitchErrorDeg = m_episodeBucketPitchErrorSum / sampleCount * Mathf.Max( bucketPitchNormalizerDeg, 1f );
+      float meanWaypointBonusScale = m_episodeWaypointBonusScaleSamples > 0 ? m_episodeWaypointBonusScaleSum / m_episodeWaypointBonusScaleSamples : 0f;
+
       var stats = Academy.Instance.StatsRecorder;
-      stats.Add( "Trajectory/SuccessRate", completed || m_episodeCompletedPath ? 1f : 0f, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/SuccessRate", success, StatAggregationMethod.Average );
       stats.Add( "Trajectory/WaypointsReached", m_episodeReachedTargets, StatAggregationMethod.Average );
-      stats.Add( "Trajectory/WaypointReachRate", m_episodeReachedTargets / targetCount, StatAggregationMethod.Average );
-      stats.Add( "Trajectory/WaypointTimeoutRate", m_episodeTimedOut ? 1f : 0f, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/WaypointReachRate", waypointReachRate, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/WaypointTimeoutRate", timeout, StatAggregationMethod.Average );
       stats.Add( "Trajectory/PathProgress", pathProgress, StatAggregationMethod.Average );
       stats.Add( "Trajectory/FinalDistance", finalDistance, StatAggregationMethod.Average );
       stats.Add( "Trajectory/MinDistance", minDistance, StatAggregationMethod.Average );
 
-      float sampleCount = Mathf.Max( m_episodeStepSamples, 1 );
-      stats.Add( "Trajectory/MeanActionMagnitude", m_episodeActionMagnitudeSum / sampleCount, StatAggregationMethod.Average );
-      stats.Add( "Trajectory/MeanPositiveProgress", m_episodePositiveProgressSum / sampleCount, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/MeanActionMagnitude", meanActionMagnitude, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/MeanPositiveProgress", meanPositiveProgress, StatAggregationMethod.Average );
       stats.Add( "Trajectory/SignedProgress", m_episodeSignedProgressSum, StatAggregationMethod.Average );
       stats.Add( "Trajectory/TaskMode", taskMode == TrajectoryTaskMode.CarryMaterial ? 1f : 0f, StatAggregationMethod.Average );
-      stats.Add( "Trajectory/BucketPitchErrorDeg", m_episodeBucketPitchErrorSum / sampleCount * Mathf.Max( bucketPitchNormalizerDeg, 1f ), StatAggregationMethod.Average );
+      stats.Add( "Trajectory/BucketPitchErrorDeg", meanBucketPitchErrorDeg, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/BucketPitchProgress", m_episodeBucketPitchProgressSum, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/WaypointBonusScale", meanWaypointBonusScale, StatAggregationMethod.Average );
+
+      string taskPrefix = taskMode == TrajectoryTaskMode.CarryMaterial ? "Trajectory/CarryMaterial" : "Trajectory/MoveToDig";
+      stats.Add( $"{taskPrefix}/SuccessRate", success, StatAggregationMethod.Average );
+      stats.Add( $"{taskPrefix}/WaypointReachRate", waypointReachRate, StatAggregationMethod.Average );
+      stats.Add( $"{taskPrefix}/WaypointTimeoutRate", timeout, StatAggregationMethod.Average );
+      stats.Add( $"{taskPrefix}/PathProgress", pathProgress, StatAggregationMethod.Average );
+      stats.Add( $"{taskPrefix}/BucketPitchErrorDeg", meanBucketPitchErrorDeg, StatAggregationMethod.Average );
+      stats.Add( $"{taskPrefix}/BucketPitchProgress", m_episodeBucketPitchProgressSum, StatAggregationMethod.Average );
+      stats.Add( $"{taskPrefix}/WaypointBonusScale", meanWaypointBonusScale, StatAggregationMethod.Average );
+      stats.Add( $"{taskPrefix}/FinalDistance", finalDistance, StatAggregationMethod.Average );
     }
 
     private float CurrentDistanceToTargetInternal()
@@ -553,6 +608,16 @@ namespace RLExcavator
       }
 
       return threshold;
+    }
+
+    private float WaypointBonusAttitudeScale( float bucketPitchErrorAbsDeg )
+    {
+      if ( !scaleWaypointBonusByBucketAttitude )
+        return 1f;
+
+      float tolerance = Mathf.Max( waypointBonusPitchToleranceDeg, 1f );
+      float normalizedError = Mathf.Clamp01( bucketPitchErrorAbsDeg / tolerance );
+      return Mathf.Lerp( 1f, Mathf.Clamp01( minWaypointBonusScaleWhenPitchBad ), normalizedError );
     }
 
     private void AddLookaheadWaypointObservations( VectorSensor sensor, Vector3 tipLocal )
@@ -654,6 +719,7 @@ namespace RLExcavator
       );
       m_previousTipLocal = bucketTip != null ? transform.InverseTransformPoint( bucketTip.position ) : Vector3.zero;
       m_previousBucketPitchDeg = CurrentBucketPitchDegrees();
+      m_previousBucketPitchErrorAbsDeg = Mathf.Abs( BucketPitchErrorDegrees() );
       m_bucketPitchVelocityNormalized = 0f;
       m_jointVelocity = Vector4.zero;
       m_tipVelocityLocal = Vector3.zero;
