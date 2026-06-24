@@ -12,7 +12,8 @@ namespace RLExcavator
     {
       Independent,
       Trend,
-      CalibratedFan
+      CalibratedFan,
+      ReachableWorkspaceVolume
     }
 
     [Header("Path")]
@@ -70,6 +71,39 @@ namespace RLExcavator
     [Range( 0f, 0.5f )]
     public float calibratedFanCurveStrength = 0.18f;
 
+    [Header("Reachable workspace volume path")]
+    [Tooltip("提供当前 MoveToDig / CarryMaterial 模式的 Agent。为空时会在同一环境根节点下自动查找。")]
+    public ExcavatorTrajectoryAgent taskModeSource;
+
+    [Tooltip("MoveToDig 模式使用的 3D 可达空间。为空时会尝试按名字自动查找 MoveToDig。")]
+    public ReachableWorkspaceVisualizer moveToDigReachableWorkspace;
+
+    [Tooltip("CarryMaterial 模式使用的 3D 可达空间。为空时会尝试按名字自动查找 CarryMaterial。")]
+    public ReachableWorkspaceVisualizer carryMaterialReachableWorkspace;
+
+    [Tooltip("没有 ReachableWorkspaceVisualizer 组件时，体积锚点所属参考系。为空时回退 calibratedFanFrame / TrajectoryGroup 父物体。")]
+    public Transform reachableWorkspaceFrame;
+
+    [Tooltip("MoveToDig 后备 3D 可达空间锚点，顺序为 5 个方向 x 4 点。只有场景中未绑定 ReachableWorkspaceVisualizer 时使用。")]
+    public Vector3[] moveToDigVolumeLocalPoints = ReachableWorkspaceVisualizer.Env01VolumeAnchors();
+
+    [Tooltip("CarryMaterial 后备 3D 可达空间锚点，顺序为 5 个方向 x 4 点。只有场景中未绑定 ReachableWorkspaceVisualizer 时使用。")]
+    public Vector3[] carryMaterialVolumeLocalPoints = ReachableWorkspaceVisualizer.Env01VolumeAnchors();
+
+    [Tooltip("ReachableWorkspaceVolume 模式下起点和终点的最小空间距离。")]
+    public float reachableWorkspaceMinEndpointDistance = 1.0f;
+
+    [Tooltip("ReachableWorkspaceVolume 模式下路径中段的弯曲扰动强度。")]
+    [Range( 0f, 0.5f )]
+    public float reachableWorkspaceCurveStrength = 0.16f;
+
+    [Tooltip("ReachableWorkspaceVolume 模式下是否允许路径中段带弧度。")]
+    public bool reachableWorkspaceUseCurvedPaths = true;
+
+    [Tooltip("ReachableWorkspaceVolume 后备锚点采样时，起点和终点在方向参数上的最小跨度。")]
+    [Range( 0f, 1f )]
+    public float reachableWorkspaceMinDirectionSpan = 0.30f;
+
     [Header("Debug visual")]
     public bool drawGizmos = true;
     [Tooltip("路径连线颜色。")]
@@ -105,6 +139,7 @@ namespace RLExcavator
     private Vector3[] m_baseLocalWaypoints = null;
     private Vector3[] m_pendingLocalWaypoints = null;
     private bool m_pathVisualsVisible = true;
+    private bool m_reachableWorkspaceWarningShown = false;
 
     private void Start()
     {
@@ -242,6 +277,9 @@ namespace RLExcavator
         return;
       }
 
+      if ( randomPathMode == RandomPathMode.ReachableWorkspaceVolume && TryGenerateReachableWorkspaceVolumePath( count ) )
+        return;
+
       Vector3 previous = RandomPathPoint();
       for ( int i = 0; i < count; i++ ) {
         Vector3 candidate = i == 0 ? previous : RandomPathPointNear( previous );
@@ -358,6 +396,274 @@ namespace RLExcavator
     {
       const int radialCount = 3;
       return direction * radialCount + radial;
+    }
+
+    private bool TryGenerateReachableWorkspaceVolumePath( int count )
+    {
+      EnsureReachableWorkspaceVolumeAnchorArrays();
+      ResolveReachableWorkspaceReferences();
+
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      if ( workspace != null && TryGenerateReachableWorkspaceComponentPath( workspace, count ) )
+        return true;
+
+      Vector3[] volumeAnchors = ActiveReachableWorkspaceVolumeAnchors();
+      if ( IsValidVolumeAnchorArray( volumeAnchors ) ) {
+        GenerateReachableWorkspaceAnchorPath( volumeAnchors, count );
+        return true;
+      }
+
+      if ( !m_reachableWorkspaceWarningShown ) {
+        Debug.LogWarning( "[TrajectoryProvider] ReachableWorkspaceVolume mode has no valid Move/Carry volume. Falling back to CalibratedFan." );
+        m_reachableWorkspaceWarningShown = true;
+      }
+
+      GenerateCalibratedFanPath( count );
+      return true;
+    }
+
+    private bool TryGenerateReachableWorkspaceComponentPath( ReachableWorkspaceVisualizer workspace, int count )
+    {
+      if ( workspace == null || !workspace.TryGetWorldVolumeBounds( out Bounds bounds ) )
+        return false;
+
+      if ( !TryRandomWorldPointInWorkspace( workspace, bounds, out Vector3 start ) )
+        return false;
+
+      Vector3 end = start;
+      float minDistance = Mathf.Max( reachableWorkspaceMinEndpointDistance, 0f );
+      for ( int i = 0; i < 24; i++ ) {
+        if ( !TryRandomWorldPointInWorkspace( workspace, bounds, out end ) )
+          return false;
+
+        if ( ( end - start ).magnitude >= minDistance )
+          break;
+      }
+
+      Vector3 axis = end - start;
+      Vector3 lateral = Vector3.Cross( axis.sqrMagnitude > 0.0001f ? axis.normalized : Vector3.forward, Vector3.up );
+      if ( lateral.sqrMagnitude < 0.0001f )
+        lateral = Vector3.right;
+      lateral.Normalize();
+
+      float curveStrength = reachableWorkspaceUseCurvedPaths ? Mathf.Clamp01( reachableWorkspaceCurveStrength ) : 0f;
+      float jitterScale = Mathf.Max( bounds.extents.magnitude, 0.1f ) * curveStrength;
+
+      for ( int i = 0; i < count; i++ ) {
+        float t = count <= 1 ? 1f : (float)i / ( count - 1 );
+        float arc = Mathf.Sin( Mathf.PI * t );
+        Vector3 worldPoint = Vector3.Lerp( start, end, t );
+
+        if ( curveStrength > 0f ) {
+          float signedOffset = Random.Range( -jitterScale, jitterScale ) * arc;
+          float verticalOffset = Random.Range( -jitterScale, jitterScale ) * 0.35f * arc;
+          worldPoint += lateral * signedOffset + Vector3.up * verticalOffset;
+        }
+
+        worldPoint = workspace.ClosestWorldPointInVolume( worldPoint );
+        if ( waypoints[ i ] != null )
+          waypoints[ i ].localPosition = transform.InverseTransformPoint( worldPoint );
+      }
+
+      return true;
+    }
+
+    private bool TryRandomWorldPointInWorkspace( ReachableWorkspaceVisualizer workspace, Bounds bounds, out Vector3 point )
+    {
+      for ( int i = 0; i < 96; i++ ) {
+        Vector3 candidate = new Vector3(
+          Random.Range( bounds.min.x, bounds.max.x ),
+          Random.Range( bounds.min.y, bounds.max.y ),
+          Random.Range( bounds.min.z, bounds.max.z )
+        );
+
+        if ( workspace.ContainsWorldPointInVolume( candidate ) ) {
+          point = candidate;
+          return true;
+        }
+      }
+
+      Vector3 fallback = new Vector3(
+        Random.Range( bounds.min.x, bounds.max.x ),
+        Random.Range( bounds.min.y, bounds.max.y ),
+        Random.Range( bounds.min.z, bounds.max.z )
+      );
+      point = workspace.ClosestWorldPointInVolume( fallback );
+      return true;
+    }
+
+    private void GenerateReachableWorkspaceAnchorPath( Vector3[] volumeAnchors, int count )
+    {
+      float startDirection = Random.value;
+      float endDirection = Random.value;
+      float minSpan = Mathf.Clamp01( reachableWorkspaceMinDirectionSpan );
+
+      for ( int i = 0; i < 16 && Mathf.Abs( endDirection - startDirection ) < minSpan; i++ )
+        endDirection = Random.value;
+
+      if ( Mathf.Abs( endDirection - startDirection ) < minSpan )
+        endDirection = startDirection < 0.5f ? Mathf.Min( 1f, startDirection + minSpan ) : Mathf.Max( 0f, startDirection - minSpan );
+
+      float startHeight = Random.Range( 0.1f, 0.9f );
+      float endHeight = Random.Range( 0.1f, 0.9f );
+      float startDepth = Random.Range( 0.1f, 0.9f );
+      float endDepth = Random.Range( 0.1f, 0.9f );
+      float curvePhase = Random.value < 0.5f ? -1f : 1f;
+      float curveStrength = reachableWorkspaceUseCurvedPaths ? reachableWorkspaceCurveStrength : 0f;
+
+      for ( int i = 0; i < count; i++ ) {
+        float t = count <= 1 ? 1f : (float)i / ( count - 1 );
+        float endpointScale = i == 0 || i == count - 1 ? 0.35f : 1f;
+        float arc = Mathf.Sin( Mathf.PI * t );
+
+        float direction =
+          Mathf.Lerp( startDirection, endDirection, t ) +
+          curvePhase * arc * curveStrength +
+          Random.Range( -calibratedFanDirectionJitter, calibratedFanDirectionJitter ) * endpointScale;
+
+        float height =
+          Mathf.Lerp( startHeight, endHeight, t ) +
+          Random.Range( -calibratedFanRangeJitter, calibratedFanRangeJitter ) * endpointScale;
+
+        float depth =
+          Mathf.Lerp( startDepth, endDepth, t ) -
+          arc * curveStrength * 0.25f +
+          Random.Range( -calibratedFanRangeJitter, calibratedFanRangeJitter ) * endpointScale;
+
+        Vector3 localPoint = SampleReachableWorkspaceVolume(
+          volumeAnchors,
+          Mathf.Clamp01( direction ),
+          Mathf.Clamp01( height ),
+          Mathf.Clamp01( depth ) );
+
+        if ( waypoints[ i ] != null )
+          waypoints[ i ].localPosition = ReachableWorkspaceLocalToWaypointLocal( localPoint );
+      }
+    }
+
+    private ReachableWorkspaceVisualizer ActiveReachableWorkspace()
+    {
+      ExcavatorTrajectoryAgent.TrajectoryTaskMode mode = ActiveTaskMode();
+      if ( mode == ExcavatorTrajectoryAgent.TrajectoryTaskMode.CarryMaterial )
+        return carryMaterialReachableWorkspace != null ? carryMaterialReachableWorkspace : moveToDigReachableWorkspace;
+
+      return moveToDigReachableWorkspace != null ? moveToDigReachableWorkspace : carryMaterialReachableWorkspace;
+    }
+
+    private Vector3[] ActiveReachableWorkspaceVolumeAnchors()
+    {
+      ExcavatorTrajectoryAgent.TrajectoryTaskMode mode = ActiveTaskMode();
+      if ( mode == ExcavatorTrajectoryAgent.TrajectoryTaskMode.CarryMaterial )
+        return IsValidVolumeAnchorArray( carryMaterialVolumeLocalPoints ) ? carryMaterialVolumeLocalPoints : moveToDigVolumeLocalPoints;
+
+      return IsValidVolumeAnchorArray( moveToDigVolumeLocalPoints ) ? moveToDigVolumeLocalPoints : carryMaterialVolumeLocalPoints;
+    }
+
+    private ExcavatorTrajectoryAgent.TrajectoryTaskMode ActiveTaskMode()
+    {
+      return taskModeSource != null ? taskModeSource.CurrentTaskMode : ExcavatorTrajectoryAgent.TrajectoryTaskMode.MoveToDig;
+    }
+
+    private void ResolveReachableWorkspaceReferences()
+    {
+      if ( taskModeSource == null ) {
+        Transform root = transform.root;
+        if ( root != null )
+          taskModeSource = root.GetComponentInChildren<ExcavatorTrajectoryAgent>( true );
+      }
+
+      if ( moveToDigReachableWorkspace != null && carryMaterialReachableWorkspace != null )
+        return;
+
+      ReachableWorkspaceVisualizer[] workspaces = UnityEngine.Object.FindObjectsByType<ReachableWorkspaceVisualizer>(
+        FindObjectsInactive.Include,
+        FindObjectsSortMode.None );
+
+      foreach ( ReachableWorkspaceVisualizer workspace in workspaces ) {
+        if ( workspace == null )
+          continue;
+
+        string workspaceName = workspace.name.ToLowerInvariant();
+        if ( moveToDigReachableWorkspace == null && workspaceName.Contains( "movetodig" ) )
+          moveToDigReachableWorkspace = workspace;
+        else if ( carryMaterialReachableWorkspace == null && workspaceName.Contains( "carrymaterial" ) )
+          carryMaterialReachableWorkspace = workspace;
+      }
+    }
+
+    private Vector3 ReachableWorkspaceLocalToWaypointLocal( Vector3 workspaceLocalPoint )
+    {
+      Transform frame = reachableWorkspaceFrame != null
+        ? reachableWorkspaceFrame
+        : calibratedFanFrame != null
+          ? calibratedFanFrame
+          : transform.parent;
+
+      if ( frame == null || frame == transform )
+        return workspaceLocalPoint;
+
+      Vector3 worldPoint = frame.TransformPoint( workspaceLocalPoint );
+      return transform.InverseTransformPoint( worldPoint );
+    }
+
+    private static Vector3 SampleReachableWorkspaceVolume( Vector3[] anchors, float direction01, float height01, float depth01 )
+    {
+      const int directionCount = ReachableWorkspaceVisualizer.DirectionCount;
+
+      float directionScaled = Mathf.Clamp01( direction01 ) * ( directionCount - 1 );
+      int directionIndex = Mathf.Clamp( Mathf.FloorToInt( directionScaled ), 0, directionCount - 2 );
+      float directionT = directionScaled - directionIndex;
+
+      int p0Direction = Mathf.Max( directionIndex - 1, 0 );
+      int p1Direction = directionIndex;
+      int p2Direction = directionIndex + 1;
+      int p3Direction = Mathf.Min( directionIndex + 2, directionCount - 1 );
+
+      return CatmullRom(
+        SampleReachableWorkspaceSection( anchors, p0Direction, height01, depth01 ),
+        SampleReachableWorkspaceSection( anchors, p1Direction, height01, depth01 ),
+        SampleReachableWorkspaceSection( anchors, p2Direction, height01, depth01 ),
+        SampleReachableWorkspaceSection( anchors, p3Direction, height01, depth01 ),
+        directionT );
+    }
+
+    private static Vector3 SampleReachableWorkspaceSection( Vector3[] points, int direction, float height, float depth )
+    {
+      const int cornerCount = ReachableWorkspaceVisualizer.VolumeCornerCount;
+      int start = direction * cornerCount;
+      Vector3 highFar = points[ start ];
+      Vector3 lowFar = points[ start + 1 ];
+      Vector3 highNear = points[ start + 2 ];
+      Vector3 lowNear = points[ start + 3 ];
+      Vector3 high = Vector3.Lerp( highNear, highFar, Mathf.Clamp01( depth ) );
+      Vector3 low = Vector3.Lerp( lowNear, lowFar, Mathf.Clamp01( depth ) );
+      return Vector3.Lerp( high, low, Mathf.Clamp01( height ) );
+    }
+
+    private static Vector3 CatmullRom( Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t )
+    {
+      float clampedT = Mathf.Clamp01( t );
+      float t2 = clampedT * clampedT;
+      float t3 = t2 * clampedT;
+      return 0.5f * (
+        2f * p1 +
+        ( -p0 + p2 ) * clampedT +
+        ( 2f * p0 - 5f * p1 + 4f * p2 - p3 ) * t2 +
+        ( -p0 + 3f * p1 - 3f * p2 + p3 ) * t3 );
+    }
+
+    private static bool IsValidVolumeAnchorArray( Vector3[] anchors )
+    {
+      return anchors != null && anchors.Length == ReachableWorkspaceVisualizer.VolumeAnchorCount;
+    }
+
+    private void EnsureReachableWorkspaceVolumeAnchorArrays()
+    {
+      if ( !IsValidVolumeAnchorArray( moveToDigVolumeLocalPoints ) )
+        moveToDigVolumeLocalPoints = ReachableWorkspaceVisualizer.Env01VolumeAnchors();
+
+      if ( !IsValidVolumeAnchorArray( carryMaterialVolumeLocalPoints ) )
+        carryMaterialVolumeLocalPoints = ReachableWorkspaceVisualizer.Env01VolumeAnchors();
     }
 
     private Vector3[] WorldToLocalPath( Vector3[] worldPoints )

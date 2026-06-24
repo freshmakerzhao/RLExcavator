@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9d2135dc92f817349a5e8f6ac3477155, type: 3}
+  m_Name: "\u5361\u7279365_v3_ContactMaterial"
+  m_EditorClassIdentifier: AGXUnity::AGXUnity.IO.RestoredAssetsRoot
+  m_type: 1
+--- !u!114 &1708267232148129995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: fa76d302d537f3643a58c6cab77fb092, type: 3}
+  m_Name: ContactMaterial_Unknown Material_Unknown Material
+  m_EditorClassIdentifier: AGXUnity::AGXUnity.ContactMaterial
+  m_serializationVersion: 1
+  m_material1: {fileID: -322496205555161909, guid: 23ef7c4eebd1ff584bc09c8f18abccf0, type: 2}
+  m_material2: {fileID: -322496205555161909, guid: 23ef7c4eebd1ff584bc09c8f18abccf0, type: 2}
+  m_frictionModel: {fileID: -7564895710173995109, guid: 19532397474b208e38b7f69dc5e1f6d1, type: 2}
+  m_youngsModulus: 2e+11
+  m_surfaceViscosity: {x: 0.00000001, y: 0.00000001}
+  m_frictionCoefficients: {x: 0.15, y: 0.15}
+  m_restitution: 0.2
+  m_damping: 0.015
+  m_adhesiveForce: 0
+  m_adhesiveOverlap: 0
+  m_useContactArea: 1
+  m_contactReductionMode: 1
+  m_contactReductionLevel: 1
+  m_wireFrictionCoefficients: {x: 0.15, y: 0.15}

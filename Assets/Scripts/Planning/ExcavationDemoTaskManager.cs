@@ -18,6 +18,7 @@ namespace RLExcavator
       Idle,
       PathPlanned,
       Tracking,
+      ManualControl,
       Completed
     }
 
@@ -25,13 +26,23 @@ namespace RLExcavator
     public ExcavatorTrajectoryAgent agent;
     public ExcavatorController controller;
     public SimpleTrajectoryPlanner planner;
+    public DemoPointPicker pointPicker;
     public TrajectoryProvider trajectory;
+    [Tooltip("当前激活的可达空间。Demo 会根据任务模式自动切换该引用。")]
+    public ReachableWorkspaceVisualizer reachableWorkspace;
+    [Tooltip("赴挖掘点模式使用的可达空间。")]
+    public ReachableWorkspaceVisualizer moveToDigReachableWorkspace;
+    [Tooltip("运土保持模式使用的可达空间。")]
+    public ReachableWorkspaceVisualizer carryMaterialReachableWorkspace;
     public DecisionRequester decisionRequester;
     public Text statusText;
 
     [Header("Calibration")]
     [Tooltip("用于显示铲斗尖局部坐标的参考系。建议绑定 TrajectoryEnvironment 或 RLExcavatorTraj。为空时自动使用 agent.environmentRoot 或 TrajectoryProvider。")]
     public Transform bucketTipLocalFrame;
+
+    [Tooltip("Game UI 每次移动可达空间边界点的距离，单位是 workspaceFrame 的世界米。")]
+    public float workspaceAnchorMoveStep = 0.15f;
 
     [Header("Startup")]
     [Tooltip("开启后仅在 Agent 的 Behavior Type 为 Inference Only 时执行 demo 启停，避免误放到训练场景后影响训练。")]
@@ -55,6 +66,12 @@ namespace RLExcavator
 
     [Tooltip("开启后必须先点击生成轨迹，再允许开始追踪。")]
     public bool requirePathBeforeTracking = true;
+
+    [Tooltip("Demo 场景中缺少 DemoPointPicker 时自动创建，用于鼠标点击/拖拽设置起点终点。")]
+    public bool createPointPickerIfMissing = true;
+
+    [Tooltip("切换 MoveToDig/CarryMaterial 时隐藏非当前模式的可达空间编辑显示。")]
+    public bool hideInactiveReachableWorkspacesOnModeSwitch = true;
 
     [Header("Runtime")]
     public DemoState state = DemoState.Idle;
@@ -112,6 +129,7 @@ namespace RLExcavator
 
       agent.taskMode = mode;
       agent.randomizeTaskModeOnEpisodeBegin = false;
+      ApplyReachableWorkspaceForMode( mode );
       UpdateStatus();
     }
 
@@ -203,6 +221,8 @@ namespace RLExcavator
         return;
       }
 
+      SetInferenceControlMode();
+
       if ( !CanRunDemoControl() )
         return;
 
@@ -243,6 +263,233 @@ namespace RLExcavator
     {
       PlanPath();
       StartTracking();
+    }
+
+    public void StartManualControl()
+    {
+      if ( agent == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing trajectory agent reference." );
+        return;
+      }
+
+      if ( controller == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing controller reference." );
+        return;
+      }
+
+      SetHeuristicControlMode();
+
+      controller.SetCommandInputEnabled( true );
+      controller.StopAll();
+      SetDecisionRequesterEnabled( true );
+      state = DemoState.ManualControl;
+      UpdateStatus();
+    }
+
+    public void StopManualControl()
+    {
+      if ( controller != null ) {
+        controller.StopAll();
+        controller.SetCommandInputEnabled( false );
+      }
+
+      if ( disableDecisionRequesterWhenStopped )
+        SetDecisionRequesterEnabled( false );
+      HideAllReachableWorkspaces();
+      state = DemoState.Idle;
+      UpdateStatus();
+    }
+
+    public void SetHeuristicControlMode()
+    {
+      SetBehaviorType( BehaviorType.HeuristicOnly );
+      UpdateStatus();
+    }
+
+    public void SetInferenceControlMode()
+    {
+      SetBehaviorType( BehaviorType.InferenceOnly );
+      UpdateStatus();
+    }
+
+    public void StopManualMotion()
+    {
+      if ( controller != null )
+        controller.StopAll();
+      UpdateStatus();
+    }
+
+    public void CaptureManualPoseAsHome()
+    {
+      if ( controller == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing controller reference." );
+        return;
+      }
+
+      controller.CaptureCurrentPoseAsInspectorHome();
+      UpdateStatus();
+    }
+
+    public void ShowReachableWorkspaceForManualEdit()
+    {
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      if ( workspace == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing reachable workspace reference." );
+        return;
+      }
+
+      workspace.ShowReachableVolumeAndBoundaryPoints();
+      UpdateStatus();
+    }
+
+    public void HideReachableWorkspaceForManualEdit()
+    {
+      HideAllReachableWorkspaces();
+      UpdateStatus();
+    }
+
+    public void EditMoveToDigReachableWorkspace()
+    {
+      EditReachableWorkspaceForMode( ExcavatorTrajectoryAgent.TrajectoryTaskMode.MoveToDig );
+    }
+
+    public void EditCarryMaterialReachableWorkspace()
+    {
+      EditReachableWorkspaceForMode( ExcavatorTrajectoryAgent.TrajectoryTaskMode.CarryMaterial );
+    }
+
+    public void HideAllReachableWorkspaces()
+    {
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      HideWorkspaceIfInactive( moveToDigReachableWorkspace, null );
+      HideWorkspaceIfInactive( carryMaterialReachableWorkspace, null );
+
+      if ( workspace != moveToDigReachableWorkspace && workspace != carryMaterialReachableWorkspace )
+        HideWorkspaceIfInactive( workspace, null );
+    }
+
+    public void SelectPreviousWorkspaceBoundaryPoint()
+    {
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      if ( workspace == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing reachable workspace reference." );
+        return;
+      }
+
+      workspace.SelectPreviousVolumeAnchor();
+      UpdateStatus();
+    }
+
+    public void SelectNextWorkspaceBoundaryPoint()
+    {
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      if ( workspace == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing reachable workspace reference." );
+        return;
+      }
+
+      workspace.SelectNextVolumeAnchor();
+      UpdateStatus();
+    }
+
+    public void MoveSelectedWorkspaceBoundaryPointForward()
+    {
+      MoveSelectedWorkspaceBoundaryPoint( Vector3.forward );
+    }
+
+    public void MoveSelectedWorkspaceBoundaryPointBackward()
+    {
+      MoveSelectedWorkspaceBoundaryPoint( Vector3.back );
+    }
+
+    public void MoveSelectedWorkspaceBoundaryPointLeft()
+    {
+      MoveSelectedWorkspaceBoundaryPoint( Vector3.left );
+    }
+
+    public void MoveSelectedWorkspaceBoundaryPointRight()
+    {
+      MoveSelectedWorkspaceBoundaryPoint( Vector3.right );
+    }
+
+    public void MoveSelectedWorkspaceBoundaryPointUp()
+    {
+      MoveSelectedWorkspaceBoundaryPoint( Vector3.up );
+    }
+
+    public void MoveSelectedWorkspaceBoundaryPointDown()
+    {
+      MoveSelectedWorkspaceBoundaryPoint( Vector3.down );
+    }
+
+    public void RecordSelectedWorkspaceBoundaryPoint()
+    {
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      if ( workspace == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing reachable workspace reference." );
+        return;
+      }
+
+      workspace.LogSelectedVolumeAnchorCoordinate();
+      UpdateStatus();
+    }
+
+    public void ApplyBucketTipToSelectedWorkspaceBoundaryPoint()
+    {
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      if ( workspace == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing reachable workspace reference." );
+        return;
+      }
+
+      if ( agent == null || agent.bucketTip == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing bucket tip reference." );
+        return;
+      }
+
+      workspace.SetSelectedVolumeAnchorWorldPosition( agent.bucketTip.position );
+      MarkWorkspaceDirty( workspace );
+      Debug.Log( $"[ExcavationDemoTaskManager] Applied bucket tip to {workspace.name}: {workspace.SelectedVolumeAnchorCoordinateSummary()}" );
+      UpdateStatus();
+    }
+
+    [ContextMenu("Create CarryMaterial Workspace Copy")]
+    public void CreateCarryMaterialWorkspaceCopy()
+    {
+      ReachableWorkspaceVisualizer source = moveToDigReachableWorkspace != null ? moveToDigReachableWorkspace : reachableWorkspace;
+      if ( source == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing source MoveToDig reachable workspace." );
+        return;
+      }
+
+      var copyObject = new GameObject( "CarryMaterial" );
+      copyObject.transform.SetParent( source.transform.parent, false );
+      copyObject.transform.position = Vector3.zero;
+      copyObject.transform.rotation = Quaternion.identity;
+      copyObject.transform.localScale = Vector3.one;
+
+      var copy = copyObject.AddComponent<ReachableWorkspaceVisualizer>();
+      copy.CopyCalibrationFrom( source );
+      copy.volumeColor = new Color( 0.30f, 0.62f, 0.42f, 0.08f );
+      copy.boundaryColor = new Color( 0.30f, 0.85f, 0.52f, 1.0f );
+      copy.volumeBoundaryColor = new Color( 0.45f, 0.85f, 0.58f, 0.85f );
+      copy.HideReachableVolumeAndBoundaryPoints();
+
+      carryMaterialReachableWorkspace = copy;
+      if ( planner != null )
+        planner.carryMaterialReachableWorkspace = copy;
+
+#if UNITY_EDITOR
+      if ( !Application.isPlaying )
+        UnityEditor.Undo.RegisterCreatedObjectUndo( copyObject, "Create CarryMaterial Workspace Copy" );
+      UnityEditor.EditorUtility.SetDirty( this );
+      if ( planner != null )
+        UnityEditor.EditorUtility.SetDirty( planner );
+      if ( !Application.isPlaying )
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty( gameObject.scene );
+#endif
+
+      UpdateStatus();
     }
 
     public void PlanMoveToDigAndStart()
@@ -290,6 +537,14 @@ namespace RLExcavator
       if ( planner == null )
         planner = GetComponentInChildren<SimpleTrajectoryPlanner>( true );
 
+      if ( pointPicker == null )
+        pointPicker = GetComponentInChildren<DemoPointPicker>( true );
+
+      if ( pointPicker == null && createPointPickerIfMissing && planner != null ) {
+        pointPicker = gameObject.AddComponent<DemoPointPicker>();
+        pointPicker.planner = planner;
+      }
+
       if ( decisionRequester == null && agent != null )
         decisionRequester = agent.GetComponent<DecisionRequester>();
 
@@ -307,6 +562,32 @@ namespace RLExcavator
           trajectory = GetComponentInChildren<TrajectoryProvider>( true );
       }
 
+      if ( reachableWorkspace == null ) {
+        if ( planner != null && planner.reachableWorkspace != null )
+          reachableWorkspace = planner.reachableWorkspace;
+        else
+          reachableWorkspace = GetComponentInChildren<ReachableWorkspaceVisualizer>( true );
+      }
+
+      if ( moveToDigReachableWorkspace == null ) {
+        if ( planner != null && planner.moveToDigReachableWorkspace != null )
+          moveToDigReachableWorkspace = planner.moveToDigReachableWorkspace;
+        else
+          moveToDigReachableWorkspace = reachableWorkspace;
+      }
+
+      if ( carryMaterialReachableWorkspace == null && planner != null && planner.carryMaterialReachableWorkspace != null )
+        carryMaterialReachableWorkspace = planner.carryMaterialReachableWorkspace;
+
+      if ( planner != null ) {
+        if ( planner.moveToDigReachableWorkspace == null )
+          planner.moveToDigReachableWorkspace = moveToDigReachableWorkspace;
+        if ( planner.carryMaterialReachableWorkspace == null )
+          planner.carryMaterialReachableWorkspace = carryMaterialReachableWorkspace;
+      }
+
+      ApplyReachableWorkspaceForMode( agent != null ? agent.CurrentTaskMode : ExcavatorTrajectoryAgent.TrajectoryTaskMode.MoveToDig );
+
       if ( bucketTipLocalFrame == null ) {
         if ( agent != null && agent.environmentRoot != null )
           bucketTipLocalFrame = agent.environmentRoot;
@@ -321,13 +602,25 @@ namespace RLExcavator
         decisionRequester.enabled = enabled;
     }
 
+    private void SetBehaviorType( BehaviorType behaviorType )
+    {
+      if ( agent == null )
+        return;
+
+      var behavior = agent.GetComponent<BehaviorParameters>();
+      if ( behavior != null )
+        behavior.BehaviorType = behaviorType;
+    }
+
     private void UpdateStatus()
     {
       if ( statusText == null )
         return;
 
       string mode = agent != null ? TaskModeLabel( agent.CurrentTaskMode ) : "未绑定";
+      string behaviorMode = BehaviorModeLabel();
       string control = controller != null && controller.CommandInputEnabled ? "开启" : "关闭";
+      string manualInput = state == DemoState.ManualControl ? "键盘接管" : "关闭";
       string progress = agent != null ? agent.CurrentPathProgress.ToString( "P0" ) : "0%";
       string editable = planner != null ? EditablePointLabel( planner.editableControlPoint ) : "未绑定";
       string startpoint = planner != null && planner.TryGetStartPoint( out Vector3 start )
@@ -336,18 +629,43 @@ namespace RLExcavator
       string endpoint = planner != null && planner.TryGetEndPoint( out Vector3 end )
         ? FormatVector( end )
         : "未绑定";
+      string planning = planner != null ? planner.LastPlanningSummary : "未绑定";
+      string picking = pointPicker != null ? pointPicker.LastPickSummary : "未绑定";
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      string workspaceName = workspace != null ? workspace.name : "未绑定";
+      string workspacePoint = workspace != null
+        ? workspace.SelectedVolumeAnchorLocalSummary()
+        : "未绑定";
       string bucketTipLocal = TryGetBucketTipLocalPosition( out Vector3 tipLocal )
         ? FormatVector( tipLocal )
         : "未绑定";
       statusText.text =
         $"状态：{StateLabel( state )}\n" +
         $"模式：{mode}\n" +
+        $"行为模式：{behaviorMode}\n" +
         $"控制输入：{control}\n" +
+        $"手动输入：{manualInput}\n" +
         $"进度：{progress}\n" +
         $"编辑点：{editable}\n" +
         $"起点：{startpoint}\n" +
         $"终点：{endpoint}\n" +
+        $"规划：{planning}\n" +
+        $"点选：{picking}\n" +
+        $"可达区域：{workspaceName}\n" +
+        $"边界点：{workspacePoint}\n" +
         $"铲斗尖局部：{bucketTipLocal}";
+    }
+
+    private void MoveSelectedWorkspaceBoundaryPoint( Vector3 localDirection )
+    {
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      if ( workspace == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing reachable workspace reference." );
+        return;
+      }
+
+      workspace.MoveSelectedVolumeAnchor( localDirection, WorkspaceMoveFrame(), Mathf.Max( workspaceAnchorMoveStep, 0.01f ) );
+      UpdateStatus();
     }
 
     private static string FormatVector( Vector3 value )
@@ -381,6 +699,95 @@ namespace RLExcavator
       return trajectory != null ? trajectory.transform : null;
     }
 
+    private Transform WorkspaceMoveFrame()
+    {
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      if ( workspace != null && workspace.workspaceFrame != null )
+        return workspace.workspaceFrame;
+
+      return BucketTipLocalFrame();
+    }
+
+    private ReachableWorkspaceVisualizer ActiveReachableWorkspace()
+    {
+      if ( agent != null )
+        return ReachableWorkspaceForMode( agent.CurrentTaskMode );
+
+      return reachableWorkspace != null ? reachableWorkspace : moveToDigReachableWorkspace;
+    }
+
+    private ReachableWorkspaceVisualizer ReachableWorkspaceForMode( ExcavatorTrajectoryAgent.TrajectoryTaskMode mode )
+    {
+      switch ( mode ) {
+        case ExcavatorTrajectoryAgent.TrajectoryTaskMode.CarryMaterial:
+          return carryMaterialReachableWorkspace != null ? carryMaterialReachableWorkspace : reachableWorkspace;
+        case ExcavatorTrajectoryAgent.TrajectoryTaskMode.MoveToDig:
+        default:
+          return moveToDigReachableWorkspace != null ? moveToDigReachableWorkspace : reachableWorkspace;
+      }
+    }
+
+    private void ApplyReachableWorkspaceForMode( ExcavatorTrajectoryAgent.TrajectoryTaskMode mode )
+    {
+      ReachableWorkspaceVisualizer workspace = ReachableWorkspaceForMode( mode );
+      if ( workspace == null )
+        return;
+
+      if ( hideInactiveReachableWorkspacesOnModeSwitch ) {
+        HideWorkspaceIfInactive( moveToDigReachableWorkspace, workspace );
+        HideWorkspaceIfInactive( carryMaterialReachableWorkspace, workspace );
+      }
+
+      reachableWorkspace = workspace;
+      if ( planner != null ) {
+        if ( moveToDigReachableWorkspace != null )
+          planner.moveToDigReachableWorkspace = moveToDigReachableWorkspace;
+        if ( carryMaterialReachableWorkspace != null )
+          planner.carryMaterialReachableWorkspace = carryMaterialReachableWorkspace;
+        planner.SetActiveReachableWorkspace( workspace );
+      }
+    }
+
+    private static void HideWorkspaceIfInactive( ReachableWorkspaceVisualizer candidate, ReachableWorkspaceVisualizer active )
+    {
+      if ( candidate == null || candidate == active )
+        return;
+
+      candidate.HideReachableVolumeAndBoundaryPoints();
+    }
+
+    private static void MarkWorkspaceDirty( ReachableWorkspaceVisualizer workspace )
+    {
+#if UNITY_EDITOR
+      if ( workspace == null )
+        return;
+
+      if ( Application.isPlaying ) {
+        ReachableWorkspacePlayModeSaver.Queue( workspace );
+        return;
+      }
+
+      UnityEditor.EditorUtility.SetDirty( workspace );
+      if ( workspace.gameObject.scene.IsValid() )
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty( workspace.gameObject.scene );
+#endif
+    }
+
+    private void EditReachableWorkspaceForMode( ExcavatorTrajectoryAgent.TrajectoryTaskMode mode )
+    {
+      SetTaskMode( mode );
+
+      ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
+      if ( workspace == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing reachable workspace reference." );
+        return;
+      }
+
+      HideAllReachableWorkspaces();
+      workspace.ShowReachableVolumeAndBoundaryPoints();
+      UpdateStatus();
+    }
+
     private static string StateLabel( DemoState value )
     {
       switch ( value ) {
@@ -390,6 +797,8 @@ namespace RLExcavator
           return "已生成轨迹";
         case DemoState.Tracking:
           return "追踪中";
+        case DemoState.ManualControl:
+          return "手动控制";
         case DemoState.Completed:
           return "已完成";
         default:
@@ -414,6 +823,15 @@ namespace RLExcavator
       return value == SimpleTrajectoryPlanner.EditableControlPoint.Start ? "起点" : "终点";
     }
 
+    private string BehaviorModeLabel()
+    {
+      if ( agent == null )
+        return "未绑定";
+
+      var behavior = agent.GetComponent<BehaviorParameters>();
+      return behavior != null ? behavior.BehaviorType.ToString() : "未绑定";
+    }
+
     private bool CanRunDemoControl()
     {
       if ( !requireInferenceOnlyBehavior )
@@ -429,4 +847,162 @@ namespace RLExcavator
       return behavior.BehaviorType == BehaviorType.InferenceOnly;
     }
   }
+
+#if UNITY_EDITOR
+  [UnityEditor.InitializeOnLoad]
+  internal static class ReachableWorkspacePlayModeSaver
+  {
+    private const string PendingKey = "RLExcavator.PendingReachableWorkspaceChanges";
+
+    static ReachableWorkspacePlayModeSaver()
+    {
+      UnityEditor.EditorApplication.playModeStateChanged -= OnPlayModeStateChanged;
+      UnityEditor.EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+    }
+
+    public static void Queue( ReachableWorkspaceVisualizer workspace )
+    {
+      if ( workspace == null || workspace.localVolumeAnchorPoints == null )
+        return;
+
+      PendingWorkspaceStore store = Load();
+      string scenePath = workspace.gameObject.scene.path;
+      string hierarchyPath = HierarchyPath( workspace.transform );
+
+      for ( int i = store.changes.Count - 1; i >= 0; i-- ) {
+        PendingWorkspaceChange existing = store.changes[ i ];
+        if ( existing.scenePath == scenePath && existing.hierarchyPath == hierarchyPath )
+          store.changes.RemoveAt( i );
+      }
+
+      store.changes.Add( new PendingWorkspaceChange {
+        scenePath = scenePath,
+        hierarchyPath = hierarchyPath,
+        selectedVolumeAnchorIndex = workspace.selectedVolumeAnchorIndex,
+        localVolumeAnchorPoints = (Vector3[])workspace.localVolumeAnchorPoints.Clone()
+      } );
+
+      Save( store );
+      Debug.Log( $"[ReachableWorkspacePlayModeSaver] Queued workspace change for '{hierarchyPath}'. It will be applied after exiting Play Mode." );
+    }
+
+    private static void OnPlayModeStateChanged( UnityEditor.PlayModeStateChange state )
+    {
+      if ( state == UnityEditor.PlayModeStateChange.EnteredEditMode )
+        ApplyPendingChanges();
+    }
+
+    private static void ApplyPendingChanges()
+    {
+      PendingWorkspaceStore store = Load();
+      if ( store.changes == null || store.changes.Count == 0 )
+        return;
+
+      int applied = 0;
+      foreach ( PendingWorkspaceChange change in store.changes ) {
+        UnityEngine.SceneManagement.Scene scene = UnityEngine.SceneManagement.SceneManager.GetSceneByPath( change.scenePath );
+        if ( !scene.IsValid() || !scene.isLoaded ) {
+          Debug.LogWarning( $"[ReachableWorkspacePlayModeSaver] Scene is not loaded: {change.scenePath}" );
+          continue;
+        }
+
+        Transform target = FindTransformByPath( scene, change.hierarchyPath );
+        if ( target == null ) {
+          Debug.LogWarning( $"[ReachableWorkspacePlayModeSaver] Cannot find workspace: {change.hierarchyPath}" );
+          continue;
+        }
+
+        ReachableWorkspaceVisualizer workspace = target.GetComponent<ReachableWorkspaceVisualizer>();
+        if ( workspace == null ) {
+          Debug.LogWarning( $"[ReachableWorkspacePlayModeSaver] Missing ReachableWorkspaceVisualizer on: {change.hierarchyPath}" );
+          continue;
+        }
+
+        workspace.localVolumeAnchorPoints = change.localVolumeAnchorPoints != null
+          ? (Vector3[])change.localVolumeAnchorPoints.Clone()
+          : workspace.localVolumeAnchorPoints;
+        workspace.selectedVolumeAnchorIndex = change.selectedVolumeAnchorIndex;
+        workspace.RebuildVisual();
+
+        UnityEditor.EditorUtility.SetDirty( workspace );
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty( scene );
+        applied++;
+      }
+
+      UnityEditor.EditorPrefs.DeleteKey( PendingKey );
+      if ( applied > 0 )
+        Debug.Log( $"[ReachableWorkspacePlayModeSaver] Applied {applied} reachable workspace change(s) after Play Mode. Save the scene to persist them on disk." );
+    }
+
+    private static Transform FindTransformByPath( UnityEngine.SceneManagement.Scene scene, string hierarchyPath )
+    {
+      if ( string.IsNullOrEmpty( hierarchyPath ) )
+        return null;
+
+      string[] parts = hierarchyPath.Split( '/' );
+      if ( parts.Length == 0 )
+        return null;
+
+      GameObject[] roots = scene.GetRootGameObjects();
+      Transform current = null;
+      for ( int i = 0; i < roots.Length; i++ ) {
+        if ( roots[ i ].name == parts[ 0 ] ) {
+          current = roots[ i ].transform;
+          break;
+        }
+      }
+
+      for ( int i = 1; current != null && i < parts.Length; i++ )
+        current = current.Find( parts[ i ] );
+
+      return current;
+    }
+
+    private static string HierarchyPath( Transform transform )
+    {
+      if ( transform == null )
+        return string.Empty;
+
+      var names = new System.Collections.Generic.List<string>();
+      Transform current = transform;
+      while ( current != null ) {
+        names.Add( current.name );
+        current = current.parent;
+      }
+
+      names.Reverse();
+      return string.Join( "/", names );
+    }
+
+    private static PendingWorkspaceStore Load()
+    {
+      string json = UnityEditor.EditorPrefs.GetString( PendingKey, string.Empty );
+      if ( string.IsNullOrEmpty( json ) )
+        return new PendingWorkspaceStore();
+
+      PendingWorkspaceStore store = JsonUtility.FromJson<PendingWorkspaceStore>( json );
+      return store != null ? store : new PendingWorkspaceStore();
+    }
+
+    private static void Save( PendingWorkspaceStore store )
+    {
+      UnityEditor.EditorPrefs.SetString( PendingKey, JsonUtility.ToJson( store ) );
+    }
+
+    [System.Serializable]
+    private class PendingWorkspaceStore
+    {
+      public System.Collections.Generic.List<PendingWorkspaceChange> changes = new System.Collections.Generic.List<PendingWorkspaceChange>();
+    }
+
+    [System.Serializable]
+    private class PendingWorkspaceChange
+    {
+      public string scenePath;
+      public string hierarchyPath;
+      public int selectedVolumeAnchorIndex;
+      public Vector3[] localVolumeAnchorPoints;
+    }
+  }
+#endif
 }

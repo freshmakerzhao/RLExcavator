@@ -557,10 +557,14 @@ public void SetPathVisualsVisible(bool visible);
 public TrajectoryProvider trajectory;
 public Transform startPoint;
 public Transform endPoint;
+public PlannerAlgorithm plannerAlgorithm;
+public ReachableWorkspaceVisualizer reachableWorkspace;
 public int waypointCount = 5;
 public float arcHeight = 0.5f;
 public float endpointMoveStep = 0.5f;
 public Transform endpointMoveFrame;
+public bool clampEndpointsToWorkspace;
+public bool clampGeneratedWaypointsToWorkspace;
 
 public void SelectStartPoint();
 public void SelectEndPoint();
@@ -574,18 +578,118 @@ public void PlanConfiguredPath();
 public bool TryPlanConfiguredPath();
 public void Plan(Vector3 startWorld, Vector3 goalWorld);
 public Vector3[] GeneratePath(Vector3 startWorld, Vector3 goalWorld);
+public bool TryGetSelectedPointWorldPosition(out Vector3 worldPosition);
+public bool SetSelectedPointWorldPosition(Vector3 worldPosition);
 ```
 
-第一版只做“起点 -> 终点”的光滑 waypoint 生成；后续替换 RRT* 时保持 `Plan(...) -> Vector3[] -> TrajectoryProvider` 这条接口不变。
+`SimpleTrajectoryPlanner` 当前保留两种规划模式：
+
+| 模式 | 用途 | 说明 |
+|---|---|---|
+| `ArcInterpolation` | 稳定 fallback / 快速演示 | 仍使用“起点 -> 终点 + 中段抬高”的光滑 waypoint 生成 |
+| `RrtStar` | 可达空间内采样规划 | 在 `ReachableWorkspaceVisualizer` 扇形区域内采样、扩展、重连、平滑，并重采样为策略熟悉的 waypoint 数量 |
+
+无论内部使用哪种算法，对下游都保持同一个接口：`Plan(...) -> Vector3[] -> TrajectoryProvider`。
+`fallbackToArcOnRrtFailure=true` 时，RRT* 失败会自动回退到可达空间参数域插值，保证 demo 不会因为规划失败完全不可用。
+该字段名保留 `Arc` 是为了兼容已有 Unity 序列化，当前 RRT fallback 不再使用自由空间圆弧。
 交互 demo 中 `StartPoint` 和 `EndPoint` 都应是场景中的可见控制点。UI 先选择当前编辑的是起点还是终点，
 再按 `endpointMoveFrame` 的前/后/左/右/上/下方向移动当前控制点；`endpointMoveFrame` 为空时使用 planner 物体坐标系。
 控制点总是可见，不再提供“是否显示控制点”的开关；demo 也不再支持把 `bucketTip` 作为规划起点。
+如果绑定了 `reachableWorkspace`，建议保持：
 
-`ReachableWorkspaceVisualizer` 用于把手动标定的铲斗尖可达空间画成扇形区域，第一版只做可视化检查，不参与训练、
-轨迹规划或策略推理。当前默认内置 15 个 `env01` 局部坐标标定点，排列方式为 5 个方向（左、左前、正前、
+```text
+clampMovedControlPointsToWorkspace = true
+clampEndpointsToWorkspace = true
+writeClampedEndpointsBack = true
+clampGeneratedWaypointsToWorkspace = true
+```
+
+这样 UI 移动或点击生成轨迹时，起点/终点都会被夹到最近的可达空间位置，且可见小球会同步到实际规划输入。
+RRT* 不再在自由 XYZ 空间里采样后吸附到可达空间，而是直接在 `ReachableWorkspaceVisualizer`
+提供的二维参数域中规划。每个 RRT 节点是 `(direction01, range01)`，再通过 `SampleWorld`
+映射成真实铲斗尖位置。因此“可达空间外部”不是后处理障碍，而是状态空间边界，RRT 根本不会采样到那里。
+`clampGeneratedWaypointsToWorkspace` 只作为非参数域轨迹的最后保险，例如手动切回 `ArcInterpolation` 时，
+把圆弧中间点投影回可达空间。
+
+新增 `DemoPointPicker` 后，demo 操作员不再只能通过 Inspector 或六方向按钮缓慢移动控制点。推荐交互方式：
+
+```text
+1. 进入“生成轨迹”tab
+2. 点击“选起点后点画面”或“选终点后点画面”
+3. 在 Game 视图中左键点击平台/规划平面，当前控制点会移动到点击位置
+4. 按住左键拖拽可连续移动当前控制点
+5. 鼠标滚轮可调节当前控制点高度
+6. 点击“生成轨迹”或“生成并追踪”
+```
+
+`DemoPointPicker` 会优先用 `Physics.Raycast` 点击真实 Collider；没有命中时，会退回到“当前编辑点高度处的水平平面”。
+为了让点选更稳定，正式 demo 场景建议给规划平台或可点选地面单独设置 Layer，并把
+`pickableSurfaceMask` 只配置到该 Layer。若开启 `autoPlanAfterPointChanged`，每次点击或拖拽后会自动重新规划；
+调试 RRT* 参数时建议关闭，避免每次拖动都触发规划。
+
+`ReachableWorkspaceVisualizer` 用于把手动标定的铲斗尖可达空间画成扇形区域，并提供采样、最近点夹取和可编辑锚点。
+当前默认内置 15 个 `env01` 局部坐标标定点，排列方式为 5 个方向（左、左前、正前、
 右前、右）乘 3 个距离层（近、中、远）。推荐把该组件挂在 `TrajectoryEnvironment_01` 或与 `env01`
 完全重合的空物体上；如果挂在其它物体上，则需要把 `Workspace Frame` 显式绑定到 `env01`。确认区域不偏后，
-后续 planner/random path 才应复用这组点作为可达空间边界。
+planner 和训练随机轨迹都应复用这组点作为可达空间边界。
+
+手动修改可达空间推荐流程：
+
+```text
+1. 在 ReachableWorkspaceVisualizer 右键菜单点击 Create Editable Anchor Objects
+2. 场景中会生成 ReachableWorkspaceAnchorControls/Anchor_D*_R* 共 15 个锚点
+3. 拖动锚点到新的铲斗尖可达边界
+4. 开启 syncFromEditableAnchors 可实时回写；或右键点击 Bake Anchors From Editable Objects 一次性回写
+5. 检查扇形 mesh/gizmos 没有偏移后，再让 planner/RRT* 使用该组件
+```
+
+`ReachableWorkspaceVisualizer` 暴露给规划器的关键接口：
+
+```csharp
+public Vector3 SampleWorld(float direction01, float range01);
+public Vector3 SampleWorld(Vector2 parameters);
+public Vector3 ClosestWorldPoint(Vector3 worldPoint);
+public Vector2 ClosestWorldParameters(Vector3 worldPoint);
+public Vector3 WorldPointToLocal(Vector3 worldPoint);
+public Vector3 LocalPointToWorld(Vector3 localPoint);
+```
+
+RRT* 当前输入可理解为：
+
+| 输入 | 当前实现 |
+|---|---|
+| 起点 | UI 起点世界坐标，先转换为最近的可达空间参数 `(direction01, range01)` |
+| 终点 | UI 终点世界坐标，先转换为最近的可达空间参数 `(direction01, range01)` |
+| 状态空间 | `direction01 ∈ [0,1]` 与 `range01 ∈ [0,1]` 构成的二维可达空间参数域 |
+| 采样器 | 在 `[0,1] x [0,1]` 内随机采样，按 `rrtGoalBias` 概率直接采样目标 |
+| steer | 沿参数域方向扩展，并用世界距离限制单步长度 `rrtStepSize` |
+| 状态有效性 | 参数必须在 `[0,1]` 内，映射后的世界点不能低于 `rrtMinWorldY`，也不能与 `rrtObstacleMask` 碰撞 |
+| 边有效性 | 沿参数域线段离散采样 `rrtWorkspaceEdgeSamples` 次，每个采样点和相邻小段都要通过碰撞检查 |
+| 距离/代价 | 使用参数点映射后的世界距离，便于和铲斗尖实际运动距离一致 |
+| 输出 | 参数路径平滑和重采样后，用 `SampleWorld` 转成 world waypoint 写入 `TrajectoryProvider` |
+
+可达空间外部不应当作为普通 collider 障碍来处理，而应当作为状态空间边界处理；这比“采样到外面再判失败”
+更稳定，也更符合当前铲斗尖可达空间建模。`rrtObstacleMask` 留给可达空间内部的实体障碍，例如地面、料堆、
+设备、禁入区域等。
+
+### 11.1.1 通用 3D RRT* 沙盒
+
+为了先复现 MATLAB 风格的三维 RRT/RRT* 规划效果，项目新增独立沙盒场景
+`Assets/Scenes/RrtStarSandboxScene.unity`。该场景只验证通用 3D RRT*，不接挖掘机、不接
+`TrajectoryProvider`，也不替换 `ExcavatorAlgorithmValidationScene` 中现有的可达空间参数域 RRT*。
+
+沙盒入口：
+
+- 场景：`RrtStarSandboxScene`
+- 运行脚本：`RrtStarSandboxController`
+- 通用规划核心：`RrtStar3DPlanner`
+- Editor 菜单：`RLExcavator/RRT*/Create Simple Sandbox Scene`
+
+沙盒场景已静态搭好地平面、墙体、圆柱体、起点和终点；Play 时只运行 RRT* 搜索并绘制搜索树和最终路径。
+障碍物使用 `RrtObstacle` layer，碰撞检测由 `PhysicsRrtStar3DCollisionChecker` 通过
+`Physics.CheckSphere` 和 `Physics.SphereCast` 完成。该沙盒稳定后，再考虑把
+`RrtStar3DPlanner` 作为 Cartesian 3D baseline 接入 demo，或继续保留当前更贴合挖掘机的可达空间参数域
+RRT*。
 
 训练用随机轨迹现在推荐使用 `TrajectoryProvider.randomPathMode = CalibratedFan`。该模式使用同一组 15 个
 标定点做双线性插值，在扇形可达区域内采样起点、终点和中间 waypoint，并通过
@@ -638,6 +742,7 @@ TaskManager 在每段开始前直接写 `agent.taskMode`，并保持 `randomizeT
 agent      -> ExcavatorTrajectoryAgent
 controller -> ExcavatorController
 planner    -> SimpleTrajectoryPlanner
+pointPicker -> DemoPointPicker，可选；缺失时 DemoSystem 会自动创建
 trajectory -> TrajectoryProvider
 bucketTipLocalFrame -> 用于显示铲斗尖局部坐标的参考系，建议绑定 TrajectoryEnvironment 或 RLExcavatorTraj
 statusText -> 可选 Text，用于显示状态
@@ -655,6 +760,7 @@ waypoint 可视化，避免 demo 一开始显示训练用路径。点击“生�
 状态栏会显示 `铲斗尖局部`，计算方式为
 `bucketTipLocalFrame.InverseTransformPoint(agent.bucketTip.position)`。该值用于手动标定可达空间范围；
 如果 `bucketTipLocalFrame` 为空，会自动优先使用 `agent.environmentRoot`，再退到 `TrajectoryProvider`。
+若 `pointPicker` 已绑定或自动创建，状态栏还会显示最近一次点选结果，便于确认 Game 视图点击是否命中了预期位置。
 
 可绑定到 Unity UI Button 的 public 方法：
 
@@ -697,7 +803,8 @@ HUD 结构：
 左侧控制菜单：
   随当前 tab 切换。
   感知建图暂为占位按钮。
-  生成轨迹可通过 UI 选择编辑 StartPoint / EndPoint，并对当前控制点进行前/后/左/右/上/下移动。
+  生成轨迹可通过 UI 选择起点/终点，然后在 Game 视图中左键点击或拖拽设置当前控制点。
+  前/后/左/右/上/下移动按钮仍作为精调手段保留。
   生成轨迹可直接调用 SimpleTrajectoryPlanner 生成 waypoint，也可一键生成并进入追踪。
   轨迹追踪绑定“生成轨迹 / 开始追踪 / 停止追踪 / 重置演示”等功能。
 
@@ -729,8 +836,9 @@ Agent。若场景中没有 `EventSystem`，它会自动创建一个，避免按�
 Play
   -> controller.commandInputEnabled=false，挖掘机静止
   -> 进入“生成轨迹”tab
-  -> 点击“编辑起点”，通过控制点前/后/左/右/上/下按钮调整 StartPoint
-  -> 点击“编辑终点”，通过控制点前/后/左/右/上/下按钮调整 EndPoint
+  -> 点击“选起点后点画面”，在 Game 视图中点选或拖拽 StartPoint
+  -> 点击“选终点后点画面”，在 Game 视图中点选或拖拽 EndPoint
+  -> 如需要更精细的高度或水平位置，再用控制点前/后/左/右/上/下按钮微调
   -> 点击“生成轨迹”或“生成并追踪”
   -> 如只生成轨迹，再进入“轨迹追踪”tab 点击“开始追踪”
   -> 轨迹完成后自动 Stop
@@ -772,9 +880,10 @@ Play
 | RL tracker 加入 bucket pitch 后跟不稳 | demo v1 用已稳定的 trajectory-only 行为 / 固定单模式 / 降低姿态权重；姿态标定通过后再开混合模式 |
 | `bucketPitchFrame` 绑错（绑到下车） | 按第 6 节必做验证；显式绑定上车节点 |
 | planner waypoint 太稀或曲率太大 | 间距控制在训练尺度（约 1.0–2.4m）；折线在 safe height 平滑过渡 |
+| RRT* 输出分布超出策略训练分布 | 输出重采样为 5 个左右 waypoint；若仍跟踪差，用 RRT* 生成的路径分布继续训练策略 |
 | 坐标系不统一 | 轨迹点与 bucketTip 统一到 `agent.transform` 局部系；`SetPlannedPath` 负责换算 |
 | 固定 primitive 太复杂拖慢验证 | primitive 用最简时间脚本化序列，先保证“挖一下/倒一下”视觉完成 |
-| 过早接入真实 RRT*/雷达地图 | 先直线 baseline，接口可替换，把时间留给闭环联调而非碰撞检测调试 |
+| 过早接入真实雷达地图 | RRT* 先吃手动起终点和可达空间；地图/障碍物后续只通过 `rrtObstacleMask` 或障碍列表接入 |
 | 可变形地形性能 | 单环境先跑通；`Reset` 仅复原挖掘区域局部高度，避免全图重置卡顿 |
 
 推荐原则：
@@ -796,4 +905,4 @@ Play
 | **P2 最小闭环** | `ExcavationTaskManager` 状态机 + `SimpleTrajectoryPlanner` 直线 + `FixedExcavationPrimitive`；单模式跑通顺流 | P1 |
 | **P3 失败处理** | `Recover`/`Aborted`/`Reset` 转移、阶段超时、N 轮成功率统计 | P2 |
 | **P4 姿态条件化** | 标定 `MoveToDig`/`CarryMaterial` 目标 pitch，开混合模式 | P2 + 标定 |
-| **P5 替换感知/规划** | RRT* / 真实地图，接口不变 | P3 |
+| **P5 替换感知/规划** | RRT* / 真实地图，接口不变；当前已具备可达空间采样版 RRT* 初版 | P3 |

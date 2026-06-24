@@ -15,7 +15,8 @@ namespace RLExcavator
     {
       PerceptionMapping = 0,
       TrajectoryPlanning = 1,
-      TrajectoryTracking = 2
+      TrajectoryTracking = 2,
+      ManualControl = 3
     }
 
     [Header("References")]
@@ -42,9 +43,9 @@ namespace RLExcavator
     [Header("Minimap")]
     public Vector2Int minimapTextureSize = new Vector2Int( 800, 480 );
 
-    private readonly Button[] m_tabButtons = new Button[ 3 ];
-    private readonly Image[] m_tabImages = new Image[ 3 ];
-    private readonly Outline[] m_tabOutlines = new Outline[ 3 ];
+    private readonly Button[] m_tabButtons = new Button[ 4 ];
+    private readonly Image[] m_tabImages = new Image[ 4 ];
+    private readonly Outline[] m_tabOutlines = new Outline[ 4 ];
 
     private GameObject m_root;
     private RectTransform m_leftMenuPanel;
@@ -57,7 +58,7 @@ namespace RLExcavator
 
     private const float kMenuRowStep = 42f;
     private const float kMenuButtonHeight = 34f;
-    private const float kMenuStatusHeight = 158f;
+    private const float kMenuStatusHeight = 278f;
     private const float kMenuChromeHeight = 86f;
 
     private static readonly Color s_panelColor = new Color( 0.025f, 0.075f, 0.12f, 0.82f );
@@ -195,11 +196,11 @@ namespace RLExcavator
 
     private void BuildTabs( Transform parent )
     {
-      RectTransform tabGroup = CreateRect( parent, "FunctionTabs", AnchorPreset.TopCenter, new Vector2( 0f, -24f ), new Vector2( 650f, 50f ) );
-      string[] labels = { "感知建图", "生成轨迹", "轨迹追踪" };
+      RectTransform tabGroup = CreateRect( parent, "FunctionTabs", AnchorPreset.TopCenter, new Vector2( 0f, -24f ), new Vector2( 820f, 50f ) );
+      string[] labels = { "感知建图", "生成轨迹", "轨迹追踪", "手动控制" };
       for ( int i = 0; i < labels.Length; i++ ) {
         int index = i;
-        RectTransform tab = CreatePanel( tabGroup, $"Tab_{labels[ i ]}", AnchorPreset.MiddleLeft, new Vector2( i * 218f, 0f ), new Vector2( 204f, 40f ), s_buttonColor );
+        RectTransform tab = CreatePanel( tabGroup, $"Tab_{labels[ i ]}", AnchorPreset.MiddleLeft, new Vector2( i * 208f, 0f ), new Vector2( 194f, 40f ), s_buttonColor );
         tab.anchorMin = new Vector2( 0f, 0.5f );
         tab.anchorMax = new Vector2( 0f, 0.5f );
         tab.pivot = new Vector2( 0f, 0.5f );
@@ -315,6 +316,18 @@ namespace RLExcavator
     private void SwitchTab( DemoTab tab )
     {
       m_activeTab = tab;
+      if ( taskManager != null ) {
+        if ( tab == DemoTab.ManualControl ) {
+          taskManager.StartManualControl();
+        }
+        else {
+          if ( taskManager.state == ExcavationDemoTaskManager.DemoState.ManualControl )
+            taskManager.StopManualControl();
+
+          taskManager.SetInferenceControlMode();
+        }
+      }
+
       UpdateTabVisuals();
       PopulateLeftMenu();
     }
@@ -352,20 +365,22 @@ namespace RLExcavator
           break;
         case DemoTab.TrajectoryPlanning:
           m_leftMenuTitle.text = "生成轨迹";
-          AddMenuButton( "编辑起点", 0, taskManager.SelectPlanStartPoint, true );
-          AddMenuButton( "编辑终点", 1, taskManager.SelectPlanEndPoint, true );
-          AddMenuButton( "控制点前移", 2, taskManager.MoveSelectedPlanPointForward, true );
-          AddMenuButton( "控制点后移", 3, taskManager.MoveSelectedPlanPointBackward, true );
-          AddMenuButton( "控制点左移", 4, taskManager.MoveSelectedPlanPointLeft, true );
-          AddMenuButton( "控制点右移", 5, taskManager.MoveSelectedPlanPointRight, true );
-          AddMenuButton( "控制点上移", 6, taskManager.MoveSelectedPlanPointUp, true );
-          AddMenuButton( "控制点下移", 7, taskManager.MoveSelectedPlanPointDown, true );
-          AddMenuButton( "生成轨迹", 8, taskManager.PlanPath, true );
-          AddMenuButton( "生成并追踪", 9, taskManager.PlanAndStartTracking, true );
-          AddStatusBlock( "状态：-\n模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n铲斗尖局部：-", 11 );
+          AddMenuButton( "赴挖掘点模式", 0, taskManager.SetModeMoveToDig, true );
+          AddMenuButton( "运土保持模式", 1, taskManager.SetModeCarryMaterial, true );
+          AddMenuButton( "选起点后点画面", 2, taskManager.SelectPlanStartPoint, true );
+          AddMenuButton( "选终点后点画面", 3, taskManager.SelectPlanEndPoint, true );
+          AddMenuButton( "控制点前移", 4, taskManager.MoveSelectedPlanPointForward, true );
+          AddMenuButton( "控制点后移", 5, taskManager.MoveSelectedPlanPointBackward, true );
+          AddMenuButton( "控制点左移", 6, taskManager.MoveSelectedPlanPointLeft, true );
+          AddMenuButton( "控制点右移", 7, taskManager.MoveSelectedPlanPointRight, true );
+          AddMenuButton( "控制点上移", 8, taskManager.MoveSelectedPlanPointUp, true );
+          AddMenuButton( "控制点下移", 9, taskManager.MoveSelectedPlanPointDown, true );
+          AddMenuButton( "生成轨迹", 10, taskManager.PlanPath, true );
+          AddMenuButton( "生成并追踪", 11, taskManager.PlanAndStartTracking, true );
+          AddStatusBlock( "状态：-\n模式：-\n行为模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 13 );
           if ( assignStatusTextToTaskManager )
             taskManager.statusText = m_statusText;
-          FitLeftMenuHeight( 10, 11 );
+          FitLeftMenuHeight( 12, 13 );
           break;
         case DemoTab.TrajectoryTracking:
           m_leftMenuTitle.text = "轨迹追踪";
@@ -376,10 +391,31 @@ namespace RLExcavator
           AddMenuButton( "停止追踪", 4, taskManager.StopTracking, true );
           AddMenuButton( "生成并追踪", 5, taskManager.PlanAndStartTracking, true );
           AddMenuButton( "重置演示", 6, taskManager.ResetDemo, true );
-          AddStatusBlock( "状态：-\n模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n铲斗尖局部：-", 8 );
+          AddStatusBlock( "状态：-\n模式：-\n行为模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 8 );
           if ( assignStatusTextToTaskManager )
             taskManager.statusText = m_statusText;
           FitLeftMenuHeight( 7, 8 );
+          break;
+        case DemoTab.ManualControl:
+          m_leftMenuTitle.text = "手动控制";
+          AddMenuButton( "编辑挖掘点区域", 0, taskManager.EditMoveToDigReachableWorkspace, true );
+          AddMenuButton( "编辑运土区域", 1, taskManager.EditCarryMaterialReachableWorkspace, true );
+          AddMenuButton( "隐藏可达区域", 2, taskManager.HideReachableWorkspaceForManualEdit, true );
+          AddMenuButton( "停止关节运动", 3, taskManager.StopManualMotion, true );
+          AddMenuButton( "当前姿态设为Home", 4, taskManager.CaptureManualPoseAsHome, true );
+          AddMenuButton( "上一个边界点", 5, taskManager.SelectPreviousWorkspaceBoundaryPoint, true );
+          AddMenuButton( "下一个边界点", 6, taskManager.SelectNextWorkspaceBoundaryPoint, true );
+          AddMenuButton( "边界点前移", 7, taskManager.MoveSelectedWorkspaceBoundaryPointForward, true );
+          AddMenuButton( "边界点后移", 8, taskManager.MoveSelectedWorkspaceBoundaryPointBackward, true );
+          AddMenuButton( "边界点左移", 9, taskManager.MoveSelectedWorkspaceBoundaryPointLeft, true );
+          AddMenuButton( "边界点右移", 10, taskManager.MoveSelectedWorkspaceBoundaryPointRight, true );
+          AddMenuButton( "边界点上移", 11, taskManager.MoveSelectedWorkspaceBoundaryPointUp, true );
+          AddMenuButton( "边界点下移", 12, taskManager.MoveSelectedWorkspaceBoundaryPointDown, true );
+          AddMenuButton( "应用铲斗到边界点", 13, taskManager.ApplyBucketTipToSelectedWorkspaceBoundaryPoint, true );
+          AddStatusBlock( "状态：-\n模式：-\n行为模式：-\n控制输入：-\n手动输入：-\n可达区域：-\n边界点：-\n键盘：I/K 大臂，T/G 小臂，J/L 铲斗，F/H 回转\n铲斗尖局部：-", 14 );
+          if ( assignStatusTextToTaskManager )
+            taskManager.statusText = m_statusText;
+          FitLeftMenuHeight( 14, 14 );
           break;
       }
     }

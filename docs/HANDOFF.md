@@ -220,20 +220,32 @@ waypoint-following controller 靠拢：策略不再只跟踪一个当前点，�
   - 当前目标、待到达目标、已完成目标使用不同颜色
   - 会在随机路径 reset 时自动修复空 waypoint、重复 waypoint、引用到其它环境的 waypoint
 - `SimpleTrajectoryPlanner`
-  - 第一版最小 planner，位于 `Assets/Scripts/Planning/SimpleTrajectoryPlanner.cs`
+  - 交互 demo planner，位于 `Assets/Scripts/Planning/SimpleTrajectoryPlanner.cs`
   - 输入 `startPoint/endPoint`，生成一条起点到终点的 waypoint 路径；demo 展示中两者都应绑定为可见场景物体
-  - 默认 `waypointCount = 5`，对齐当前策略训练尺度；`arcHeight` 可让路径中段略微抬高
+  - `plannerAlgorithm` 支持 `ArcInterpolation` 和 `RrtStar`：前者是稳定 fallback，后者在可达扇区内采样、扩展、重连、平滑后输出 waypoint
+  - 默认 `waypointCount = 5`，对齐当前策略训练尺度；RRT* 输出也会重采样到该尺度
   - 不再支持 `bucketTip` 作为规划起点；StartPoint / EndPoint 是唯一规划控制点
   - UI 可调用 `SelectStartPoint()` / `SelectEndPoint()` 切换当前编辑控制点
   - UI 可调用 `MoveSelectedPointForward/Backward/Left/Right/Up/Down()` 按 `endpointMoveStep` 移动当前控制点
+  - 新增 `SetSelectedPointWorldPosition(...)` / `TryGetSelectedPointWorldPosition(...)`，供 Game 视图点选脚本直接设置当前起点或终点
   - Play 后总会给 StartPoint / EndPoint 添加可见标记，不再提供显示开关
   - `endpointMoveFrame` 控制控制点前后左右移动参考系；为空时使用 planner 物体坐标系
+  - 绑定 `reachableWorkspace` 后，控制点移动和规划前可自动夹到最近可达点，避免生成不可达目标
+  - RRT* 当前在可达空间二维参数域 `(direction01, range01)` 内规划，而不是在自由 XYZ 空间里规划后吸附到扇形面；可达空间外部作为状态空间边界处理
+  - `clampGeneratedWaypointsToWorkspace=true` 只作为非参数域轨迹的保险，例如 `ArcInterpolation` 输出写入 `TrajectoryProvider` 前可投影回可达空间表面
   - `PlanConfiguredPath()` 可从 Inspector Context Menu 触发；`Plan(startWorld, goalWorld)` 供后续 UI / TaskManager 调用
-  - 当前版本不做避障；后续 RRT* 应保持输出 `Vector3[] worldPoints`，继续写入 `TrajectoryProvider`
+  - RRT* 第一版仅做 Cartesian waypoint 规划；配置 `rrtObstacleMask` 后可用简化球体检测接入障碍物层
+- `DemoPointPicker`
+  - Game 视图点选脚本，位于 `Assets/Scripts/Planning/DemoPointPicker.cs`
+  - 用于把鼠标左键点击/拖拽转换为当前起点或终点的世界坐标更新；滚轮可调整当前控制点高度
+  - 优先通过 `Physics.Raycast` 命中规划平台或地面；未命中时回退到当前编辑点高度处的水平平面
+  - 正式 demo 建议给可点选地面单独设置 Layer，并把 `pickableSurfaceMask` 只配置到该 Layer，减少误点
+  - `autoPlanAfterPointChanged` 可开启点选后自动规划；调试 RRT* 参数时建议关闭
 - `ReachableWorkspaceVisualizer`
-  - 可达空间可视化组件，位于 `Assets/Scripts/Planning/ReachableWorkspaceVisualizer.cs`
+  - 可达空间可视化/采样组件，位于 `Assets/Scripts/Planning/ReachableWorkspaceVisualizer.cs`
   - 当前默认内置 15 个 `env01` 坐标系下的铲斗尖标定点：5 个方向（左、左前、正前、右前、右）x 3 个距离层（近、中、远）
-  - 只用于检查扇形可达区域，不参与训练、推理或路径生成
+  - 提供 `SampleWorld` / `ClosestWorldPoint` / `ClosestWorldParameters` 等接口，供 RRT*、控制点夹取和后续规划模块复用
+  - 右键菜单 `Create Editable Anchor Objects` 可生成 15 个可拖拽锚点；开启 `syncFromEditableAnchors` 或执行 `Bake Anchors From Editable Objects` 后可回写标定点
   - 推荐挂在 `TrajectoryEnvironment_01` 或与 `env01` 完全重合的空物体上；若挂在其它对象上，必须把 `Workspace Frame` 绑定到 `env01`
   - Scene 中会显示半透明网格、边界线、内部网格和锚点球；如果区域明显偏移，优先检查挂载对象/`Workspace Frame` 是否使用了正确参考系
 - `ExcavationDemoTaskManager`
@@ -242,6 +254,7 @@ waypoint-following controller 靠拢：策略不再只跟踪一个当前点，�
   - UI Button 可绑定 `SetModeMoveToDig`、`SetModeCarryMaterial`、`SelectPlanStartPoint`、`SelectPlanEndPoint`、`MoveSelectedPlanPoint*`、`PlanPath`、`StartTracking`、`StopTracking`、`PlanAndStartTracking`
   - `PlanMoveToDigAndStart` / `PlanCarryMaterialAndStart` 可作为一键测试按钮
   - `bucketTipLocalFrame` 用于状态栏显示 `铲斗尖局部`；建议绑定 `TrajectoryEnvironment` 或 `RLExcavatorTraj`，用于手动标定可达空间范围
+  - 可绑定 `pointPicker`；缺失且 `createPointPickerIfMissing=true` 时会自动在 DemoSystem 上创建一个，并连接到 planner
   - 组件只做流程编排，不直接写关节；训练/推理仍由 `ExcavatorTrajectoryAgent -> ExcavatorController` 完成
   - demo 启停只通过 `ExcavatorController.SetCommandInputEnabled(...)` 控制，不再向 `ExcavatorTrajectoryAgent` 增加 demo 专用开关
   - 默认 `requireInferenceOnlyBehavior=true`；训练场景 `Behavior Type=Default` 时不关闭 controller、不改随机 task mode，避免误影响训练

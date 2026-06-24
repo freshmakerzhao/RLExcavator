@@ -1065,7 +1065,7 @@ MonoBehaviour:
   fallbackLocalTarget: {x: 0, y: 0, z: 2}
   randomizePathOnReset: 1
   randomWaypointCount: 5
-  randomPathMode: 2
+  randomPathMode: 3
   randomLocalMin: {x: -4, y: 0.5, z: -2}
   randomLocalMax: {x: 4, y: 4.5, z: 5.5}
   randomMinSegmentLength: 1
@@ -1095,6 +1095,56 @@ MonoBehaviour:
   calibratedFanVerticalJitter: 0.15
   calibratedFanUseCurvedPaths: 1
   calibratedFanCurveStrength: 0.18
+  taskModeSource: {fileID: 0}
+  moveToDigReachableWorkspace: {fileID: 0}
+  carryMaterialReachableWorkspace: {fileID: 0}
+  reachableWorkspaceFrame: {fileID: 0}
+  moveToDigVolumeLocalPoints:
+  - {x: -4.77, y: 4.7, z: 12.18}
+  - {x: -5.1, y: 2.25, z: 10.95}
+  - {x: -4.98, y: 4.25, z: 9.2}
+  - {x: -4.98, y: 2.35, z: 9.2}
+  - {x: 1.7, y: 4.65, z: 9.2}
+  - {x: 0.03, y: 2.3, z: 9.15}
+  - {x: -0.34, y: 4.25, z: 7}
+  - {x: -0.34, y: 2.45, z: 7}
+  - {x: 3.95, y: 4.05, z: 2.41}
+  - {x: 2.82, y: 2.2, z: 3.39}
+  - {x: 1.03, y: 4.15, z: 3.24}
+  - {x: 1.03, y: 2.4, z: 3.24}
+  - {x: -0.1, y: 4.05, z: -4.24}
+  - {x: 0.64, y: 2.2, z: -2.23}
+  - {x: -0.36, y: 4.15, z: -0.63}
+  - {x: -0.36, y: 2.4, z: -0.63}
+  - {x: -4.94, y: 4.05, z: -5.68}
+  - {x: -4.94, y: 2.05, z: -4.64}
+  - {x: -5.13, y: 4.15, z: -2.8}
+  - {x: -5.13, y: 2.35, z: -2.8}
+  carryMaterialVolumeLocalPoints:
+  - {x: -4.77, y: 4.7, z: 12.18}
+  - {x: -5.1, y: 2.25, z: 10.95}
+  - {x: -4.98, y: 4.25, z: 9.2}
+  - {x: -4.98, y: 2.35, z: 9.2}
+  - {x: 1.7, y: 4.65, z: 9.2}
+  - {x: 0.03, y: 2.3, z: 9.15}
+  - {x: -0.34, y: 4.25, z: 7}
+  - {x: -0.34, y: 2.45, z: 7}
+  - {x: 3.95, y: 4.05, z: 2.41}
+  - {x: 2.82, y: 2.2, z: 3.39}
+  - {x: 1.03, y: 4.15, z: 3.24}
+  - {x: 1.03, y: 2.4, z: 3.24}
+  - {x: -0.1, y: 4.05, z: -4.24}
+  - {x: 0.64, y: 2.2, z: -2.23}
+  - {x: -0.36, y: 4.15, z: -0.63}
+  - {x: -0.36, y: 2.4, z: -0.63}
+  - {x: -4.94, y: 4.05, z: -5.68}
+  - {x: -4.94, y: 2.05, z: -4.64}
+  - {x: -5.13, y: 4.15, z: -2.8}
+  - {x: -5.13, y: 2.35, z: -2.8}
+  reachableWorkspaceMinEndpointDistance: 1
+  reachableWorkspaceCurveStrength: 0.16
+  reachableWorkspaceUseCurvedPaths: 1
+  reachableWorkspaceMinDirectionSpan: 0.3
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -1494,10 +1544,10 @@ PrefabInstance:
     - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 5022602860645237092, guid: 504339cfbf5d4563f8545646bb981a57, type: 3}
+      objectReference: {fileID: 0}
     - target: {fileID: 4988505423128042404, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_BehaviorType
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6353856740993249710, guid: 85e02ac694443d5f2a8ad1197ca2fa04, type: 3}
       propertyPath: m_toothDirection.m_end.m_localPosition.x
@@ -2223,7 +2273,7 @@ MonoBehaviour:
   fallbackLocalTarget: {x: 0, y: 0, z: 2}
   randomizePathOnReset: 1
   randomWaypointCount: 5
-  randomPathMode: 2
+  randomPathMode: 3
   randomLocalMin: {x: -4, y: 0.5, z: -2}
   randomLocalMax: {x: 4, y: 4.5, z: 5.5}
   randomMinSegmentLength: 1
@@ -2253,6 +2303,56 @@ MonoBehaviour:
   calibratedFanVerticalJitter: 0.15
   calibratedFanUseCurvedPaths: 1
   calibratedFanCurveStrength: 0.18
+  taskModeSource: {fileID: 0}
+  moveToDigReachableWorkspace: {fileID: 0}
+  carryMaterialReachableWorkspace: {fileID: 0}
+  reachableWorkspaceFrame: {fileID: 0}
+  moveToDigVolumeLocalPoints:
+  - {x: -4.77, y: 4.7, z: 12.18}
+  - {x: -5.1, y: 2.25, z: 10.95}
+  - {x: -4.98, y: 4.25, z: 9.2}
+  - {x: -4.98, y: 2.35, z: 9.2}
+  - {x: 1.7, y: 4.65, z: 9.2}
+  - {x: 0.03, y: 2.3, z: 9.15}
+  - {x: -0.34, y: 4.25, z: 7}
+  - {x: -0.34, y: 2.45, z: 7}
+  - {x: 3.95, y: 4.05, z: 2.41}
+  - {x: 2.82, y: 2.2, z: 3.39}
+  - {x: 1.03, y: 4.15, z: 3.24}
+  - {x: 1.03, y: 2.4, z: 3.24}
+  - {x: -0.1, y: 4.05, z: -4.24}
+  - {x: 0.64, y: 2.2, z: -2.23}
+  - {x: -0.36, y: 4.15, z: -0.63}
+  - {x: -0.36, y: 2.4, z: -0.63}
+  - {x: -4.94, y: 4.05, z: -5.68}
+  - {x: -4.94, y: 2.05, z: -4.64}
+  - {x: -5.13, y: 4.15, z: -2.8}
+  - {x: -5.13, y: 2.35, z: -2.8}
+  carryMaterialVolumeLocalPoints:
+  - {x: -4.77, y: 4.7, z: 12.18}
+  - {x: -5.1, y: 2.25, z: 10.95}
+  - {x: -4.98, y: 4.25, z: 9.2}
+  - {x: -4.98, y: 2.35, z: 9.2}
+  - {x: 1.7, y: 4.65, z: 9.2}
+  - {x: 0.03, y: 2.3, z: 9.15}
+  - {x: -0.34, y: 4.25, z: 7}
+  - {x: -0.34, y: 2.45, z: 7}
+  - {x: 3.95, y: 4.05, z: 2.41}
+  - {x: 2.82, y: 2.2, z: 3.39}
+  - {x: 1.03, y: 4.15, z: 3.24}
+  - {x: 1.03, y: 2.4, z: 3.24}
+  - {x: -0.1, y: 4.05, z: -4.24}
+  - {x: 0.64, y: 2.2, z: -2.23}
+  - {x: -0.36, y: 4.15, z: -0.63}
+  - {x: -0.36, y: 2.4, z: -0.63}
+  - {x: -4.94, y: 4.05, z: -5.68}
+  - {x: -4.94, y: 2.05, z: -4.64}
+  - {x: -5.13, y: 4.15, z: -2.8}
+  - {x: -5.13, y: 2.35, z: -2.8}
+  reachableWorkspaceMinEndpointDistance: 1
+  reachableWorkspaceCurveStrength: 0.16
+  reachableWorkspaceUseCurvedPaths: 1
+  reachableWorkspaceMinDirectionSpan: 0.3
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -2584,7 +2684,7 @@ MonoBehaviour:
   fallbackLocalTarget: {x: 0, y: 0, z: 2}
   randomizePathOnReset: 1
   randomWaypointCount: 5
-  randomPathMode: 2
+  randomPathMode: 3
   randomLocalMin: {x: -4, y: 0.5, z: -2}
   randomLocalMax: {x: 4, y: 4.5, z: 5.5}
   randomMinSegmentLength: 1
@@ -2614,6 +2714,56 @@ MonoBehaviour:
   calibratedFanVerticalJitter: 0.15
   calibratedFanUseCurvedPaths: 1
   calibratedFanCurveStrength: 0.18
+  taskModeSource: {fileID: 0}
+  moveToDigReachableWorkspace: {fileID: 0}
+  carryMaterialReachableWorkspace: {fileID: 0}
+  reachableWorkspaceFrame: {fileID: 0}
+  moveToDigVolumeLocalPoints:
+  - {x: -4.77, y: 4.7, z: 12.18}
+  - {x: -5.1, y: 2.25, z: 10.95}
+  - {x: -4.98, y: 4.25, z: 9.2}
+  - {x: -4.98, y: 2.35, z: 9.2}
+  - {x: 1.7, y: 4.65, z: 9.2}
+  - {x: 0.03, y: 2.3, z: 9.15}
+  - {x: -0.34, y: 4.25, z: 7}
+  - {x: -0.34, y: 2.45, z: 7}
+  - {x: 3.95, y: 4.05, z: 2.41}
+  - {x: 2.82, y: 2.2, z: 3.39}
+  - {x: 1.03, y: 4.15, z: 3.24}
+  - {x: 1.03, y: 2.4, z: 3.24}
+  - {x: -0.1, y: 4.05, z: -4.24}
+  - {x: 0.64, y: 2.2, z: -2.23}
+  - {x: -0.36, y: 4.15, z: -0.63}
+  - {x: -0.36, y: 2.4, z: -0.63}
+  - {x: -4.94, y: 4.05, z: -5.68}
+  - {x: -4.94, y: 2.05, z: -4.64}
+  - {x: -5.13, y: 4.15, z: -2.8}
+  - {x: -5.13, y: 2.35, z: -2.8}
+  carryMaterialVolumeLocalPoints:
+  - {x: -4.77, y: 4.7, z: 12.18}
+  - {x: -5.1, y: 2.25, z: 10.95}
+  - {x: -4.98, y: 4.25, z: 9.2}
+  - {x: -4.98, y: 2.35, z: 9.2}
+  - {x: 1.7, y: 4.65, z: 9.2}
+  - {x: 0.03, y: 2.3, z: 9.15}
+  - {x: -0.34, y: 4.25, z: 7}
+  - {x: -0.34, y: 2.45, z: 7}
+  - {x: 3.95, y: 4.05, z: 2.41}
+  - {x: 2.82, y: 2.2, z: 3.39}
+  - {x: 1.03, y: 4.15, z: 3.24}
+  - {x: 1.03, y: 2.4, z: 3.24}
+  - {x: -0.1, y: 4.05, z: -4.24}
+  - {x: 0.64, y: 2.2, z: -2.23}
+  - {x: -0.36, y: 4.15, z: -0.63}
+  - {x: -0.36, y: 2.4, z: -0.63}
+  - {x: -4.94, y: 4.05, z: -5.68}
+  - {x: -4.94, y: 2.05, z: -4.64}
+  - {x: -5.13, y: 4.15, z: -2.8}
+  - {x: -5.13, y: 2.35, z: -2.8}
+  reachableWorkspaceMinEndpointDistance: 1
+  reachableWorkspaceCurveStrength: 0.16
+  reachableWorkspaceUseCurvedPaths: 1
+  reachableWorkspaceMinDirectionSpan: 0.3
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -9792,7 +9942,7 @@ MonoBehaviour:
   fallbackLocalTarget: {x: 0, y: 0, z: 2}
   randomizePathOnReset: 1
   randomWaypointCount: 5
-  randomPathMode: 2
+  randomPathMode: 3
   randomLocalMin: {x: -4, y: 0.5, z: -2}
   randomLocalMax: {x: 4, y: 4.5, z: 5.5}
   randomMinSegmentLength: 1
@@ -9822,6 +9972,56 @@ MonoBehaviour:
   calibratedFanVerticalJitter: 0.15
   calibratedFanUseCurvedPaths: 1
   calibratedFanCurveStrength: 0.18
+  taskModeSource: {fileID: 0}
+  moveToDigReachableWorkspace: {fileID: 0}
+  carryMaterialReachableWorkspace: {fileID: 0}
+  reachableWorkspaceFrame: {fileID: 0}
+  moveToDigVolumeLocalPoints:
+  - {x: -4.77, y: 4.7, z: 12.18}
+  - {x: -5.1, y: 2.25, z: 10.95}
+  - {x: -4.98, y: 4.25, z: 9.2}
+  - {x: -4.98, y: 2.35, z: 9.2}
+  - {x: 1.7, y: 4.65, z: 9.2}
+  - {x: 0.03, y: 2.3, z: 9.15}
+  - {x: -0.34, y: 4.25, z: 7}
+  - {x: -0.34, y: 2.45, z: 7}
+  - {x: 3.95, y: 4.05, z: 2.41}
+  - {x: 2.82, y: 2.2, z: 3.39}
+  - {x: 1.03, y: 4.15, z: 3.24}
+  - {x: 1.03, y: 2.4, z: 3.24}
+  - {x: -0.1, y: 4.05, z: -4.24}
+  - {x: 0.64, y: 2.2, z: -2.23}
+  - {x: -0.36, y: 4.15, z: -0.63}
+  - {x: -0.36, y: 2.4, z: -0.63}
+  - {x: -4.94, y: 4.05, z: -5.68}
+  - {x: -4.94, y: 2.05, z: -4.64}
+  - {x: -5.13, y: 4.15, z: -2.8}
+  - {x: -5.13, y: 2.35, z: -2.8}
+  carryMaterialVolumeLocalPoints:
+  - {x: -4.77, y: 4.7, z: 12.18}
+  - {x: -5.1, y: 2.25, z: 10.95}
+  - {x: -4.98, y: 4.25, z: 9.2}
+  - {x: -4.98, y: 2.35, z: 9.2}
+  - {x: 1.7, y: 4.65, z: 9.2}
+  - {x: 0.03, y: 2.3, z: 9.15}
+  - {x: -0.34, y: 4.25, z: 7}
+  - {x: -0.34, y: 2.45, z: 7}
+  - {x: 3.95, y: 4.05, z: 2.41}
+  - {x: 2.82, y: 2.2, z: 3.39}
+  - {x: 1.03, y: 4.15, z: 3.24}
+  - {x: 1.03, y: 2.4, z: 3.24}
+  - {x: -0.1, y: 4.05, z: -4.24}
+  - {x: 0.64, y: 2.2, z: -2.23}
+  - {x: -0.36, y: 4.15, z: -0.63}
+  - {x: -0.36, y: 2.4, z: -0.63}
+  - {x: -4.94, y: 4.05, z: -5.68}
+  - {x: -4.94, y: 2.05, z: -4.64}
+  - {x: -5.13, y: 4.15, z: -2.8}
+  - {x: -5.13, y: 2.35, z: -2.8}
+  reachableWorkspaceMinEndpointDistance: 1
+  reachableWorkspaceCurveStrength: 0.16
+  reachableWorkspaceUseCurvedPaths: 1
+  reachableWorkspaceMinDirectionSpan: 0.3
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -10685,87 +10885,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1850755402}
   m_CullTransparentMesh: 0
---- !u!1001 &1862076123
-PrefabInstance:
-  m_ObjectHideFlags: 0
-  serializedVersion: 2
-  m_Modification:
-    serializedVersion: 3
-    m_TransformParent: {fileID: 0}
-    m_Modifications:
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalScale.x
-      value: 0.01
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalScale.y
-      value: 0.01
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalScale.z
-      value: 0.01
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalPosition.x
-      value: -6.07
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalPosition.y
-      value: 5.93
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalPosition.z
-      value: 1.53
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalRotation.w
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalRotation.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalRotation.y
-      value: 0.7071068
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalRotation.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.x
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.y
-      value: 90
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_LocalEulerAnglesHint.z
-      value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: -8679921383154817045, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: -5729224451620170555, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_ConstrainProportionsScale
-      value: 1
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_Name
-      value: "\u5361\u7279365"
-      objectReference: {fileID: 0}
-    - target: {fileID: 919132149155446097, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
-      propertyPath: m_IsActive
-      value: 0
-      objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
-    m_AddedGameObjects: []
-    m_AddedComponents: []
-  m_SourcePrefab: {fileID: 100100000, guid: c44f4f53f56edfc84a97f99ba6110ddf, type: 3}
 --- !u!1 &1892633701
 GameObject:
   m_ObjectHideFlags: 0
@@ -11485,7 +11604,6 @@ SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
   - {fileID: 483917375}
-  - {fileID: 1862076123}
   - {fileID: 1174931580}
   - {fileID: 601617339}
   - {fileID: 1447066317}
