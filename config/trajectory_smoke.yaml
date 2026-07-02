@@ -4,8 +4,8 @@
 #   Use this after code changes to verify that Unity connects, episodes run,
 #   rewards are computed, and TensorBoard stats are written.
 #
-# Current observation size: 37
-#   trajectory tracking observations + task mode + bucket pitch conditioning.
+# Current observation size: 38
+#   scale_excavator_v2_38d, locked by the master execution plan.
 #
 # Not for final training:
 #   The network and buffer are intentionally small. For real training, use

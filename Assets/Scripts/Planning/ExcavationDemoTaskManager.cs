@@ -23,6 +23,9 @@ namespace RLExcavator
     }
 
     [Header("References")]
+    [Tooltip("挖机语义坐标注册器。手动标定和状态显示统一使用 MachineRoot。")]
+    public ExcavatorFrameRegistry frameRegistry;
+
     public ExcavatorTrajectoryAgent agent;
     public ExcavatorController controller;
     public SimpleTrajectoryPlanner planner;
@@ -60,6 +63,9 @@ namespace RLExcavator
     [Tooltip("Demo 空闲或停止时禁用 DecisionRequester，开始追踪时再启用，避免策略持续推理。")]
     public bool disableDecisionRequesterWhenStopped = true;
 
+    [Tooltip("Demo 空闲/手动时禁用 ML-Agents Agent，只在真正开始轨迹追踪时启用，避免算法验证场景默认跑训练回合。")]
+    public bool disableAgentWhenStopped = true;
+
     [Header("Demo path")]
     [Tooltip("Demo 启动时隐藏 TrajectoryProvider 中残留的默认路径，等待用户点击生成轨迹后再显示。")]
     public bool hideTrajectoryUntilPlannedOnStart = true;
@@ -76,25 +82,35 @@ namespace RLExcavator
     [Header("Runtime")]
     public DemoState state = DemoState.Idle;
 
+    private ExcavatorKeyboardTester m_manualKeyboardTester;
+    private ExcavatorTrajectoryAgent.TrajectoryTaskMode m_taskModeWithoutAgent = ExcavatorTrajectoryAgent.TrajectoryTaskMode.MoveToDig;
+
     private void Awake()
     {
       ResolveMissingReferences();
+
+      if ( disableAgentWhenStopped )
+        SetAgentEnabled( false );
     }
 
     private void Start()
     {
-      if ( CanRunDemoControl() && agent != null && disableRandomTaskModeOnStart )
+      if ( agent != null && disableRandomTaskModeOnStart )
         agent.randomizeTaskModeOnEpisodeBegin = false;
 
-      if ( CanRunDemoControl() && controller != null && disableCommandInputOnStart )
+      if ( controller != null && disableCommandInputOnStart )
         controller.SetCommandInputEnabled( false );
 
-      if ( CanRunDemoControl() && disableDecisionRequesterWhenStopped )
+      if ( disableDecisionRequesterWhenStopped )
         SetDecisionRequesterEnabled( false );
 
-      if ( CanRunDemoControl() && trajectory != null && hideTrajectoryUntilPlannedOnStart )
+      if ( disableAgentWhenStopped )
+        SetAgentEnabled( false );
+
+      if ( trajectory != null && hideTrajectoryUntilPlannedOnStart )
         trajectory.SetPathVisualsVisible( false );
 
+      HideAllReachableWorkspaces();
       UpdateStatus();
     }
 
@@ -122,13 +138,13 @@ namespace RLExcavator
 
     public void SetTaskMode( ExcavatorTrajectoryAgent.TrajectoryTaskMode mode )
     {
-      if ( agent == null ) {
-        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing trajectory agent reference." );
-        return;
+      m_taskModeWithoutAgent = mode;
+
+      if ( agent != null ) {
+        agent.taskMode = mode;
+        agent.randomizeTaskModeOnEpisodeBegin = false;
       }
 
-      agent.taskMode = mode;
-      agent.randomizeTaskModeOnEpisodeBegin = false;
       ApplyReachableWorkspaceForMode( mode );
       UpdateStatus();
     }
@@ -221,6 +237,9 @@ namespace RLExcavator
         return;
       }
 
+      if ( !CanUseInferenceControlMode() )
+        return;
+
       SetInferenceControlMode();
 
       if ( !CanRunDemoControl() )
@@ -236,6 +255,8 @@ namespace RLExcavator
         return;
       }
 
+      SetAgentEnabled( true );
+      SetManualKeyboardTesterEnabled( false );
       controller.SetCommandInputEnabled( true );
       SetDecisionRequesterEnabled( true );
       state = DemoState.Tracking;
@@ -251,6 +272,9 @@ namespace RLExcavator
 
         if ( disableDecisionRequesterWhenStopped )
           SetDecisionRequesterEnabled( false );
+
+        if ( disableAgentWhenStopped )
+          SetAgentEnabled( false );
       }
 
       if ( state == DemoState.Tracking )
@@ -267,21 +291,17 @@ namespace RLExcavator
 
     public void StartManualControl()
     {
-      if ( agent == null ) {
-        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing trajectory agent reference." );
-        return;
-      }
-
       if ( controller == null ) {
         Debug.LogWarning( "[ExcavationDemoTaskManager] Missing controller reference." );
         return;
       }
 
-      SetHeuristicControlMode();
-
+      controller.CancelHomePoseReset();
+      SetDecisionRequesterEnabled( false );
+      SetAgentEnabled( false );
+      SetManualKeyboardTesterEnabled( true );
       controller.SetCommandInputEnabled( true );
       controller.StopAll();
-      SetDecisionRequesterEnabled( true );
       state = DemoState.ManualControl;
       UpdateStatus();
     }
@@ -293,8 +313,11 @@ namespace RLExcavator
         controller.SetCommandInputEnabled( false );
       }
 
+      SetManualKeyboardTesterEnabled( false );
       if ( disableDecisionRequesterWhenStopped )
         SetDecisionRequesterEnabled( false );
+      if ( disableAgentWhenStopped )
+        SetAgentEnabled( false );
       HideAllReachableWorkspaces();
       state = DemoState.Idle;
       UpdateStatus();
@@ -442,14 +465,31 @@ namespace RLExcavator
         return;
       }
 
-      if ( agent == null || agent.bucketTip == null ) {
+      Transform bucketTip = ActiveBucketTip();
+      if ( bucketTip == null ) {
         Debug.LogWarning( "[ExcavationDemoTaskManager] Missing bucket tip reference." );
         return;
       }
 
-      workspace.SetSelectedVolumeAnchorWorldPosition( agent.bucketTip.position );
+      int selectedAnchor = workspace.selectedVolumeAnchorIndex;
+      Vector3 bucketTipWorld = bucketTip.position;
+      Vector3 bucketTipWorkspaceLocal = workspace.WorldPointToLocal( bucketTipWorld );
+      Transform workspaceFrame = workspace.EffectiveWorkspaceFrame;
+      string beforeSummary = workspace.SelectedVolumeAnchorLocalSummary();
+
+      workspace.SetSelectedVolumeAnchorWorldPosition( bucketTipWorld );
       MarkWorkspaceDirty( workspace );
-      Debug.Log( $"[ExcavationDemoTaskManager] Applied bucket tip to {workspace.name}: {workspace.SelectedVolumeAnchorCoordinateSummary()}" );
+      Debug.Log(
+        "[ExcavationDemoTaskManager] 应用铲斗尖到可达区域边界点\n" +
+        $"  模式：{TaskModeLabel( CurrentDemoTaskMode() )}\n" +
+        $"  可达区域：{workspace.name}，边界点索引：{selectedAnchor}\n" +
+        $"  坐标系：{workspaceFrame.name}\n" +
+        $"  铲斗尖世界坐标：{FormatPreciseVector( bucketTipWorld )}\n" +
+        $"  将写入的局部坐标：{FormatPreciseVector( bucketTipWorkspaceLocal )}\n" +
+        $"  应用前：{beforeSummary}\n" +
+        $"  应用后：{workspace.SelectedVolumeAnchorCoordinateSummary()}\n" +
+        $"  可达区域文件：{WorkspaceProfilePathLabel( workspace )}",
+        this );
       UpdateStatus();
     }
 
@@ -471,7 +511,6 @@ namespace RLExcavator
       var copy = copyObject.AddComponent<ReachableWorkspaceVisualizer>();
       copy.CopyCalibrationFrom( source );
       copy.volumeColor = new Color( 0.30f, 0.62f, 0.42f, 0.08f );
-      copy.boundaryColor = new Color( 0.30f, 0.85f, 0.52f, 1.0f );
       copy.volumeBoundaryColor = new Color( 0.45f, 0.85f, 0.58f, 0.85f );
       copy.HideReachableVolumeAndBoundaryPoints();
 
@@ -514,6 +553,8 @@ namespace RLExcavator
 
       if ( disableDecisionRequesterWhenStopped )
         SetDecisionRequesterEnabled( false );
+      if ( disableAgentWhenStopped )
+        SetAgentEnabled( false );
 
       state = DemoState.Idle;
 
@@ -531,8 +572,14 @@ namespace RLExcavator
 
     private void ResolveMissingReferences()
     {
+      if ( frameRegistry == null )
+        frameRegistry = ExcavatorFrameRegistry.FindNearest( this );
+
       if ( agent == null )
         agent = GetComponentInChildren<ExcavatorTrajectoryAgent>( true );
+
+      if ( frameRegistry == null && agent != null )
+        frameRegistry = agent.frameRegistry;
 
       if ( planner == null )
         planner = GetComponentInChildren<SimpleTrajectoryPlanner>( true );
@@ -554,6 +601,9 @@ namespace RLExcavator
         else
           controller = GetComponentInChildren<ExcavatorController>( true );
       }
+
+      if ( frameRegistry == null && controller != null )
+        frameRegistry = controller.GetComponent<ExcavatorFrameRegistry>();
 
       if ( trajectory == null ) {
         if ( planner != null && planner.trajectory != null )
@@ -586,10 +636,23 @@ namespace RLExcavator
           planner.carryMaterialReachableWorkspace = carryMaterialReachableWorkspace;
       }
 
+      if ( trajectory != null && trajectory.frameRegistry == null )
+        trajectory.frameRegistry = frameRegistry;
+
+      if ( agent != null && agent.frameRegistry == null )
+        agent.frameRegistry = frameRegistry;
+
+      if ( moveToDigReachableWorkspace != null && moveToDigReachableWorkspace.frameRegistry == null )
+        moveToDigReachableWorkspace.frameRegistry = frameRegistry;
+      if ( carryMaterialReachableWorkspace != null && carryMaterialReachableWorkspace.frameRegistry == null )
+        carryMaterialReachableWorkspace.frameRegistry = frameRegistry;
+
       ApplyReachableWorkspaceForMode( agent != null ? agent.CurrentTaskMode : ExcavatorTrajectoryAgent.TrajectoryTaskMode.MoveToDig );
 
       if ( bucketTipLocalFrame == null ) {
-        if ( agent != null && agent.environmentRoot != null )
+        if ( frameRegistry != null && frameRegistry.MachineRoot != null )
+          bucketTipLocalFrame = frameRegistry.MachineRoot;
+        else if ( agent != null && agent.environmentRoot != null )
           bucketTipLocalFrame = agent.environmentRoot;
         else if ( trajectory != null )
           bucketTipLocalFrame = trajectory.transform;
@@ -600,6 +663,12 @@ namespace RLExcavator
     {
       if ( decisionRequester != null )
         decisionRequester.enabled = enabled;
+    }
+
+    private void SetAgentEnabled( bool enabled )
+    {
+      if ( agent != null )
+        agent.enabled = enabled;
     }
 
     private void SetBehaviorType( BehaviorType behaviorType )
@@ -617,7 +686,7 @@ namespace RLExcavator
       if ( statusText == null )
         return;
 
-      string mode = agent != null ? TaskModeLabel( agent.CurrentTaskMode ) : "未绑定";
+      string mode = TaskModeLabel( CurrentDemoTaskMode() );
       string behaviorMode = BehaviorModeLabel();
       string control = controller != null && controller.CommandInputEnabled ? "开启" : "关闭";
       string manualInput = state == DemoState.ManualControl ? "键盘接管" : "关闭";
@@ -673,25 +742,67 @@ namespace RLExcavator
       return $"({value.x:0.00}, {value.y:0.00}, {value.z:0.00})";
     }
 
+    private static string FormatPreciseVector( Vector3 value )
+    {
+      return $"({value.x:0.0000}, {value.y:0.0000}, {value.z:0.0000})";
+    }
+
+    private static string WorkspaceProfilePathLabel( ReachableWorkspaceVisualizer workspace )
+    {
+      if ( workspace == null )
+        return "未绑定";
+
+      if ( !workspace.useWorkspaceProfile )
+        return "未启用 profile 写入";
+
+      try {
+        return ReachableWorkspaceProfileLoader.DefaultWorkspacePath();
+      }
+      catch ( System.Exception exception ) {
+        return "无法解析：" + exception.Message;
+      }
+    }
+
     private bool TryGetBucketTipLocalPosition( out Vector3 localPosition )
     {
       localPosition = Vector3.zero;
 
-      if ( agent == null || agent.bucketTip == null )
+      Transform bucketTip = ActiveBucketTip();
+      if ( bucketTip == null )
         return false;
 
       Transform frame = BucketTipLocalFrame();
       if ( frame == null )
         return false;
 
-      localPosition = frame.InverseTransformPoint( agent.bucketTip.position );
+      localPosition = frame.InverseTransformPoint( bucketTip.position );
       return true;
+    }
+
+    private Transform ActiveBucketTip()
+    {
+      if ( agent != null && agent.bucketTip != null )
+        return agent.bucketTip;
+
+      if ( frameRegistry == null && controller != null )
+        frameRegistry = controller.GetComponent<ExcavatorFrameRegistry>();
+
+      if ( frameRegistry != null ) {
+        frameRegistry.ResolveMissingReferences();
+        if ( frameRegistry.BucketTip != null )
+          return frameRegistry.BucketTip;
+      }
+
+      return controller != null ? FindChildByName( controller.transform, "BucketTip" ) : null;
     }
 
     private Transform BucketTipLocalFrame()
     {
       if ( bucketTipLocalFrame != null )
         return bucketTipLocalFrame;
+
+      if ( frameRegistry != null && frameRegistry.MachineRoot != null )
+        return frameRegistry.MachineRoot;
 
       if ( agent != null && agent.environmentRoot != null )
         return agent.environmentRoot;
@@ -702,18 +813,37 @@ namespace RLExcavator
     private Transform WorkspaceMoveFrame()
     {
       ReachableWorkspaceVisualizer workspace = ActiveReachableWorkspace();
-      if ( workspace != null && workspace.workspaceFrame != null )
-        return workspace.workspaceFrame;
+      if ( workspace != null && workspace.EffectiveWorkspaceFrame != null )
+        return workspace.EffectiveWorkspaceFrame;
 
       return BucketTipLocalFrame();
     }
 
     private ReachableWorkspaceVisualizer ActiveReachableWorkspace()
     {
-      if ( agent != null )
-        return ReachableWorkspaceForMode( agent.CurrentTaskMode );
+      return ReachableWorkspaceForMode( CurrentDemoTaskMode() );
+    }
 
-      return reachableWorkspace != null ? reachableWorkspace : moveToDigReachableWorkspace;
+    private ExcavatorTrajectoryAgent.TrajectoryTaskMode CurrentDemoTaskMode()
+    {
+      return agent != null ? agent.CurrentTaskMode : m_taskModeWithoutAgent;
+    }
+
+    private static Transform FindChildByName( Transform root, string childName )
+    {
+      if ( root == null || string.IsNullOrEmpty( childName ) )
+        return null;
+
+      if ( root.name == childName )
+        return root;
+
+      for ( int i = 0; i < root.childCount; i++ ) {
+        Transform match = FindChildByName( root.GetChild( i ), childName );
+        if ( match != null )
+          return match;
+      }
+
+      return null;
     }
 
     private ReachableWorkspaceVisualizer ReachableWorkspaceForMode( ExcavatorTrajectoryAgent.TrajectoryTaskMode mode )
@@ -846,6 +976,41 @@ namespace RLExcavator
 
       return behavior.BehaviorType == BehaviorType.InferenceOnly;
     }
+
+    private bool CanUseInferenceControlMode()
+    {
+      if ( agent == null )
+        return false;
+
+      var behavior = agent.GetComponent<BehaviorParameters>();
+      if ( behavior == null || behavior.Model != null )
+        return true;
+
+      Debug.LogWarning( "[ExcavationDemoTaskManager] Cannot start inference tracking without an assigned model." );
+      return false;
+    }
+
+    private void SetManualKeyboardTesterEnabled( bool enabled )
+    {
+      ExcavatorKeyboardTester tester = ManualKeyboardTester();
+      if ( tester != null )
+        tester.enabled = enabled;
+    }
+
+    private ExcavatorKeyboardTester ManualKeyboardTester()
+    {
+      if ( m_manualKeyboardTester != null )
+        return m_manualKeyboardTester;
+
+      if ( controller == null )
+        return null;
+
+      m_manualKeyboardTester = controller.GetComponent<ExcavatorKeyboardTester>();
+      if ( m_manualKeyboardTester == null )
+        m_manualKeyboardTester = controller.gameObject.AddComponent<ExcavatorKeyboardTester>();
+
+      return m_manualKeyboardTester;
+    }
   }
 
 #if UNITY_EDITOR
@@ -864,6 +1029,14 @@ namespace RLExcavator
     {
       if ( workspace == null || workspace.localVolumeAnchorPoints == null )
         return;
+
+      if ( workspace.useWorkspaceProfile && workspace.saveWorkspaceProfileChanges ) {
+        string saveMessage;
+        if ( workspace.TrySaveToWorkspaceProfile( out saveMessage ) )
+          Debug.Log( "[ReachableWorkspacePlayModeSaver] " + saveMessage );
+        else
+          Debug.LogWarning( "[ReachableWorkspacePlayModeSaver] " + saveMessage );
+      }
 
       PendingWorkspaceStore store = Load();
       string scenePath = workspace.gameObject.scene.path;

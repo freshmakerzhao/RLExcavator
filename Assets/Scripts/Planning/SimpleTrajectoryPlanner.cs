@@ -55,7 +55,7 @@ namespace RLExcavator
     public bool applyImmediately = true;
 
     [Header("Reachable workspace")]
-    [Tooltip("当前激活的铲斗尖可达空间。保留该字段用于兼容旧场景；Demo 中会随 MoveToDig/CarryMaterial 自动切换。")]
+    [Tooltip("当前激活的铲斗尖 3D 可达空间。保留该字段用于兼容旧场景；Demo 中会随 MoveToDig/CarryMaterial 自动切换。")]
     public ReachableWorkspaceVisualizer reachableWorkspace;
 
     [Tooltip("MoveToDig 模式使用的可达空间。为空时回退到当前激活的 reachableWorkspace。")]
@@ -76,7 +76,7 @@ namespace RLExcavator
     [Tooltip("通过 UI 移动起点/终点后，是否自动夹到可达空间最近点。")]
     public bool clampMovedControlPointsToWorkspace = true;
 
-    [Tooltip("非参数域轨迹写入 TrajectoryProvider 前，将 waypoint 投影回当前可达空间。CartesianRrtStar 使用 3D 体积，旧 RrtStar 使用参数域表面。")]
+    [Tooltip("非参数域轨迹写入 TrajectoryProvider 前，将 waypoint 投影回当前 3D 可达空间。")]
     public bool clampGeneratedWaypointsToWorkspace = true;
 
     [Tooltip("起点/终点被夹取超过该距离时打印 warning，单位米。")]
@@ -117,7 +117,7 @@ namespace RLExcavator
     [Tooltip("路径平滑时尝试删除冗余节点的次数。")]
     public int rrtSmoothingPasses = 2;
 
-    [Tooltip("在可达空间参数域检查一条边时的离散采样数。数值越大越不容易跨出可达面或穿过障碍，但规划更慢。")]
+    [Tooltip("在可达空间参数域检查一条边时的离散采样数。数值越大越不容易跨出体积或穿过障碍，但规划更慢。")]
     public int rrtWorkspaceEdgeSamples = 8;
 
     [Tooltip("规划节点和路径段允许的最低世界高度，防止采到地面以下。")]
@@ -377,10 +377,10 @@ namespace RLExcavator
       if ( reachableWorkspace == null )
         return new[] { startWorld, goalWorld };
 
-      Vector2 startParameters = reachableWorkspace.ClosestWorldParameters( startWorld );
-      Vector2 goalParameters = reachableWorkspace.ClosestWorldParameters( goalWorld );
-      List<Vector2> parameterPath = ResampleParameterPathByDistance(
-        new List<Vector2> { startParameters, goalParameters },
+      Vector3 startParameters = reachableWorkspace.ClosestWorldVolumeParameters( startWorld );
+      Vector3 goalParameters = reachableWorkspace.ClosestWorldVolumeParameters( goalWorld );
+      List<Vector3> parameterPath = ResampleParameterPathByDistance(
+        new List<Vector3> { startParameters, goalParameters },
         PlannedWaypointCount( startWorld, goalWorld ) );
       return ParametersToWorldPath( parameterPath );
     }
@@ -514,10 +514,10 @@ namespace RLExcavator
         return false;
       }
 
-      Vector2 startParameters = reachableWorkspace.ClosestWorldParameters( startWorld );
-      Vector2 goalParameters = reachableWorkspace.ClosestWorldParameters( goalWorld );
-      Vector3 clampedStart = reachableWorkspace.SampleWorld( startParameters );
-      Vector3 clampedGoal = reachableWorkspace.SampleWorld( goalParameters );
+      Vector3 startParameters = reachableWorkspace.ClosestWorldVolumeParameters( startWorld );
+      Vector3 goalParameters = reachableWorkspace.ClosestWorldVolumeParameters( goalWorld );
+      Vector3 clampedStart = reachableWorkspace.SampleWorldVolume( startParameters );
+      Vector3 clampedGoal = reachableWorkspace.SampleWorldVolume( goalParameters );
 
       if ( !IsWorkspaceStateValid( startParameters ) || !IsWorkspaceStateValid( goalParameters ) ) {
         LastPlanningSummary = "RRT* 起点或终点高度/碰撞检查失败";
@@ -525,8 +525,8 @@ namespace RLExcavator
       }
 
       if ( preferDirectPathWhenClear && IsWorkspaceEdgeValid( startParameters, goalParameters ) ) {
-        List<Vector2> parameterPath = ResampleParameterPathByDistance(
-          new List<Vector2> { startParameters, goalParameters },
+        List<Vector3> parameterPath = ResampleParameterPathByDistance(
+          new List<Vector3> { startParameters, goalParameters },
           PlannedWaypointCount( clampedStart, clampedGoal ) );
         path = ParametersToWorldPath( parameterPath );
         LastPlanningSucceeded = true;
@@ -548,15 +548,15 @@ namespace RLExcavator
 
       for ( int iteration = 0; iteration < maxIterations; iteration++ ) {
         LastPlanningIterations = iteration + 1;
-        Vector2 sampleParameters = Random.value < rrtGoalBias
+        Vector3 sampleParameters = Random.value < rrtGoalBias
           ? goalParameters
-          : new Vector2( Random.value, Random.value );
-        Vector3 sampleWorld = reachableWorkspace.SampleWorld( sampleParameters );
+          : new Vector3( Random.value, Random.value, Random.value );
+        Vector3 sampleWorld = reachableWorkspace.SampleWorldVolume( sampleParameters );
         int nearestIndex = NearestNodeIndex( nodes, sampleWorld );
-        Vector2 nearestParameters = nodes[ nearestIndex ].parameters;
+        Vector3 nearestParameters = nodes[ nearestIndex ].parameters;
         Vector3 nearestWorld = nodes[ nearestIndex ].position;
-        Vector2 candidateParameters = SteerParameters( nearestParameters, sampleParameters, stepSize );
-        Vector3 candidateWorld = reachableWorkspace.SampleWorld( candidateParameters );
+        Vector3 candidateParameters = SteerParameters( nearestParameters, sampleParameters, stepSize );
+        Vector3 candidateWorld = reachableWorkspace.SampleWorldVolume( candidateParameters );
 
         if ( Vector3.Distance( nearestWorld, candidateWorld ) < 0.03f )
           continue;
@@ -611,42 +611,44 @@ namespace RLExcavator
         return false;
       }
 
-      List<Vector2> rawParameterPath = BuildRawRrtParameterPath( nodes, bestGoalParent, goalParameters );
+      List<Vector3> rawParameterPath = BuildRawRrtParameterPath( nodes, bestGoalParent, goalParameters );
       LastRawPathPointCount = rawParameterPath.Count;
 
-      List<Vector2> smoothed = SmoothParameterPath( rawParameterPath, Mathf.Max( rrtSmoothingPasses, 0 ) );
-      List<Vector2> resampled = ResampleParameterPathByDistance( smoothed, PlannedWaypointCount( clampedStart, clampedGoal ) );
+      List<Vector3> smoothed = SmoothParameterPath( rawParameterPath, Mathf.Max( rrtSmoothingPasses, 0 ) );
+      List<Vector3> resampled = ResampleParameterPathByDistance( smoothed, PlannedWaypointCount( clampedStart, clampedGoal ) );
       path = ParametersToWorldPath( resampled );
       LastPlanningSucceeded = true;
       LastPlanningSummary = $"RRT* 参数域成功：迭代 {LastPlanningIterations}，原始点 {LastRawPathPointCount}，输出点 {path.Length}";
       return true;
     }
 
-    private bool IsWorkspaceStateValid( Vector2 parameters )
+    private bool IsWorkspaceStateValid( Vector3 parameters )
     {
       if ( reachableWorkspace == null )
         return false;
 
-      if ( parameters.x < 0f || parameters.x > 1f || parameters.y < 0f || parameters.y > 1f )
+      if ( parameters.x < 0f || parameters.x > 1f
+        || parameters.y < 0f || parameters.y > 1f
+        || parameters.z < 0f || parameters.z > 1f )
         return false;
 
-      return IsPointValid( reachableWorkspace.SampleWorld( parameters ) );
+      return IsPointValid( reachableWorkspace.SampleWorldVolume( parameters ) );
     }
 
-    private bool IsWorkspaceEdgeValid( Vector2 fromParameters, Vector2 toParameters )
+    private bool IsWorkspaceEdgeValid( Vector3 fromParameters, Vector3 toParameters )
     {
       if ( reachableWorkspace == null )
         return false;
 
       int steps = Mathf.Max( rrtWorkspaceEdgeSamples, 1 );
-      Vector3 previous = reachableWorkspace.SampleWorld( fromParameters );
+      Vector3 previous = reachableWorkspace.SampleWorldVolume( fromParameters );
       if ( !IsPointValid( previous ) )
         return false;
 
       for ( int i = 1; i <= steps; i++ ) {
         float t = (float)i / steps;
-        Vector2 parameters = Vector2.Lerp( fromParameters, toParameters, t );
-        Vector3 current = reachableWorkspace.SampleWorld( parameters );
+        Vector3 parameters = Vector3.Lerp( fromParameters, toParameters, t );
+        Vector3 current = reachableWorkspace.SampleWorldVolume( parameters );
         if ( !IsPointValid( current ) || !IsSegmentValid( previous, current ) )
           return false;
 
@@ -656,17 +658,17 @@ namespace RLExcavator
       return true;
     }
 
-    private Vector2 SteerParameters( Vector2 fromParameters, Vector2 toParameters, float maxWorldDistance )
+    private Vector3 SteerParameters( Vector3 fromParameters, Vector3 toParameters, float maxWorldDistance )
     {
       if ( reachableWorkspace == null )
         return Clamp01( toParameters );
 
-      Vector2 delta = toParameters - fromParameters;
+      Vector3 delta = toParameters - fromParameters;
       if ( delta.sqrMagnitude < 0.000001f )
         return Clamp01( toParameters );
 
-      Vector3 fromWorld = reachableWorkspace.SampleWorld( fromParameters );
-      Vector3 toWorld = reachableWorkspace.SampleWorld( toParameters );
+      Vector3 fromWorld = reachableWorkspace.SampleWorldVolume( fromParameters );
+      Vector3 toWorld = reachableWorkspace.SampleWorldVolume( toParameters );
       if ( Vector3.Distance( fromWorld, toWorld ) <= maxWorldDistance )
         return Clamp01( toParameters );
 
@@ -674,25 +676,25 @@ namespace RLExcavator
       float high = 1f;
       for ( int i = 0; i < 10; i++ ) {
         float mid = ( low + high ) * 0.5f;
-        Vector2 midParameters = Vector2.Lerp( fromParameters, toParameters, mid );
-        Vector3 midWorld = reachableWorkspace.SampleWorld( midParameters );
+        Vector3 midParameters = Vector3.Lerp( fromParameters, toParameters, mid );
+        Vector3 midWorld = reachableWorkspace.SampleWorldVolume( midParameters );
         if ( Vector3.Distance( fromWorld, midWorld ) <= maxWorldDistance )
           low = mid;
         else
           high = mid;
       }
 
-      return Clamp01( Vector2.Lerp( fromParameters, toParameters, low ) );
+      return Clamp01( Vector3.Lerp( fromParameters, toParameters, low ) );
     }
 
-    private static Vector2 Clamp01( Vector2 value )
+    private static Vector3 Clamp01( Vector3 value )
     {
-      return new Vector2( Mathf.Clamp01( value.x ), Mathf.Clamp01( value.y ) );
+      return new Vector3( Mathf.Clamp01( value.x ), Mathf.Clamp01( value.y ), Mathf.Clamp01( value.z ) );
     }
 
-    private List<Vector2> BuildRawRrtParameterPath( List<RrtNode> nodes, int goalParentIndex, Vector2 goalParameters )
+    private List<Vector3> BuildRawRrtParameterPath( List<RrtNode> nodes, int goalParentIndex, Vector3 goalParameters )
     {
-      var reversed = new List<Vector2> { goalParameters };
+      var reversed = new List<Vector3> { goalParameters };
       int index = goalParentIndex;
       while ( index >= 0 ) {
         reversed.Add( nodes[ index ].parameters );
@@ -703,12 +705,12 @@ namespace RLExcavator
       return reversed;
     }
 
-    private List<Vector2> SmoothParameterPath( List<Vector2> rawPath, int passes )
+    private List<Vector3> SmoothParameterPath( List<Vector3> rawPath, int passes )
     {
       if ( rawPath == null || rawPath.Count <= 2 || passes <= 0 )
         return rawPath;
 
-      var path = new List<Vector2>( rawPath );
+      var path = new List<Vector3>( rawPath );
       for ( int pass = 0; pass < passes; pass++ ) {
         int index = 0;
         while ( index < path.Count - 2 ) {
@@ -722,13 +724,13 @@ namespace RLExcavator
       return path;
     }
 
-    private List<Vector2> ResampleParameterPathByDistance( List<Vector2> source, int count )
+    private List<Vector3> ResampleParameterPathByDistance( List<Vector3> source, int count )
     {
       int outputCount = Mathf.Max( count, 2 );
-      var result = new List<Vector2>( outputCount );
+      var result = new List<Vector3>( outputCount );
       if ( source == null || source.Count == 0 ) {
         for ( int i = 0; i < outputCount; i++ )
-          result.Add( Vector2.zero );
+          result.Add( Vector3.zero );
         return result;
       }
 
@@ -763,7 +765,7 @@ namespace RLExcavator
         }
 
         float t = currentSegmentLength < 0.0001f ? 0f : ( targetDistance - distanceBeforeSegment ) / currentSegmentLength;
-        result.Add( Clamp01( Vector2.Lerp( source[ segmentIndex - 1 ], source[ segmentIndex ], Mathf.Clamp01( t ) ) ) );
+        result.Add( Clamp01( Vector3.Lerp( source[ segmentIndex - 1 ], source[ segmentIndex ], Mathf.Clamp01( t ) ) ) );
       }
 
       result.Add( Clamp01( source[ source.Count - 1 ] ) );
@@ -816,24 +818,24 @@ namespace RLExcavator
       return result;
     }
 
-    private float ParameterSegmentWorldDistance( Vector2 fromParameters, Vector2 toParameters )
+    private float ParameterSegmentWorldDistance( Vector3 fromParameters, Vector3 toParameters )
     {
       if ( reachableWorkspace == null )
-        return Vector2.Distance( fromParameters, toParameters );
+        return Vector3.Distance( fromParameters, toParameters );
 
       return Vector3.Distance(
-        reachableWorkspace.SampleWorld( fromParameters ),
-        reachableWorkspace.SampleWorld( toParameters ) );
+        reachableWorkspace.SampleWorldVolume( fromParameters ),
+        reachableWorkspace.SampleWorldVolume( toParameters ) );
     }
 
-    private Vector3[] ParametersToWorldPath( List<Vector2> parameterPath )
+    private Vector3[] ParametersToWorldPath( List<Vector3> parameterPath )
     {
       if ( parameterPath == null || parameterPath.Count == 0 )
         return new Vector3[ 0 ];
 
       Vector3[] path = new Vector3[ parameterPath.Count ];
       for ( int i = 0; i < parameterPath.Count; i++ )
-        path[ i ] = reachableWorkspace.SampleWorld( parameterPath[ i ] );
+        path[ i ] = reachableWorkspace.SampleWorldVolume( parameterPath[ i ] );
 
       return path;
     }
@@ -851,9 +853,7 @@ namespace RLExcavator
 
       Vector3[] clampedPath = new Vector3[ path.Length ];
       for ( int i = 0; i < path.Length; i++ ) {
-        Vector3 clamped = ShouldClampGeneratedPathToVolume()
-          ? reachableWorkspace.ClosestWorldPointInVolume( path[ i ] )
-          : reachableWorkspace.ClosestWorldPoint( path[ i ] );
+        Vector3 clamped = reachableWorkspace.ClosestWorldPointInVolume( path[ i ] );
         float distance = Vector3.Distance( path[ i ], clamped );
         if ( distance > 0.0001f ) {
           m_lastGeneratedClampCount++;
@@ -879,18 +879,13 @@ namespace RLExcavator
       return $"{summary}，投影输出点 {m_lastGeneratedClampCount} 个，最大 {m_lastGeneratedClampMaxDistance:0.00} m";
     }
 
-    private bool ShouldClampGeneratedPathToVolume()
-    {
-      return plannerAlgorithm == PlannerAlgorithm.CartesianRrtStar && useReachableWorkspaceVolumeForCartesianRrt;
-    }
-
     private void ClampEndpointsIfNeeded( ref Vector3 start, ref Vector3 goal )
     {
       if ( !clampEndpointsToWorkspace || reachableWorkspace == null )
         return;
 
-      Vector3 clampedStart = reachableWorkspace.ClosestWorldPoint( start );
-      Vector3 clampedGoal = reachableWorkspace.ClosestWorldPoint( goal );
+      Vector3 clampedStart = reachableWorkspace.ClosestWorldPointInVolume( start );
+      Vector3 clampedGoal = reachableWorkspace.ClosestWorldPointInVolume( goal );
       WarnIfEndpointMoved( "start", start, clampedStart );
       WarnIfEndpointMoved( "goal", goal, clampedGoal );
       start = clampedStart;
@@ -929,10 +924,7 @@ namespace RLExcavator
       if ( !clampMovedControlPointsToWorkspace || reachableWorkspace == null || point == null )
         return;
 
-      if ( plannerAlgorithm == PlannerAlgorithm.CartesianRrtStar && useReachableWorkspaceVolumeForCartesianRrt )
-        point.position = reachableWorkspace.ClosestWorldPointInVolume( point.position );
-      else
-        point.position = reachableWorkspace.ClosestWorldPoint( point.position );
+      point.position = reachableWorkspace.ClosestWorldPointInVolume( point.position );
     }
 
     private void WarnIfEndpointMoved( string endpointName, Vector3 original, Vector3 clamped )
@@ -1103,12 +1095,12 @@ namespace RLExcavator
 
     private class RrtNode
     {
-      public readonly Vector2 parameters;
+      public readonly Vector3 parameters;
       public readonly Vector3 position;
       public readonly int parentIndex;
       public readonly float cost;
 
-      public RrtNode( Vector2 parameters, Vector3 position, int parentIndex, float cost )
+      public RrtNode( Vector3 parameters, Vector3 position, int parentIndex, float cost )
       {
         this.parameters = parameters;
         this.position = position;

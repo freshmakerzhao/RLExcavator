@@ -6,8 +6,8 @@ using UnityEngine.UI;
 namespace RLExcavator
 {
   /// <summary>
-  /// Runtime HUD for the interactive excavation demo.
-  /// This script only builds its own UI and calls ExcavationDemoTaskManager methods.
+  /// Controller for the algorithm demo HUD.
+  /// The HUD can exist in the scene for edit-time layout work; this script binds runtime actions.
   /// </summary>
   public class ExcavationDemoRuntimeUI : MonoBehaviour
   {
@@ -21,10 +21,13 @@ namespace RLExcavator
 
     [Header("References")]
     public ExcavationDemoTaskManager taskManager;
+    public Camera mainCamera;
     public Camera minimapCamera;
     public Texture minimapFallbackTexture;
+    public RuntimeSceneCameraController sceneCameraController;
 
-    [Header("Runtime build")]
+    [Header("Runtime")]
+    [Tooltip("Play 时如果场景中没有 HUD，则自动创建一份。已有 HUD 时只绑定按钮，不重建。")]
     public bool buildOnStart = true;
     public bool createEventSystemIfMissing = true;
     public bool assignStatusTextToTaskManager = true;
@@ -46,12 +49,15 @@ namespace RLExcavator
     private readonly Button[] m_tabButtons = new Button[ 4 ];
     private readonly Image[] m_tabImages = new Image[ 4 ];
     private readonly Outline[] m_tabOutlines = new Outline[ 4 ];
+    private readonly RectTransform[] m_tabPages = new RectTransform[ 4 ];
 
     private GameObject m_root;
     private RectTransform m_leftMenuPanel;
     private RectTransform m_leftMenuContent;
     private Text m_leftMenuTitle;
     private Text m_statusText;
+    private RawImage m_minimapFeed;
+    private AspectRatioFitter m_minimapFitter;
     private Font m_font;
     private RenderTexture m_minimapRenderTexture;
     private DemoTab m_activeTab = DemoTab.TrajectoryTracking;
@@ -69,6 +75,10 @@ namespace RLExcavator
     private static readonly Color s_textColor = new Color( 0.92f, 0.96f, 1.0f, 1.0f );
     private static readonly Color s_mutedTextColor = new Color( 0.70f, 0.82f, 0.92f, 1.0f );
 
+    private static readonly string[] s_tabLabels = { "感知建图", "生成轨迹", "轨迹追踪", "手动控制" };
+    private static readonly string[] s_pageNames = { "Page_PerceptionMapping", "Page_TrajectoryPlanning", "Page_TrajectoryTracking", "Page_ManualControl" };
+    private static readonly string[] s_menuTitles = { "感知建图", "生成轨迹", "轨迹追踪", "手动控制" };
+
     private void Awake()
     {
       ResolveReferences();
@@ -76,6 +86,16 @@ namespace RLExcavator
 
     private void Start()
     {
+      ResolveReferences();
+
+      if ( TryBindExistingHud() ) {
+        EnsureEventSystem();
+        WireRuntimeButtons();
+        ConfigureMinimapFeed();
+        SwitchTab( m_activeTab );
+        return;
+      }
+
       if ( buildOnStart )
         Build();
     }
@@ -110,8 +130,11 @@ namespace RLExcavator
       BuildHeader( m_root.transform );
       BuildTabs( m_root.transform );
       BuildLeftMenu( m_root.transform );
+      BuildMenuPages();
       BuildMinimapMonitor( m_root.transform );
 
+      WireRuntimeButtons();
+      ConfigureMinimapFeed();
       SwitchTab( m_activeTab );
     }
 
@@ -127,9 +150,23 @@ namespace RLExcavator
         m_minimapRenderTexture = null;
       }
 
-      if ( m_root != null ) {
-        DestroyRuntimeObject( m_root );
-        m_root = null;
+      GameObject existingRoot = m_root != null ? m_root : FindExistingRoot();
+      if ( existingRoot != null )
+        DestroyRuntimeObject( existingRoot );
+
+      m_root = null;
+      m_leftMenuPanel = null;
+      m_leftMenuContent = null;
+      m_leftMenuTitle = null;
+      m_statusText = null;
+      m_minimapFeed = null;
+      m_minimapFitter = null;
+
+      for ( int i = 0; i < m_tabButtons.Length; i++ ) {
+        m_tabButtons[ i ] = null;
+        m_tabImages[ i ] = null;
+        m_tabOutlines[ i ] = null;
+        m_tabPages[ i ] = null;
       }
     }
 
@@ -140,6 +177,54 @@ namespace RLExcavator
 
       if ( taskManager == null )
         taskManager = GetComponentInChildren<ExcavationDemoTaskManager>( true );
+
+      if ( mainCamera == null )
+        mainCamera = Camera.main;
+
+      if ( sceneCameraController == null && mainCamera != null )
+        sceneCameraController = mainCamera.GetComponent<RuntimeSceneCameraController>();
+
+      if ( sceneCameraController == null && Application.isPlaying && mainCamera != null )
+        sceneCameraController = mainCamera.gameObject.AddComponent<RuntimeSceneCameraController>();
+    }
+
+    private bool TryBindExistingHud()
+    {
+      GameObject existingRoot = FindExistingRoot();
+      if ( existingRoot == null )
+        return false;
+
+      m_root = existingRoot;
+      m_font = LoadBuiltinFont();
+
+      m_leftMenuPanel = FindRect( m_root.transform, "LeftControlMenu" );
+      m_leftMenuContent = FindRect( m_root.transform, "LeftControlMenu/MenuContent" );
+      m_leftMenuTitle = FindText( m_root.transform, "LeftControlMenu/MenuTitle" );
+
+      Transform tabGroup = FindChild( m_root.transform, "FunctionTabs" );
+      for ( int i = 0; i < s_tabLabels.Length; i++ ) {
+        Transform tab = tabGroup != null ? tabGroup.Find( $"Tab_{s_tabLabels[ i ]}" ) : null;
+        if ( tab == null )
+          continue;
+
+        m_tabButtons[ i ] = tab.GetComponent<Button>();
+        m_tabImages[ i ] = tab.GetComponent<Image>();
+        m_tabOutlines[ i ] = tab.GetComponent<Outline>();
+      }
+
+      for ( int i = 0; i < s_pageNames.Length; i++ )
+        m_tabPages[ i ] = FindRect( m_root.transform, $"LeftControlMenu/MenuContent/{s_pageNames[ i ]}" );
+
+      m_minimapFeed = FindComponent<RawImage>( m_root.transform, "MinimapMonitor/Viewport/CameraFeed" );
+      m_minimapFitter = m_minimapFeed != null ? m_minimapFeed.GetComponent<AspectRatioFitter>() : null;
+
+      return m_leftMenuPanel != null && m_leftMenuContent != null;
+    }
+
+    private GameObject FindExistingRoot()
+    {
+      Transform existing = transform.Find( "ExcavationDemoHUD" );
+      return existing != null ? existing.gameObject : null;
     }
 
     private void EnsureEventSystem()
@@ -197,19 +282,16 @@ namespace RLExcavator
     private void BuildTabs( Transform parent )
     {
       RectTransform tabGroup = CreateRect( parent, "FunctionTabs", AnchorPreset.TopCenter, new Vector2( 0f, -24f ), new Vector2( 820f, 50f ) );
-      string[] labels = { "感知建图", "生成轨迹", "轨迹追踪", "手动控制" };
-      for ( int i = 0; i < labels.Length; i++ ) {
-        int index = i;
-        RectTransform tab = CreatePanel( tabGroup, $"Tab_{labels[ i ]}", AnchorPreset.MiddleLeft, new Vector2( i * 208f, 0f ), new Vector2( 194f, 40f ), s_buttonColor );
+      for ( int i = 0; i < s_tabLabels.Length; i++ ) {
+        RectTransform tab = CreatePanel( tabGroup, $"Tab_{s_tabLabels[ i ]}", AnchorPreset.MiddleLeft, new Vector2( i * 208f, 0f ), new Vector2( 194f, 40f ), s_buttonColor );
         tab.anchorMin = new Vector2( 0f, 0.5f );
         tab.anchorMax = new Vector2( 0f, 0.5f );
         tab.pivot = new Vector2( 0f, 0.5f );
 
         var button = tab.gameObject.AddComponent<Button>();
         button.targetGraphic = tab.GetComponent<Image>();
-        button.onClick.AddListener( () => SwitchTab( (DemoTab)index ) );
 
-        Text text = CreateText( tab, "Text", labels[ i ], 18, FontStyle.Bold, TextAnchor.MiddleCenter );
+        Text text = CreateText( tab, "Text", s_tabLabels[ i ], 18, FontStyle.Bold, TextAnchor.MiddleCenter );
         text.rectTransform.anchorMin = Vector2.zero;
         text.rectTransform.anchorMax = Vector2.one;
         text.rectTransform.offsetMin = Vector2.zero;
@@ -238,6 +320,74 @@ namespace RLExcavator
       m_leftMenuContent.offsetMax = new Vector2( -14f, -58f );
     }
 
+    private void BuildMenuPages()
+    {
+      if ( m_leftMenuContent == null )
+        return;
+
+      for ( int i = 0; i < s_pageNames.Length; i++ ) {
+        RectTransform page = CreateRect( m_leftMenuContent, s_pageNames[ i ], AnchorPreset.Stretch, Vector2.zero, Vector2.zero );
+        page.offsetMin = Vector2.zero;
+        page.offsetMax = Vector2.zero;
+        m_tabPages[ i ] = page;
+      }
+
+      BuildPerceptionPage( m_tabPages[ (int)DemoTab.PerceptionMapping ] );
+      BuildTrajectoryPlanningPage( m_tabPages[ (int)DemoTab.TrajectoryPlanning ] );
+      BuildTrajectoryTrackingPage( m_tabPages[ (int)DemoTab.TrajectoryTracking ] );
+      BuildManualControlPage( m_tabPages[ (int)DemoTab.ManualControl ] );
+    }
+
+    private void BuildPerceptionPage( RectTransform page )
+    {
+      AddMenuButton( page, "启动感知", 0, null, false );
+      AddMenuButton( page, "加载点云", 1, null, false );
+      AddMenuButton( page, "生成地图", 2, null, false );
+      AddMenuButton( page, "保存地图", 3, null, false );
+      AddStatusBlock( page, "模块状态：待接入雷达 / SLAM 输出", 5 );
+    }
+
+    private void BuildTrajectoryPlanningPage( RectTransform page )
+    {
+      AddMenuButton( page, "赴挖掘点模式", 0, taskManager.SetModeMoveToDig, true );
+      AddMenuButton( page, "运土保持模式", 1, taskManager.SetModeCarryMaterial, true );
+      AddMenuButton( page, "选起点后点画面", 2, taskManager.SelectPlanStartPoint, true );
+      AddMenuButton( page, "选终点后点画面", 3, taskManager.SelectPlanEndPoint, true );
+      AddMenuButton( page, "控制点前移", 4, taskManager.MoveSelectedPlanPointForward, true );
+      AddMenuButton( page, "控制点后移", 5, taskManager.MoveSelectedPlanPointBackward, true );
+      AddMenuButton( page, "控制点左移", 6, taskManager.MoveSelectedPlanPointLeft, true );
+      AddMenuButton( page, "控制点右移", 7, taskManager.MoveSelectedPlanPointRight, true );
+      AddMenuButton( page, "控制点上移", 8, taskManager.MoveSelectedPlanPointUp, true );
+      AddMenuButton( page, "控制点下移", 9, taskManager.MoveSelectedPlanPointDown, true );
+      AddMenuButton( page, "生成轨迹", 10, taskManager.PlanPath, true );
+      AddMenuButton( page, "生成并追踪", 11, taskManager.PlanAndStartTracking, true );
+      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 13 );
+    }
+
+    private void BuildTrajectoryTrackingPage( RectTransform page )
+    {
+      AddMenuButton( page, "赴挖掘点模式", 0, taskManager.SetModeMoveToDig, true );
+      AddMenuButton( page, "运土保持模式", 1, taskManager.SetModeCarryMaterial, true );
+      AddMenuButton( page, "生成轨迹", 2, taskManager.PlanPath, true );
+      AddMenuButton( page, "开始追踪", 3, taskManager.StartTracking, true );
+      AddMenuButton( page, "停止追踪", 4, taskManager.StopTracking, true );
+      AddMenuButton( page, "生成并追踪", 5, taskManager.PlanAndStartTracking, true );
+      AddMenuButton( page, "重置演示", 6, taskManager.ResetDemo, true );
+      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 8 );
+    }
+
+    private void BuildManualControlPage( RectTransform page )
+    {
+      AddMenuButton( page, "编辑挖掘点区域", 0, taskManager.EditMoveToDigReachableWorkspace, true );
+      AddMenuButton( page, "编辑运土区域", 1, taskManager.EditCarryMaterialReachableWorkspace, true );
+      AddMenuButton( page, "隐藏可达区域", 2, taskManager.HideReachableWorkspaceForManualEdit, true );
+      AddMenuButton( page, "停止关节运动", 3, taskManager.StopManualMotion, true );
+      AddMenuButton( page, "上一个边界点", 4, taskManager.SelectPreviousWorkspaceBoundaryPoint, true );
+      AddMenuButton( page, "下一个边界点", 5, taskManager.SelectNextWorkspaceBoundaryPoint, true );
+      AddMenuButton( page, "应用铲斗到边界点", 6, taskManager.ApplyBucketTipToSelectedWorkspaceBoundaryPoint, true );
+      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n手动输入：-\n可达区域：-\n边界点：-\n键盘：I/K 大臂，T/G 小臂，J/L 铲斗，F/H 回转\n铲斗尖局部：-", 7 );
+    }
+
     private void BuildMinimapMonitor( Transform parent )
     {
       RectTransform monitor = CreatePanel( parent, "MinimapMonitor", AnchorPreset.RightTop, new Vector2( -28f, -104f ), monitorSize, new Color( 0.025f, 0.075f, 0.12f, 0.86f ) );
@@ -259,20 +409,30 @@ namespace RLExcavator
 
       AddOutline( viewport.gameObject, new Color( 0.35f, 0.72f, 1f, 0.45f ), new Vector2( 1f, -1f ) );
 
-      if ( minimapCamera != null || minimapFallbackTexture != null ) {
-        RectTransform feed = CreateRect( viewport, "CameraFeed", AnchorPreset.Stretch, Vector2.zero, Vector2.zero );
-        feed.offsetMin = Vector2.zero;
-        feed.offsetMax = Vector2.zero;
-        var rawImage = feed.gameObject.AddComponent<RawImage>();
-        rawImage.color = Color.white;
-        rawImage.texture = minimapFallbackTexture != null ? minimapFallbackTexture : CreateMinimapRenderTexture();
-        var fitter = feed.gameObject.AddComponent<AspectRatioFitter>();
-        fitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
-        fitter.aspectRatio = RawImageAspectRatio( rawImage.texture );
-      }
-      else {
-        CreatePlaceholderMap( viewport );
-      }
+      RectTransform feed = CreateRect( viewport, "CameraFeed", AnchorPreset.Stretch, Vector2.zero, Vector2.zero );
+      feed.offsetMin = Vector2.zero;
+      feed.offsetMax = Vector2.zero;
+      m_minimapFeed = feed.gameObject.AddComponent<RawImage>();
+      m_minimapFeed.color = Color.white;
+      m_minimapFitter = feed.gameObject.AddComponent<AspectRatioFitter>();
+      m_minimapFitter.aspectMode = AspectRatioFitter.AspectMode.FitInParent;
+      m_minimapFitter.aspectRatio = 16f / 9f;
+    }
+
+    private void ConfigureMinimapFeed()
+    {
+      if ( m_minimapFeed == null )
+        return;
+
+      Texture texture = minimapFallbackTexture;
+      if ( texture == null && Application.isPlaying && minimapCamera != null )
+        texture = CreateMinimapRenderTexture();
+
+      m_minimapFeed.texture = texture;
+      m_minimapFeed.color = texture != null ? Color.white : new Color( 1f, 1f, 1f, 0.0f );
+
+      if ( m_minimapFitter != null )
+        m_minimapFitter.aspectRatio = RawImageAspectRatio( texture );
     }
 
     private Texture CreateMinimapRenderTexture()
@@ -282,8 +442,9 @@ namespace RLExcavator
 
       int width = Mathf.Max( minimapTextureSize.x, 64 );
       int height = Mathf.Max( minimapTextureSize.y, 64 );
-      m_minimapRenderTexture = new RenderTexture( width, height, 16, RenderTextureFormat.ARGB32 );
-      m_minimapRenderTexture.name = "ExcavationDemoMinimapRT";
+      m_minimapRenderTexture = new RenderTexture( width, height, 16, RenderTextureFormat.ARGB32 ) {
+        name = "ExcavationDemoMinimapRT"
+      };
       minimapCamera.targetTexture = m_minimapRenderTexture;
       return m_minimapRenderTexture;
     }
@@ -296,21 +457,64 @@ namespace RLExcavator
       return (float)texture.width / texture.height;
     }
 
-    private void CreatePlaceholderMap( RectTransform parent )
+    private void WireRuntimeButtons()
     {
-      CreateMapLine( parent, "Road", new Vector2( 0.5f, 0.5f ), new Vector2( 36f, 210f ), new Color( 0.25f, 0.30f, 0.33f, 1f ), 8f );
-      CreateMapLine( parent, "LaneLeft", new Vector2( 0.43f, 0.5f ), new Vector2( 4f, 190f ), new Color( 0.88f, 0.90f, 0.84f, 0.92f ), 0f );
-      CreateMapLine( parent, "LaneRight", new Vector2( 0.57f, 0.5f ), new Vector2( 4f, 190f ), new Color( 0.88f, 0.90f, 0.84f, 0.92f ), 0f );
-      CreateMapMarker( parent, "Vehicle", new Vector2( 0.50f, 0.34f ), new Vector2( 34f, 48f ), new Color( 0.95f, 0.68f, 0.18f, 1f ) );
-      CreateMapMarker( parent, "Target", new Vector2( 0.62f, 0.66f ), new Vector2( 22f, 22f ), s_activeBlue );
-      CreateMapMarker( parent, "Obstacle", new Vector2( 0.35f, 0.58f ), new Vector2( 18f, 18f ), new Color( 0.85f, 0.18f, 0.16f, 1f ) );
+      for ( int i = 0; i < m_tabButtons.Length; i++ ) {
+        int index = i;
+        if ( m_tabButtons[ i ] == null )
+          continue;
 
-      Text placeholder = CreateText( parent, "Placeholder", "绑定 Minimap Camera 后显示真实俯视画面", 13, FontStyle.Normal, TextAnchor.LowerCenter );
-      placeholder.color = s_mutedTextColor;
-      placeholder.rectTransform.anchorMin = Vector2.zero;
-      placeholder.rectTransform.anchorMax = Vector2.one;
-      placeholder.rectTransform.offsetMin = new Vector2( 8f, 6f );
-      placeholder.rectTransform.offsetMax = new Vector2( -8f, -6f );
+        m_tabButtons[ i ].onClick.RemoveAllListeners();
+        m_tabButtons[ i ].onClick.AddListener( () => SwitchTab( (DemoTab)index ) );
+      }
+
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_赴挖掘点模式", taskManager.SetModeMoveToDig );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_运土保持模式", taskManager.SetModeCarryMaterial );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_选起点后点画面", taskManager.SelectPlanStartPoint );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_选终点后点画面", taskManager.SelectPlanEndPoint );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点前移", taskManager.MoveSelectedPlanPointForward );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点后移", taskManager.MoveSelectedPlanPointBackward );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点左移", taskManager.MoveSelectedPlanPointLeft );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点右移", taskManager.MoveSelectedPlanPointRight );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点上移", taskManager.MoveSelectedPlanPointUp );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点下移", taskManager.MoveSelectedPlanPointDown );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_生成轨迹", taskManager.PlanPath );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_生成并追踪", taskManager.PlanAndStartTracking );
+
+      WirePageButton( DemoTab.TrajectoryTracking, "Button_赴挖掘点模式", taskManager.SetModeMoveToDig );
+      WirePageButton( DemoTab.TrajectoryTracking, "Button_运土保持模式", taskManager.SetModeCarryMaterial );
+      WirePageButton( DemoTab.TrajectoryTracking, "Button_生成轨迹", taskManager.PlanPath );
+      WirePageButton( DemoTab.TrajectoryTracking, "Button_开始追踪", taskManager.StartTracking );
+      WirePageButton( DemoTab.TrajectoryTracking, "Button_停止追踪", taskManager.StopTracking );
+      WirePageButton( DemoTab.TrajectoryTracking, "Button_生成并追踪", taskManager.PlanAndStartTracking );
+      WirePageButton( DemoTab.TrajectoryTracking, "Button_重置演示", taskManager.ResetDemo );
+
+      WirePageButton( DemoTab.ManualControl, "Button_编辑挖掘点区域", taskManager.EditMoveToDigReachableWorkspace );
+      WirePageButton( DemoTab.ManualControl, "Button_编辑运土区域", taskManager.EditCarryMaterialReachableWorkspace );
+      WirePageButton( DemoTab.ManualControl, "Button_隐藏可达区域", taskManager.HideReachableWorkspaceForManualEdit );
+      WirePageButton( DemoTab.ManualControl, "Button_停止关节运动", taskManager.StopManualMotion );
+      WirePageButton( DemoTab.ManualControl, "Button_上一个边界点", taskManager.SelectPreviousWorkspaceBoundaryPoint );
+      WirePageButton( DemoTab.ManualControl, "Button_下一个边界点", taskManager.SelectNextWorkspaceBoundaryPoint );
+      WirePageButton( DemoTab.ManualControl, "Button_应用铲斗到边界点", taskManager.ApplyBucketTipToSelectedWorkspaceBoundaryPoint );
+    }
+
+    private void WirePageButton( DemoTab tab, string buttonName, UnityEngine.Events.UnityAction action )
+    {
+      Button button = FindPageButton( tab, buttonName );
+      if ( button == null )
+        return;
+
+      button.onClick.RemoveAllListeners();
+      button.interactable = action != null;
+      if ( action != null )
+        button.onClick.AddListener( action );
+    }
+
+    private Button FindPageButton( DemoTab tab, string buttonName )
+    {
+      RectTransform page = PageForTab( tab );
+      Transform buttonTransform = page != null ? page.Find( buttonName ) : null;
+      return buttonTransform != null ? buttonTransform.GetComponent<Button>() : null;
     }
 
     private void SwitchTab( DemoTab tab )
@@ -319,17 +523,41 @@ namespace RLExcavator
       if ( taskManager != null ) {
         if ( tab == DemoTab.ManualControl ) {
           taskManager.StartManualControl();
+          taskManager.ShowReachableWorkspaceForManualEdit();
         }
         else {
+          taskManager.HideAllReachableWorkspaces();
           if ( taskManager.state == ExcavationDemoTaskManager.DemoState.ManualControl )
             taskManager.StopManualControl();
-
-          taskManager.SetInferenceControlMode();
         }
       }
 
+      for ( int i = 0; i < m_tabPages.Length; i++ ) {
+        if ( m_tabPages[ i ] != null )
+          m_tabPages[ i ].gameObject.SetActive( i == (int)m_activeTab );
+      }
+
+      if ( m_leftMenuTitle != null )
+        m_leftMenuTitle.text = s_menuTitles[ (int)m_activeTab ];
+
+      m_statusText = FindStatusText( m_activeTab );
+      if ( assignStatusTextToTaskManager && taskManager != null )
+        taskManager.statusText = m_statusText;
+
       UpdateTabVisuals();
-      PopulateLeftMenu();
+      FitLeftMenuHeightForTab( m_activeTab );
+    }
+
+    private Text FindStatusText( DemoTab tab )
+    {
+      RectTransform page = PageForTab( tab );
+      return page != null ? FindText( page, "StatusBlock/StatusText" ) : null;
+    }
+
+    private RectTransform PageForTab( DemoTab tab )
+    {
+      int index = (int)tab;
+      return index >= 0 && index < m_tabPages.Length ? m_tabPages[ index ] : null;
     }
 
     private void UpdateTabVisuals()
@@ -345,84 +573,9 @@ namespace RLExcavator
       }
     }
 
-    private void PopulateLeftMenu()
+    private void AddMenuButton( RectTransform parent, string label, int row, UnityEngine.Events.UnityAction action, bool interactable )
     {
-      if ( m_leftMenuContent == null || m_leftMenuTitle == null )
-        return;
-
-      for ( int i = m_leftMenuContent.childCount - 1; i >= 0; i-- )
-        DestroyRuntimeObject( m_leftMenuContent.GetChild( i ).gameObject );
-
-      switch ( m_activeTab ) {
-        case DemoTab.PerceptionMapping:
-          m_leftMenuTitle.text = "感知建图";
-          AddMenuButton( "启动感知", 0, null, false );
-          AddMenuButton( "加载点云", 1, null, false );
-          AddMenuButton( "生成地图", 2, null, false );
-          AddMenuButton( "保存地图", 3, null, false );
-          AddStatusBlock( "模块状态：待接入雷达 / SLAM 输出", 5 );
-          FitLeftMenuHeight( 4, 5 );
-          break;
-        case DemoTab.TrajectoryPlanning:
-          m_leftMenuTitle.text = "生成轨迹";
-          AddMenuButton( "赴挖掘点模式", 0, taskManager.SetModeMoveToDig, true );
-          AddMenuButton( "运土保持模式", 1, taskManager.SetModeCarryMaterial, true );
-          AddMenuButton( "选起点后点画面", 2, taskManager.SelectPlanStartPoint, true );
-          AddMenuButton( "选终点后点画面", 3, taskManager.SelectPlanEndPoint, true );
-          AddMenuButton( "控制点前移", 4, taskManager.MoveSelectedPlanPointForward, true );
-          AddMenuButton( "控制点后移", 5, taskManager.MoveSelectedPlanPointBackward, true );
-          AddMenuButton( "控制点左移", 6, taskManager.MoveSelectedPlanPointLeft, true );
-          AddMenuButton( "控制点右移", 7, taskManager.MoveSelectedPlanPointRight, true );
-          AddMenuButton( "控制点上移", 8, taskManager.MoveSelectedPlanPointUp, true );
-          AddMenuButton( "控制点下移", 9, taskManager.MoveSelectedPlanPointDown, true );
-          AddMenuButton( "生成轨迹", 10, taskManager.PlanPath, true );
-          AddMenuButton( "生成并追踪", 11, taskManager.PlanAndStartTracking, true );
-          AddStatusBlock( "状态：-\n模式：-\n行为模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 13 );
-          if ( assignStatusTextToTaskManager )
-            taskManager.statusText = m_statusText;
-          FitLeftMenuHeight( 12, 13 );
-          break;
-        case DemoTab.TrajectoryTracking:
-          m_leftMenuTitle.text = "轨迹追踪";
-          AddMenuButton( "赴挖掘点模式", 0, taskManager.SetModeMoveToDig, true );
-          AddMenuButton( "运土保持模式", 1, taskManager.SetModeCarryMaterial, true );
-          AddMenuButton( "生成轨迹", 2, taskManager.PlanPath, true );
-          AddMenuButton( "开始追踪", 3, taskManager.StartTracking, true );
-          AddMenuButton( "停止追踪", 4, taskManager.StopTracking, true );
-          AddMenuButton( "生成并追踪", 5, taskManager.PlanAndStartTracking, true );
-          AddMenuButton( "重置演示", 6, taskManager.ResetDemo, true );
-          AddStatusBlock( "状态：-\n模式：-\n行为模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 8 );
-          if ( assignStatusTextToTaskManager )
-            taskManager.statusText = m_statusText;
-          FitLeftMenuHeight( 7, 8 );
-          break;
-        case DemoTab.ManualControl:
-          m_leftMenuTitle.text = "手动控制";
-          AddMenuButton( "编辑挖掘点区域", 0, taskManager.EditMoveToDigReachableWorkspace, true );
-          AddMenuButton( "编辑运土区域", 1, taskManager.EditCarryMaterialReachableWorkspace, true );
-          AddMenuButton( "隐藏可达区域", 2, taskManager.HideReachableWorkspaceForManualEdit, true );
-          AddMenuButton( "停止关节运动", 3, taskManager.StopManualMotion, true );
-          AddMenuButton( "当前姿态设为Home", 4, taskManager.CaptureManualPoseAsHome, true );
-          AddMenuButton( "上一个边界点", 5, taskManager.SelectPreviousWorkspaceBoundaryPoint, true );
-          AddMenuButton( "下一个边界点", 6, taskManager.SelectNextWorkspaceBoundaryPoint, true );
-          AddMenuButton( "边界点前移", 7, taskManager.MoveSelectedWorkspaceBoundaryPointForward, true );
-          AddMenuButton( "边界点后移", 8, taskManager.MoveSelectedWorkspaceBoundaryPointBackward, true );
-          AddMenuButton( "边界点左移", 9, taskManager.MoveSelectedWorkspaceBoundaryPointLeft, true );
-          AddMenuButton( "边界点右移", 10, taskManager.MoveSelectedWorkspaceBoundaryPointRight, true );
-          AddMenuButton( "边界点上移", 11, taskManager.MoveSelectedWorkspaceBoundaryPointUp, true );
-          AddMenuButton( "边界点下移", 12, taskManager.MoveSelectedWorkspaceBoundaryPointDown, true );
-          AddMenuButton( "应用铲斗到边界点", 13, taskManager.ApplyBucketTipToSelectedWorkspaceBoundaryPoint, true );
-          AddStatusBlock( "状态：-\n模式：-\n行为模式：-\n控制输入：-\n手动输入：-\n可达区域：-\n边界点：-\n键盘：I/K 大臂，T/G 小臂，J/L 铲斗，F/H 回转\n铲斗尖局部：-", 14 );
-          if ( assignStatusTextToTaskManager )
-            taskManager.statusText = m_statusText;
-          FitLeftMenuHeight( 14, 14 );
-          break;
-      }
-    }
-
-    private void AddMenuButton( string label, int row, UnityEngine.Events.UnityAction action, bool interactable )
-    {
-      RectTransform rect = CreatePanel( m_leftMenuContent, label, AnchorPreset.TopStretch, new Vector2( 0f, -row * kMenuRowStep ), new Vector2( 0f, kMenuButtonHeight ), interactable ? s_buttonColor : s_buttonDisabledColor );
+      RectTransform rect = CreatePanel( parent, $"Button_{label}", AnchorPreset.TopStretch, new Vector2( 0f, -row * kMenuRowStep ), new Vector2( 0f, kMenuButtonHeight ), interactable ? s_buttonColor : s_buttonDisabledColor );
       AddOutline( rect.gameObject, interactable ? new Color( 0.12f, 0.48f, 0.75f, 0.42f ) : new Color( 0.12f, 0.16f, 0.18f, 0.35f ), new Vector2( 1f, -1f ) );
       var button = rect.gameObject.AddComponent<Button>();
       button.targetGraphic = rect.GetComponent<Image>();
@@ -438,16 +591,34 @@ namespace RLExcavator
       text.rectTransform.offsetMax = Vector2.zero;
     }
 
-    private void AddStatusBlock( string content, int row )
+    private void AddStatusBlock( RectTransform parent, string content, int row )
     {
-      RectTransform rect = CreatePanel( m_leftMenuContent, "StatusBlock", AnchorPreset.TopStretch, new Vector2( 0f, -row * kMenuRowStep ), new Vector2( 0f, kMenuStatusHeight ), new Color( 0.015f, 0.055f, 0.09f, 0.78f ) );
+      RectTransform rect = CreatePanel( parent, "StatusBlock", AnchorPreset.TopStretch, new Vector2( 0f, -row * kMenuRowStep ), new Vector2( 0f, kMenuStatusHeight ), new Color( 0.015f, 0.055f, 0.09f, 0.78f ) );
       AddOutline( rect.gameObject, new Color( 0.25f, 0.54f, 0.75f, 0.45f ), new Vector2( 1f, -1f ) );
-      m_statusText = CreateText( rect, "StatusText", content, 14, FontStyle.Normal, TextAnchor.UpperLeft );
-      m_statusText.color = s_mutedTextColor;
-      m_statusText.rectTransform.anchorMin = Vector2.zero;
-      m_statusText.rectTransform.anchorMax = Vector2.one;
-      m_statusText.rectTransform.offsetMin = new Vector2( 10f, 8f );
-      m_statusText.rectTransform.offsetMax = new Vector2( -10f, -8f );
+      Text statusText = CreateText( rect, "StatusText", content, 14, FontStyle.Normal, TextAnchor.UpperLeft );
+      statusText.color = s_mutedTextColor;
+      statusText.rectTransform.anchorMin = Vector2.zero;
+      statusText.rectTransform.anchorMax = Vector2.one;
+      statusText.rectTransform.offsetMin = new Vector2( 10f, 8f );
+      statusText.rectTransform.offsetMax = new Vector2( -10f, -8f );
+    }
+
+    private void FitLeftMenuHeightForTab( DemoTab tab )
+    {
+      switch ( tab ) {
+        case DemoTab.PerceptionMapping:
+          FitLeftMenuHeight( 4, 5 );
+          break;
+        case DemoTab.TrajectoryPlanning:
+          FitLeftMenuHeight( 12, 13 );
+          break;
+        case DemoTab.TrajectoryTracking:
+          FitLeftMenuHeight( 7, 8 );
+          break;
+        case DemoTab.ManualControl:
+          FitLeftMenuHeight( 8, 8 );
+          break;
+      }
     }
 
     private void FitLeftMenuHeight( int buttonCount, int statusRow )
@@ -460,26 +631,6 @@ namespace RLExcavator
         kMenuChromeHeight + Mathf.Max( buttonCount * kMenuRowStep, statusRow * kMenuRowStep + kMenuStatusHeight )
       );
       m_leftMenuPanel.sizeDelta = new Vector2( leftMenuSize.x, requiredHeight );
-    }
-
-    private void CreateMapLine( RectTransform parent, string name, Vector2 anchor, Vector2 size, Color color, float rotation )
-    {
-      RectTransform rect = CreatePanel( parent, name, AnchorPreset.Custom, Vector2.zero, size, color );
-      rect.anchorMin = anchor;
-      rect.anchorMax = anchor;
-      rect.pivot = new Vector2( 0.5f, 0.5f );
-      rect.anchoredPosition = Vector2.zero;
-      rect.localRotation = Quaternion.Euler( 0f, 0f, rotation );
-    }
-
-    private void CreateMapMarker( RectTransform parent, string name, Vector2 anchor, Vector2 size, Color color )
-    {
-      RectTransform rect = CreatePanel( parent, name, AnchorPreset.Custom, Vector2.zero, size, color );
-      rect.anchorMin = anchor;
-      rect.anchorMax = anchor;
-      rect.pivot = new Vector2( 0.5f, 0.5f );
-      rect.anchoredPosition = Vector2.zero;
-      AddOutline( rect.gameObject, Color.white, new Vector2( 1f, -1f ) );
     }
 
     private RectTransform CreatePanel( Transform parent, string name, AnchorPreset preset, Vector2 anchoredPosition, Vector2 size, Color color )
@@ -561,6 +712,28 @@ namespace RLExcavator
         case AnchorPreset.Custom:
           break;
       }
+    }
+
+    private static RectTransform FindRect( Transform root, string path )
+    {
+      Transform child = FindChild( root, path );
+      return child != null ? child.GetComponent<RectTransform>() : null;
+    }
+
+    private static Text FindText( Transform root, string path )
+    {
+      return FindComponent<Text>( root, path );
+    }
+
+    private static T FindComponent<T>( Transform root, string path ) where T : Component
+    {
+      Transform child = FindChild( root, path );
+      return child != null ? child.GetComponent<T>() : null;
+    }
+
+    private static Transform FindChild( Transform root, string path )
+    {
+      return root != null ? root.Find( path ) : null;
     }
 
     private static void DestroyRuntimeObject( Object target )

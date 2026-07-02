@@ -2,7 +2,8 @@
   "name": "RLExcavator.EditModeTests",
   "rootNamespace": "RLExcavator.Tests",
   "references": [
-    "RLExcavator.RrtStarCore"
+    "RLExcavator.RrtStarCore",
+    "RLExcavator.Config"
   ],
   "includePlatforms": [
     "Editor"

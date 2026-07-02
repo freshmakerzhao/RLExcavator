@@ -1,35 +1,45 @@
+using System;
+using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.Rendering;
 
 namespace RLExcavator
 {
   /// <summary>
-  /// Visualizes a calibrated bucket-tip reachable workspace.
-  /// The default anchors are local positions measured in the env01 frame.
+  /// Visualizes and edits the calibrated 20-point bucket-tip reachable volume.
   /// </summary>
   [ExecuteAlways]
   public class ReachableWorkspaceVisualizer : MonoBehaviour
   {
     public const int DirectionCount = 5;
-    public const int RadialCount = 3;
-    public const int AnchorCount = DirectionCount * RadialCount;
     public const int VolumeCornerCount = 4;
     public const int VolumeAnchorCount = DirectionCount * VolumeCornerCount;
 
     [Header("Reference frame")]
-    [Tooltip("Frame that owns the calibrated local points. Leave empty when this component is attached to env01.")]
+    [Tooltip("挖机语义坐标注册器。开启下方选项时，可达区域局部点相对 MachineRoot。")]
+    public ExcavatorFrameRegistry frameRegistry;
+
+    [Tooltip("使用 FrameRegistry.MachineRoot 作为可达区域坐标系。正式缩比模型应保持开启。")]
+    public bool useFrameRegistryMachineRoot = true;
+
+    [Tooltip("Frame that owns the calibrated local points. Leave empty when this component is attached to the machine root.")]
     public Transform workspaceFrame;
 
-    [Tooltip("Bucket-tip anchor points in workspaceFrame local coordinates: 5 directions x 3 ranges.")]
-    public Vector3[] localAnchorPoints = DefaultAnchors();
+    public Transform EffectiveWorkspaceFrame => ResolveWorkspaceFrame();
+
+    [Header("Workspace profile")]
+    [Tooltip("从 machine_profile 指向的可达区域文件读取本模式标定点。")]
+    public bool useWorkspaceProfile = false;
+
+    [Tooltip("可达区域模式名，例如 MoveToDig 或 CarryMaterial。为空时按对象名推断。")]
+    public string workspaceMode = "";
+
+    [Tooltip("标定点变化时写回共享可达区域文件。")]
+    public bool saveWorkspaceProfileChanges = true;
 
     [Header("Volume anchors")]
     [Tooltip("3D workspace cross-section anchors: 5 directions x 4 corners. Corner order per direction: high-far, low-far, high-near, low-near.")]
     public Vector3[] localVolumeAnchorPoints = DefaultVolumeAnchors();
-
-    [Header("Mesh")]
-    public bool showMesh = true;
-    public Color fillColor = new Color( 0.1f, 0.55f, 1.0f, 0.18f );
 
     [Header("Volume constraint")]
     [Tooltip("显示由可达锚点扩展得到的 3D 可达空间体积。Cartesian RRT* 可直接使用这个体积作为规划边界。")]
@@ -52,26 +62,18 @@ namespace RLExcavator
 
     [Header("Gizmos")]
     public bool drawGizmos = true;
-    [Tooltip("Legacy 15-anchor surface debug drawing. Keep disabled for the current Move/Carry volume workflow.")]
-    public bool drawSurfaceGizmos = false;
-    public bool drawInternalGrid = true;
     public bool drawAnchorSpheres = true;
     public bool drawVolumeBounds = true;
-    public Color boundaryColor = new Color( 0.0f, 0.85f, 1.0f, 1.0f );
-    public Color internalGridColor = new Color( 0.2f, 0.95f, 0.65f, 0.8f );
     public Color anchorColor = new Color( 1.0f, 0.72f, 0.05f, 1.0f );
     public Color volumeBoundaryColor = new Color( 0.35f, 0.75f, 1.0f, 0.85f );
-    public float anchorRadius = 0.12f;
+    [Tooltip("3D 可达空间边界线宽度。")]
+    [Min( 0.001f )]
+    public float volumeBoundaryLineWidth = 0.035f;
+    public float anchorRadius = 0.04f;
 
     [Header("Editable anchors")]
-    [Tooltip("Play/Edit 模式下自动创建 15 个可拖拽锚点对象。关闭时仍可通过右键菜单手动创建。")]
-    public bool autoCreateEditableAnchors = false;
-
-    [Tooltip("开启后每帧从可拖拽锚点对象回写 localAnchorPoints，用于手动标定可达空间。")]
-    public bool syncFromEditableAnchors = false;
-
     [Tooltip("可拖拽锚点在 Game/Scene 中显示的小球半径。")]
-    public float editableAnchorVisualRadius = 0.10f;
+    public float editableAnchorVisualRadius = 0.04f;
 
     [Tooltip("可拖拽锚点小球颜色。")]
     public Color editableAnchorColor = new Color( 1.0f, 0.42f, 0.05f, 1.0f );
@@ -84,63 +86,57 @@ namespace RLExcavator
     public Color selectedVolumeAnchorColor = new Color( 1.0f, 0.08f, 0.02f, 1.0f );
 
     [Tooltip("当前选中的可达空间边界点小球半径。")]
-    public float selectedVolumeAnchorVisualRadius = 0.16f;
+    public float selectedVolumeAnchorVisualRadius = 0.06f;
 
     [Header("Sampling")]
-    [Tooltip("ClosestWorldPoint 近似投影时的默认采样分辨率。数值越大越精确，但调试时更慢。")]
+    [Tooltip("最近点近似投影时的默认采样分辨率。数值越大越精确，但调试时更慢。")]
     [Range( 4, 40 )]
     public int closestPointResolution = 18;
 
-    private const string VisualObjectName = "ReachableWorkspaceSectorVisual";
     private const string VolumeVisualObjectName = "ReachableWorkspaceVolumeVisual";
     private const string VolumeEdgeObjectName = "ReachableWorkspaceVolumeEdges";
-    private const string AnchorControlsRootName = "ReachableWorkspaceAnchorControls";
-    private MeshFilter m_meshFilter;
-    private MeshRenderer m_meshRenderer;
+    private const string VolumeAnchorControlsRootName = "ReachableWorkspaceVolumeAnchorControls";
+    private const HideFlags GeneratedVisualHideFlags = HideFlags.DontSaveInEditor | HideFlags.DontSaveInBuild;
+
     private MeshFilter m_volumeMeshFilter;
     private MeshRenderer m_volumeMeshRenderer;
-    private Mesh m_mesh;
     private Mesh m_volumeMesh;
-    private Material m_material;
     private Material m_volumeMaterial;
     private Material m_volumeEdgeMaterial;
-    private Transform m_anchorControlsRoot;
     private Transform m_volumeAnchorControlsRoot;
     private Transform m_volumeEdgeRoot;
     private bool m_needsRebuild;
+    private bool m_profileWarningShown;
+    private bool m_isApplyingWorkspaceProfile;
 
     private void OnEnable()
     {
-      EnsureAnchorArray();
+      ResolveFrameRegistryIfNeeded();
+      ApplyWorkspaceProfileIfEnabled();
       EnsureVolumeAnchorArray();
-      if ( autoCreateEditableAnchors )
-        CreateEditableAnchorObjects();
       RebuildVisual();
     }
 
     private void OnValidate()
     {
-      EnsureAnchorArray();
+      ResolveFrameRegistryIfNeeded();
+      ApplyWorkspaceProfileIfEnabled( false );
       EnsureVolumeAnchorArray();
       m_needsRebuild = true;
     }
 
     private void Update()
     {
-      if ( syncFromEditableAnchors && TrySyncAnchorsFromEditableObjects() )
-        m_needsRebuild = true;
-
       if ( !m_needsRebuild )
         return;
 
       m_needsRebuild = false;
       RebuildVisual();
+      RefreshExistingVolumeAnchorVisuals();
     }
 
     private void OnDisable()
     {
-      if ( m_meshRenderer != null )
-        m_meshRenderer.enabled = false;
       if ( m_volumeMeshRenderer != null )
         m_volumeMeshRenderer.enabled = false;
       if ( m_volumeEdgeRoot != null )
@@ -150,61 +146,121 @@ namespace RLExcavator
     [ContextMenu("Rebuild Workspace Visual")]
     public void RebuildVisual()
     {
-      EnsureAnchorArray();
-      EnsureMeshObjects();
+      EnsureVolumeAnchorArray();
 
-      if ( m_meshFilter == null || m_meshRenderer == null )
+      if ( !showVolume ) {
+        DestroyGeneratedVisualObjects();
         return;
-
-      ApplyMaterialColor( m_material );
-      ApplyMaterialColor( m_volumeMaterial, volumeColor );
-
-      m_meshRenderer.enabled = showMesh;
-      RebuildVolumeVisual();
-      if ( !showMesh )
-        return;
-
-      Vector3[] vertices = new Vector3[ AnchorCount ];
-      for ( int i = 0; i < AnchorCount; i++ )
-        vertices[ i ] = WorldToVisualLocal( LocalPointToWorld( localAnchorPoints[ i ] ) );
-
-      int[] triangles = new int[ ( DirectionCount - 1 ) * ( RadialCount - 1 ) * 6 ];
-      int triangleIndex = 0;
-
-      for ( int direction = 0; direction < DirectionCount - 1; direction++ ) {
-        for ( int radial = 0; radial < RadialCount - 1; radial++ ) {
-          int nearLeft = Index( direction, radial );
-          int farLeft = Index( direction, radial + 1 );
-          int nearRight = Index( direction + 1, radial );
-          int farRight = Index( direction + 1, radial + 1 );
-
-          triangles[ triangleIndex++ ] = nearLeft;
-          triangles[ triangleIndex++ ] = farLeft;
-          triangles[ triangleIndex++ ] = nearRight;
-
-          triangles[ triangleIndex++ ] = farLeft;
-          triangles[ triangleIndex++ ] = farRight;
-          triangles[ triangleIndex++ ] = nearRight;
-        }
       }
 
-      m_mesh.Clear();
-      m_mesh.name = "ReachableWorkspaceSectorMesh";
-      m_mesh.vertices = vertices;
-      m_mesh.triangles = triangles;
-      m_mesh.RecalculateNormals();
-      m_mesh.RecalculateBounds();
-      m_meshFilter.sharedMesh = m_mesh;
+      RebuildVolumeVisual();
     }
 
     [ContextMenu("Reset Anchors To Env01 Calibration")]
     public void ResetAnchorsToEnv01Calibration()
     {
-      localAnchorPoints = DefaultAnchors();
       localVolumeAnchorPoints = DefaultVolumeAnchors();
-      PushAnchorsToEditableObjects();
       PushVolumeAnchorsToEditableObjects();
       RebuildVisual();
+      MarkCalibrationDirty();
+    }
+
+    [ContextMenu("Load From Workspace Profile")]
+    public void LoadFromWorkspaceProfile()
+    {
+      string message;
+      if ( TryLoadFromWorkspaceProfile( out message ) )
+        Debug.Log( "[ReachableWorkspace] " + message, this );
+      else
+        Debug.LogWarning( "[ReachableWorkspace] " + message, this );
+    }
+
+    [ContextMenu("Save To Workspace Profile")]
+    public void SaveToWorkspaceProfile()
+    {
+      string message;
+      if ( TrySaveToWorkspaceProfile( out message ) )
+        Debug.Log( "[ReachableWorkspace] " + message, this );
+      else
+        Debug.LogWarning( "[ReachableWorkspace] " + message, this );
+    }
+
+    public bool TryLoadFromWorkspaceProfile( out string message )
+    {
+      return TryLoadFromWorkspaceProfile( out message, true );
+    }
+
+    private bool TryLoadFromWorkspaceProfile( out string message, bool updateVisuals )
+    {
+      message = string.Empty;
+      string mode = EffectiveWorkspaceMode();
+      if ( string.IsNullOrEmpty( mode ) ) {
+        message = "Workspace mode is empty; cannot load reachable workspace profile.";
+        return false;
+      }
+
+      try {
+        ReachableWorkspaceProfile profile = ReachableWorkspaceProfileLoader.LoadDefault();
+        ReachableWorkspaceModeProfile modeProfile;
+        if ( !profile.TryGetWorkspace( mode, out modeProfile ) ) {
+          message = "Workspace profile does not contain mode: " + mode;
+          return false;
+        }
+
+        Vector3[] volumeAnchors = modeProfile.VolumeAnchorPoints;
+        if ( volumeAnchors.Length != VolumeAnchorCount ) {
+          message = "Workspace mode " + mode + " has " + volumeAnchors.Length
+            + " volume anchors; expected " + VolumeAnchorCount + ".";
+          return false;
+        }
+
+        m_isApplyingWorkspaceProfile = true;
+        localVolumeAnchorPoints = volumeAnchors;
+        m_isApplyingWorkspaceProfile = false;
+
+        if ( updateVisuals ) {
+          PushVolumeAnchorsToEditableObjects();
+          RebuildVisual();
+        }
+        else {
+          m_needsRebuild = true;
+        }
+
+        message = "Loaded mode " + mode + " from " + ReachableWorkspaceProfileLoader.DefaultWorkspacePath();
+        return true;
+      }
+      catch ( Exception exception ) {
+        m_isApplyingWorkspaceProfile = false;
+        message = exception.Message;
+        return false;
+      }
+    }
+
+    public bool TrySaveToWorkspaceProfile( out string message )
+    {
+      message = string.Empty;
+      string mode = EffectiveWorkspaceMode();
+      if ( string.IsNullOrEmpty( mode ) ) {
+        message = "Workspace mode is empty; cannot save reachable workspace profile.";
+        return false;
+      }
+
+      EnsureVolumeAnchorArray();
+      if ( localVolumeAnchorPoints == null || localVolumeAnchorPoints.Length != VolumeAnchorCount ) {
+        message = "Workspace mode " + mode + " must contain " + VolumeAnchorCount + " volume anchors before saving.";
+        return false;
+      }
+
+      try {
+        string path = ReachableWorkspaceProfileLoader.DefaultWorkspacePath();
+        ReachableWorkspaceProfileLoader.SaveModeToPath( path, mode, localVolumeAnchorPoints );
+        message = "Saved mode " + mode + " to " + path;
+        return true;
+      }
+      catch ( Exception exception ) {
+        message = exception.Message;
+        return false;
+      }
     }
 
     public void CopyCalibrationFrom( ReachableWorkspaceVisualizer source )
@@ -212,28 +268,22 @@ namespace RLExcavator
       if ( source == null )
         return;
 
-      workspaceFrame = source.workspaceFrame != null ? source.workspaceFrame : source.transform;
-      localAnchorPoints = source.localAnchorPoints != null ? (Vector3[])source.localAnchorPoints.Clone() : DefaultAnchors();
+      frameRegistry = source.frameRegistry;
+      useFrameRegistryMachineRoot = source.useFrameRegistryMachineRoot;
+      workspaceFrame = source.EffectiveWorkspaceFrame != null ? source.EffectiveWorkspaceFrame : source.transform;
       localVolumeAnchorPoints = source.localVolumeAnchorPoints != null ? (Vector3[])source.localVolumeAnchorPoints.Clone() : DefaultVolumeAnchors();
-      showMesh = source.showMesh;
-      fillColor = source.fillColor;
       showVolume = source.showVolume;
       volumeSectionArcSegments = source.volumeSectionArcSegments;
       volumeSectionArcBulge = source.volumeSectionArcBulge;
       volumeDirectionArcSegments = source.volumeDirectionArcSegments;
       volumeColor = source.volumeColor;
       drawGizmos = source.drawGizmos;
-      drawSurfaceGizmos = source.drawSurfaceGizmos;
-      drawInternalGrid = source.drawInternalGrid;
       drawAnchorSpheres = source.drawAnchorSpheres;
       drawVolumeBounds = source.drawVolumeBounds;
-      boundaryColor = source.boundaryColor;
-      internalGridColor = source.internalGridColor;
       anchorColor = source.anchorColor;
       volumeBoundaryColor = source.volumeBoundaryColor;
+      volumeBoundaryLineWidth = source.volumeBoundaryLineWidth;
       anchorRadius = source.anchorRadius;
-      autoCreateEditableAnchors = false;
-      syncFromEditableAnchors = false;
       editableAnchorVisualRadius = source.editableAnchorVisualRadius;
       editableAnchorColor = source.editableAnchorColor;
       selectedVolumeAnchorIndex = source.selectedVolumeAnchorIndex;
@@ -241,25 +291,6 @@ namespace RLExcavator
       selectedVolumeAnchorVisualRadius = source.selectedVolumeAnchorVisualRadius;
       closestPointResolution = source.closestPointResolution;
       RebuildVisual();
-    }
-
-    [ContextMenu("Create Editable Anchor Objects")]
-    public void CreateEditableAnchorObjects()
-    {
-      EnsureAnchorArray();
-      EnsureAnchorControlsRoot();
-
-      for ( int i = 0; i < AnchorCount; i++ ) {
-        Transform anchor = FindAnchorControl( i );
-        if ( anchor == null ) {
-          var anchorObject = new GameObject( AnchorObjectName( i ) );
-          anchorObject.transform.SetParent( m_anchorControlsRoot, false );
-          anchor = anchorObject.transform;
-        }
-
-        anchor.position = LocalPointToWorld( localAnchorPoints[ i ] );
-        EnsureEditableAnchorVisual( anchor );
-      }
     }
 
     [ContextMenu("Create Editable Volume Anchor Objects")]
@@ -279,44 +310,20 @@ namespace RLExcavator
         anchor.position = LocalPointToWorld( localVolumeAnchorPoints[ i ] );
         EnsureEditableAnchorVisual( anchor );
       }
-    }
 
-    [ContextMenu("Bake Anchors From Editable Objects")]
-    public void BakeAnchorsFromEditableObjects()
-    {
-      if ( !TrySyncAnchorsFromEditableObjects() ) {
-        Debug.LogWarning( "[ReachableWorkspaceVisualizer] Editable anchor objects are missing. Use 'Create Editable Anchor Objects' first." );
-        return;
-      }
-
-      RebuildVisual();
+      HighlightSelectedVolumeAnchor();
     }
 
     [ContextMenu("Bake Volume Anchors From Editable Objects")]
     public void BakeVolumeAnchorsFromEditableObjects()
     {
-      if ( !TrySyncVolumeAnchorsFromEditableObjects() ) {
+      if ( !TrySyncVolumeAnchorsFromEditableObjects( out _ ) ) {
         Debug.LogWarning( "[ReachableWorkspaceVisualizer] Editable volume anchor objects are missing. Use 'Create Editable Volume Anchor Objects' first." );
         return;
       }
 
       RebuildVisual();
-    }
-
-    [ContextMenu("Push Anchors To Editable Objects")]
-    public void PushAnchorsToEditableObjects()
-    {
-      EnsureAnchorArray();
-      EnsureAnchorControlsRoot();
-
-      for ( int i = 0; i < AnchorCount; i++ ) {
-        Transform anchor = FindAnchorControl( i );
-        if ( anchor == null )
-          continue;
-
-        anchor.position = LocalPointToWorld( localAnchorPoints[ i ] );
-        EnsureEditableAnchorVisual( anchor );
-      }
+      MarkCalibrationDirty();
     }
 
     [ContextMenu("Push Volume Anchors To Editable Objects")]
@@ -339,11 +346,8 @@ namespace RLExcavator
 
     public void ShowReachableVolumeAndBoundaryPoints()
     {
-      showMesh = false;
       showVolume = true;
       drawGizmos = true;
-      drawSurfaceGizmos = false;
-      drawInternalGrid = false;
       drawAnchorSpheres = false;
       drawVolumeBounds = true;
       selectedVolumeAnchorIndex = ClampVolumeAnchorIndex( selectedVolumeAnchorIndex );
@@ -356,9 +360,10 @@ namespace RLExcavator
     public void HideReachableVolumeAndBoundaryPoints()
     {
       showVolume = false;
+      drawGizmos = false;
+      SetVolumeMeshVisible( false );
       SetVolumeAnchorControlsVisible( false );
       SetVolumeEdgesVisible( false );
-      RebuildVisual();
     }
 
     public void SelectNextVolumeAnchor()
@@ -392,16 +397,17 @@ namespace RLExcavator
       if ( anchor == null )
         return false;
 
-      Transform frame = directionFrame != null ? directionFrame : workspaceFrame != null ? workspaceFrame : transform;
+      Transform frame = directionFrame != null ? directionFrame : ResolveWorkspaceFrame();
       Vector3 worldDirection = frame.TransformDirection( localDirection.normalized );
       if ( worldDirection.sqrMagnitude < 0.000001f )
         return false;
 
       anchor.position += worldDirection.normalized * distance;
-      TrySyncVolumeAnchorsFromEditableObjects();
+      TrySyncVolumeAnchorsFromEditableObjects( out _ );
       HighlightSelectedVolumeAnchor();
       RebuildVisual();
       RebuildVolumeEdgeVisual();
+      MarkCalibrationDirty();
       return true;
     }
 
@@ -423,6 +429,7 @@ namespace RLExcavator
       HighlightSelectedVolumeAnchor();
       RebuildVisual();
       RebuildVolumeEdgeVisual();
+      MarkCalibrationDirty();
       return true;
     }
 
@@ -443,106 +450,91 @@ namespace RLExcavator
       return $"{VolumeAnchorDisplayName( selectedVolumeAnchorIndex )} {FormatVector( localPoint )}";
     }
 
+    public string VolumeAnchorLocalSummary( int index )
+    {
+      EnsureVolumeAnchorArray();
+      int clampedIndex = ClampVolumeAnchorIndex( index );
+      Vector3 localPoint = localVolumeAnchorPoints[ clampedIndex ];
+      return $"{VolumeAnchorDisplayName( clampedIndex )} {FormatVector( localPoint )}";
+    }
+
     public void LogSelectedVolumeAnchorCoordinate()
     {
       Debug.Log( $"[ReachableWorkspaceVisualizer] {SelectedVolumeAnchorCoordinateSummary()}" );
     }
 
-    public Vector3 SampleLocal( float direction01, float range01 )
+    public Vector3 SampleLocalVolume( float direction01, float height01, float depth01 )
     {
-      EnsureAnchorArray();
+      EnsureVolumeAnchorArray();
 
       float directionScaled = Mathf.Clamp01( direction01 ) * ( DirectionCount - 1 );
-      float rangeScaled = Mathf.Clamp01( range01 ) * ( RadialCount - 1 );
       int directionIndex = Mathf.Clamp( Mathf.FloorToInt( directionScaled ), 0, DirectionCount - 2 );
-      int rangeIndex = Mathf.Clamp( Mathf.FloorToInt( rangeScaled ), 0, RadialCount - 2 );
       float directionT = directionScaled - directionIndex;
-      float rangeT = rangeScaled - rangeIndex;
+      if ( direction01 >= 1f ) {
+        directionIndex = DirectionCount - 2;
+        directionT = 1f;
+      }
 
-      Vector3 nearLeft = localAnchorPoints[ Index( directionIndex, rangeIndex ) ];
-      Vector3 farLeft = localAnchorPoints[ Index( directionIndex, rangeIndex + 1 ) ];
-      Vector3 nearRight = localAnchorPoints[ Index( directionIndex + 1, rangeIndex ) ];
-      Vector3 farRight = localAnchorPoints[ Index( directionIndex + 1, rangeIndex + 1 ) ];
-
-      Vector3 left = Vector3.Lerp( nearLeft, farLeft, rangeT );
-      Vector3 right = Vector3.Lerp( nearRight, farRight, rangeT );
+      Vector3 left = SampleVolumeSectionLinear( directionIndex, height01, depth01 );
+      Vector3 right = SampleVolumeSectionLinear( directionIndex + 1, height01, depth01 );
       return Vector3.Lerp( left, right, directionT );
     }
 
-    public Vector3 SampleWorld( float direction01, float range01 )
+    public Vector3 SampleWorldVolume( float direction01, float height01, float depth01 )
     {
-      return LocalPointToWorld( SampleLocal( direction01, range01 ) );
+      return LocalPointToWorld( SampleLocalVolume( direction01, height01, depth01 ) );
     }
 
-    public Vector3 SampleWorld( Vector2 parameters )
+    public Vector3 SampleWorldVolume( Vector3 parameters )
     {
-      return SampleWorld( parameters.x, parameters.y );
+      return SampleWorldVolume( parameters.x, parameters.y, parameters.z );
     }
 
     public Vector3 LocalPointToWorld( Vector3 localPoint )
     {
-      Transform frame = workspaceFrame != null ? workspaceFrame : transform;
+      Transform frame = ResolveWorkspaceFrame();
       return frame.TransformPoint( localPoint );
     }
 
     public Vector3 WorldPointToLocal( Vector3 worldPoint )
     {
-      Transform frame = workspaceFrame != null ? workspaceFrame : transform;
+      Transform frame = ResolveWorkspaceFrame();
       return frame.InverseTransformPoint( worldPoint );
     }
 
-    public Vector3 ClosestLocalPoint( Vector3 localPoint )
+    public Vector3 ClosestWorldVolumeParameters( Vector3 worldPoint )
     {
-      return ClosestLocalPoint( localPoint, closestPointResolution );
+      return ClosestLocalVolumeParameters( WorldPointToLocal( worldPoint ), closestPointResolution );
     }
 
-    public Vector3 ClosestLocalPoint( Vector3 localPoint, int resolution )
+    public Vector3 ClosestLocalVolumeParameters( Vector3 localPoint, int resolution )
     {
-      Vector2 parameters = ClosestLocalParameters( localPoint, resolution );
-      return SampleLocal( parameters.x, parameters.y );
-    }
-
-    public Vector2 ClosestWorldParameters( Vector3 worldPoint )
-    {
-      return ClosestLocalParameters( WorldPointToLocal( worldPoint ) );
-    }
-
-    public Vector2 ClosestLocalParameters( Vector3 localPoint )
-    {
-      return ClosestLocalParameters( localPoint, closestPointResolution );
-    }
-
-    public Vector2 ClosestLocalParameters( Vector3 localPoint, int resolution )
-    {
-      EnsureAnchorArray();
+      EnsureVolumeAnchorArray();
 
       int steps = Mathf.Max( resolution, 2 );
-      Vector2 bestParameters = Vector2.zero;
-      Vector3 best = SampleLocal( bestParameters.x, bestParameters.y );
+      Vector3 bestParameters = Vector3.zero;
+      Vector3 best = SampleLocalVolume( bestParameters.x, bestParameters.y, bestParameters.z );
       float bestDistance = ( best - localPoint ).sqrMagnitude;
 
-      for ( int d = 0; d <= steps; d++ ) {
-        float direction = (float)d / steps;
-        for ( int r = 0; r <= steps; r++ ) {
-          float range = (float)r / steps;
-          Vector3 candidate = SampleLocal( direction, range );
-          float distance = ( candidate - localPoint ).sqrMagnitude;
-          if ( distance >= bestDistance )
-            continue;
+      for ( int direction = 0; direction <= steps; direction++ ) {
+        float direction01 = (float)direction / steps;
+        for ( int height = 0; height <= steps; height++ ) {
+          float height01 = (float)height / steps;
+          for ( int depth = 0; depth <= steps; depth++ ) {
+            float depth01 = (float)depth / steps;
+            Vector3 candidate = SampleLocalVolume( direction01, height01, depth01 );
+            float distance = ( candidate - localPoint ).sqrMagnitude;
+            if ( distance >= bestDistance )
+              continue;
 
-          bestParameters = new Vector2( direction, range );
-          best = candidate;
-          bestDistance = distance;
+            bestParameters = new Vector3( direction01, height01, depth01 );
+            best = candidate;
+            bestDistance = distance;
+          }
         }
       }
 
       return bestParameters;
-    }
-
-    public Vector3 ClosestWorldPoint( Vector3 worldPoint )
-    {
-      Vector3 localPoint = WorldPointToLocal( worldPoint );
-      return LocalPointToWorld( ClosestLocalPoint( localPoint ) );
     }
 
     public bool ContainsWorldPointInVolume( Vector3 worldPoint )
@@ -555,13 +547,13 @@ namespace RLExcavator
       if ( !LocalVolumeBounds().Contains( localPoint ) )
         return false;
 
-      return IsLocalPointInsideVolumeMesh( localPoint );
+      return IsLocalPointInsideLinearVolume( localPoint );
     }
 
     public Vector3 ClosestWorldPointInVolume( Vector3 worldPoint )
     {
       Vector3 localPoint = WorldPointToLocal( worldPoint );
-      if ( ContainsWorldPointInVolume( worldPoint ) )
+      if ( ContainsLocalPointInVolume( localPoint ) )
         return worldPoint;
 
       return LocalPointToWorld( ClosestLocalPointOnVolumeMesh( localPoint ) );
@@ -583,17 +575,7 @@ namespace RLExcavator
 
     public bool TryGetWorldBounds( out Bounds bounds )
     {
-      EnsureAnchorArray();
-
-      if ( localAnchorPoints == null || localAnchorPoints.Length == 0 ) {
-        bounds = new Bounds();
-        return false;
-      }
-
-      bounds = new Bounds( LocalPointToWorld( localAnchorPoints[ 0 ] ), Vector3.zero );
-      for ( int i = 1; i < localAnchorPoints.Length; i++ )
-        bounds.Encapsulate( LocalPointToWorld( localAnchorPoints[ i ] ) );
-      return true;
+      return TryGetWorldVolumeBounds( out bounds );
     }
 
     public bool TryGetWorldVolumeBounds( out Bounds bounds )
@@ -628,51 +610,6 @@ namespace RLExcavator
       return bounds;
     }
 
-    private Bounds LocalAnchorBounds()
-    {
-      EnsureAnchorArray();
-      Bounds bounds = new Bounds( localAnchorPoints[ 0 ], Vector3.zero );
-      for ( int i = 1; i < localAnchorPoints.Length; i++ )
-        bounds.Encapsulate( localAnchorPoints[ i ] );
-      return bounds;
-    }
-
-    private void EnsureMeshObjects()
-    {
-      Transform visual = transform.Find( VisualObjectName );
-      if ( visual == null ) {
-        var visualObject = new GameObject( VisualObjectName );
-        visualObject.transform.SetParent( transform, false );
-        visual = visualObject.transform;
-      }
-
-      visual.localPosition = Vector3.zero;
-      visual.localRotation = Quaternion.identity;
-      visual.localScale = Vector3.one;
-
-      m_meshFilter = visual.GetComponent<MeshFilter>();
-      if ( m_meshFilter == null )
-        m_meshFilter = visual.gameObject.AddComponent<MeshFilter>();
-
-      m_meshRenderer = visual.GetComponent<MeshRenderer>();
-      if ( m_meshRenderer == null )
-        m_meshRenderer = visual.gameObject.AddComponent<MeshRenderer>();
-
-      if ( m_mesh == null ) {
-        m_mesh = new Mesh {
-          hideFlags = HideFlags.DontSave
-        };
-      }
-
-      if ( m_material == null )
-        m_material = CreateTransparentMaterial();
-
-      if ( m_material != null )
-        m_meshRenderer.sharedMaterial = m_material;
-
-      EnsureVolumeObjects();
-    }
-
     private void EnsureVolumeObjects()
     {
       Transform visual = transform.Find( VolumeVisualObjectName );
@@ -682,6 +619,7 @@ namespace RLExcavator
         visual = visualObject.transform;
       }
 
+      visual.gameObject.hideFlags = GeneratedVisualHideFlags;
       visual.localPosition = Vector3.zero;
       visual.localRotation = Quaternion.identity;
       visual.localScale = Vector3.one;
@@ -775,6 +713,7 @@ namespace RLExcavator
     private void AddVolumeEdge( int index, Vector3 fromLocal, Vector3 toLocal )
     {
       var lineObject = new GameObject( $"Edge_{index:00}" );
+      lineObject.hideFlags = GeneratedVisualHideFlags;
       lineObject.transform.SetParent( m_volumeEdgeRoot, false );
 
       var line = lineObject.AddComponent<LineRenderer>();
@@ -784,8 +723,9 @@ namespace RLExcavator
       line.SetPosition( 1, LocalPointToWorld( toLocal ) );
       line.startColor = volumeBoundaryColor;
       line.endColor = volumeBoundaryColor;
-      line.startWidth = 0.035f;
-      line.endWidth = 0.035f;
+      float width = Mathf.Max( volumeBoundaryLineWidth, 0.001f );
+      line.startWidth = width;
+      line.endWidth = width;
       line.numCapVertices = 2;
       line.numCornerVertices = 2;
 
@@ -793,34 +733,6 @@ namespace RLExcavator
         m_volumeEdgeMaterial = CreateTransparentMaterial( "Reachable Workspace Edges", volumeBoundaryColor );
       if ( m_volumeEdgeMaterial != null )
         line.sharedMaterial = m_volumeEdgeMaterial;
-    }
-
-    private Vector3 SurfaceNormalLocal( float direction01, float range01 )
-    {
-      const float epsilon = 0.01f;
-      float d0 = Mathf.Clamp01( direction01 - epsilon );
-      float d1 = Mathf.Clamp01( direction01 + epsilon );
-      float r0 = Mathf.Clamp01( range01 - epsilon );
-      float r1 = Mathf.Clamp01( range01 + epsilon );
-      Vector3 directionTangent = SampleLocal( d1, range01 ) - SampleLocal( d0, range01 );
-      Vector3 rangeTangent = SampleLocal( direction01, r1 ) - SampleLocal( direction01, r0 );
-      Vector3 normal = Vector3.Cross( directionTangent, rangeTangent );
-      return normal.sqrMagnitude > 0.000001f ? normal.normalized : Vector3.up;
-    }
-
-    private static void AddQuad( System.Collections.Generic.List<int> triangles, int a, int b, int c, int d )
-    {
-      triangles.Add( a );
-      triangles.Add( b );
-      triangles.Add( c );
-      triangles.Add( b );
-      triangles.Add( d );
-      triangles.Add( c );
-    }
-
-    private Material CreateTransparentMaterial()
-    {
-      return CreateTransparentMaterial( "Reachable Workspace Fill", fillColor );
     }
 
     private Material CreateTransparentMaterial( string materialName, Color color )
@@ -844,11 +756,6 @@ namespace RLExcavator
       ApplyMaterialColor( material, color );
       ConfigureTransparency( material );
       return material;
-    }
-
-    private void ApplyMaterialColor( Material material )
-    {
-      ApplyMaterialColor( material, fillColor );
     }
 
     private void ApplyMaterialColor( Material material, Color color )
@@ -880,20 +787,31 @@ namespace RLExcavator
       material.EnableKeyword( "_ALPHABLEND_ON" );
     }
 
-    private void EnsureAnchorArray()
-    {
-      if ( localAnchorPoints != null && localAnchorPoints.Length == AnchorCount )
-        return;
-
-      localAnchorPoints = DefaultAnchors();
-    }
-
     private void EnsureVolumeAnchorArray()
     {
       if ( localVolumeAnchorPoints != null && localVolumeAnchorPoints.Length == VolumeAnchorCount )
         return;
 
       localVolumeAnchorPoints = DefaultVolumeAnchors();
+    }
+
+    private Transform ResolveWorkspaceFrame()
+    {
+      ResolveFrameRegistryIfNeeded();
+
+      if ( useFrameRegistryMachineRoot && frameRegistry != null && frameRegistry.MachineRoot != null )
+        return frameRegistry.MachineRoot;
+
+      return workspaceFrame != null ? workspaceFrame : transform;
+    }
+
+    private void ResolveFrameRegistryIfNeeded()
+    {
+      if ( frameRegistry == null )
+        frameRegistry = ExcavatorFrameRegistry.FindNearest( this );
+
+      if ( workspaceFrame == null && frameRegistry != null && frameRegistry.MachineRoot != null )
+        workspaceFrame = frameRegistry.MachineRoot;
     }
 
     private Vector3 WorldToVisualLocal( Vector3 worldPoint )
@@ -903,61 +821,14 @@ namespace RLExcavator
 
     private void OnDrawGizmos()
     {
-      if ( !drawGizmos ) {
+      if ( !drawGizmos )
         return;
-      }
-
-      if ( drawSurfaceGizmos ) {
-        EnsureAnchorArray();
-
-        if ( drawInternalGrid )
-          DrawInternalGrid();
-
-        DrawBoundary();
-
-        if ( drawAnchorSpheres )
-          DrawAnchors();
-      }
 
       if ( drawVolumeBounds )
         DrawVolumeBounds();
-    }
 
-    private void DrawInternalGrid()
-    {
-      Gizmos.color = internalGridColor;
-
-      for ( int direction = 0; direction < DirectionCount; direction++ ) {
-        for ( int radial = 0; radial < RadialCount - 1; radial++ )
-          DrawLine( Index( direction, radial ), Index( direction, radial + 1 ) );
-      }
-
-      for ( int radial = 0; radial < RadialCount; radial++ ) {
-        for ( int direction = 0; direction < DirectionCount - 1; direction++ )
-          DrawLine( Index( direction, radial ), Index( direction + 1, radial ) );
-      }
-    }
-
-    private void DrawBoundary()
-    {
-      Gizmos.color = boundaryColor;
-
-      for ( int direction = 0; direction < DirectionCount - 1; direction++ ) {
-        DrawLine( Index( direction, 0 ), Index( direction + 1, 0 ) );
-        DrawLine( Index( direction, RadialCount - 1 ), Index( direction + 1, RadialCount - 1 ) );
-      }
-
-      for ( int radial = 0; radial < RadialCount - 1; radial++ ) {
-        DrawLine( Index( 0, radial ), Index( 0, radial + 1 ) );
-        DrawLine( Index( DirectionCount - 1, radial ), Index( DirectionCount - 1, radial + 1 ) );
-      }
-    }
-
-    private void DrawAnchors()
-    {
-      Gizmos.color = anchorColor;
-      for ( int i = 0; i < AnchorCount; i++ )
-        Gizmos.DrawSphere( LocalPointToWorld( localAnchorPoints[ i ] ), Mathf.Max( anchorRadius, 0.01f ) );
+      if ( drawAnchorSpheres )
+        DrawVolumeAnchorSpheres();
     }
 
     private void DrawVolumeBounds()
@@ -992,36 +863,13 @@ namespace RLExcavator
         LocalPointToWorld( VolumeDirectionSamplePoint( toDirection, toRow, toFar ) ) );
     }
 
-    private void DrawLine( int fromIndex, int toIndex )
+    private void DrawVolumeAnchorSpheres()
     {
-      Gizmos.DrawLine( LocalPointToWorld( localAnchorPoints[ fromIndex ] ), LocalPointToWorld( localAnchorPoints[ toIndex ] ) );
-    }
-
-    private static int Index( int direction, int radial )
-    {
-      return direction * RadialCount + radial;
-    }
-
-    private void EnsureAnchorControlsRoot()
-    {
-      if ( m_anchorControlsRoot != null )
-        return;
-
-      Transform existing = transform.Find( AnchorControlsRootName );
-      if ( existing != null ) {
-        m_anchorControlsRoot = existing;
-        return;
-      }
-
-      var rootObject = new GameObject( AnchorControlsRootName );
-      rootObject.transform.SetParent( transform, false );
-      m_anchorControlsRoot = rootObject.transform;
-    }
-
-    private Transform FindAnchorControl( int index )
-    {
-      EnsureAnchorControlsRoot();
-      return m_anchorControlsRoot != null ? m_anchorControlsRoot.Find( AnchorObjectName( index ) ) : null;
+      EnsureVolumeAnchorArray();
+      Gizmos.color = anchorColor;
+      float radius = Mathf.Max( anchorRadius, 0.0001f );
+      for ( int i = 0; i < VolumeAnchorCount; i++ )
+        Gizmos.DrawSphere( LocalPointToWorld( localVolumeAnchorPoints[ i ] ), radius );
     }
 
     private void EnsureVolumeAnchorControlsRoot()
@@ -1029,13 +877,13 @@ namespace RLExcavator
       if ( m_volumeAnchorControlsRoot != null )
         return;
 
-      Transform existing = transform.Find( "ReachableWorkspaceVolumeAnchorControls" );
+      Transform existing = transform.Find( VolumeAnchorControlsRootName );
       if ( existing != null ) {
         m_volumeAnchorControlsRoot = existing;
         return;
       }
 
-      var rootObject = new GameObject( "ReachableWorkspaceVolumeAnchorControls" );
+      var rootObject = new GameObject( VolumeAnchorControlsRootName );
       rootObject.transform.SetParent( transform, false );
       m_volumeAnchorControlsRoot = rootObject.transform;
     }
@@ -1045,6 +893,18 @@ namespace RLExcavator
       EnsureVolumeAnchorControlsRoot();
       if ( m_volumeAnchorControlsRoot != null )
         m_volumeAnchorControlsRoot.gameObject.SetActive( visible );
+    }
+
+    private void SetVolumeMeshVisible( bool visible )
+    {
+      if ( m_volumeMeshRenderer == null ) {
+        Transform visual = transform.Find( VolumeVisualObjectName );
+        if ( visual != null )
+          m_volumeMeshRenderer = visual.GetComponent<MeshRenderer>();
+      }
+
+      if ( m_volumeMeshRenderer != null )
+        m_volumeMeshRenderer.enabled = visible;
     }
 
     private void EnsureVolumeEdgeRoot()
@@ -1059,6 +919,7 @@ namespace RLExcavator
       }
 
       var rootObject = new GameObject( VolumeEdgeObjectName );
+      rootObject.hideFlags = GeneratedVisualHideFlags;
       rootObject.transform.SetParent( transform, false );
       m_volumeEdgeRoot = rootObject.transform;
     }
@@ -1076,37 +937,14 @@ namespace RLExcavator
       return m_volumeAnchorControlsRoot != null ? m_volumeAnchorControlsRoot.Find( VolumeAnchorObjectName( index ) ) : null;
     }
 
-    private bool TrySyncAnchorsFromEditableObjects()
-    {
-      EnsureAnchorArray();
-      Transform root = m_anchorControlsRoot != null ? m_anchorControlsRoot : transform.Find( AnchorControlsRootName );
-      if ( root == null )
-        return false;
-
-      bool changed = false;
-      for ( int i = 0; i < AnchorCount; i++ ) {
-        Transform anchor = root.Find( AnchorObjectName( i ) );
-        if ( anchor == null )
-          return false;
-
-        Vector3 localPoint = WorldPointToLocal( anchor.position );
-        if ( ( localAnchorPoints[ i ] - localPoint ).sqrMagnitude > 0.000001f ) {
-          localAnchorPoints[ i ] = localPoint;
-          changed = true;
-        }
-      }
-
-      return changed;
-    }
-
-    private bool TrySyncVolumeAnchorsFromEditableObjects()
+    private bool TrySyncVolumeAnchorsFromEditableObjects( out bool changed )
     {
       EnsureVolumeAnchorArray();
-      Transform root = m_volumeAnchorControlsRoot != null ? m_volumeAnchorControlsRoot : transform.Find( "ReachableWorkspaceVolumeAnchorControls" );
+      changed = false;
+      Transform root = m_volumeAnchorControlsRoot != null ? m_volumeAnchorControlsRoot : transform.Find( VolumeAnchorControlsRootName );
       if ( root == null )
         return false;
 
-      bool changed = false;
       for ( int i = 0; i < VolumeAnchorCount; i++ ) {
         Transform anchor = root.Find( VolumeAnchorObjectName( i ) );
         if ( anchor == null )
@@ -1119,7 +957,64 @@ namespace RLExcavator
         }
       }
 
-      return changed;
+      return true;
+    }
+
+    private void MarkCalibrationDirty()
+    {
+#if UNITY_EDITOR
+      if ( useWorkspaceProfile && saveWorkspaceProfileChanges && !m_isApplyingWorkspaceProfile ) {
+        if ( Application.isPlaying ) {
+          ReachableWorkspacePlayModeSaver.Queue( this );
+        }
+        else {
+          string saveMessage;
+          if ( !TrySaveToWorkspaceProfile( out saveMessage ) )
+            Debug.LogWarning( "[ReachableWorkspace] " + saveMessage, this );
+        }
+      }
+
+      UnityEditor.EditorUtility.SetDirty( this );
+      if ( !Application.isPlaying && gameObject.scene.IsValid() )
+        UnityEditor.SceneManagement.EditorSceneManager.MarkSceneDirty( gameObject.scene );
+#endif
+    }
+
+    private void ApplyWorkspaceProfileIfEnabled()
+    {
+      ApplyWorkspaceProfileIfEnabled( true );
+    }
+
+    private void ApplyWorkspaceProfileIfEnabled( bool updateVisuals )
+    {
+      if ( !useWorkspaceProfile || m_isApplyingWorkspaceProfile )
+        return;
+
+      string message;
+      if ( TryLoadFromWorkspaceProfile( out message, updateVisuals ) ) {
+        m_profileWarningShown = false;
+        return;
+      }
+
+      if ( m_profileWarningShown )
+        return;
+
+      Debug.LogWarning( "[ReachableWorkspace] " + message, this );
+      m_profileWarningShown = true;
+    }
+
+    private string EffectiveWorkspaceMode()
+    {
+      if ( !string.IsNullOrEmpty( workspaceMode ) )
+        return workspaceMode;
+
+      string lowerName = name.ToLowerInvariant();
+      if ( lowerName.Contains( "carrymaterial" ) || lowerName.Contains( "carry" ) )
+        return "CarryMaterial";
+      if ( lowerName.Contains( "movetodig" ) || lowerName.Contains( "dig" ) )
+        return "MoveToDig";
+
+      return string.Empty;
     }
 
     private void EnsureEditableAnchorVisual( Transform anchor )
@@ -1158,11 +1053,32 @@ namespace RLExcavator
       }
     }
 
+    private void RefreshExistingVolumeAnchorVisuals()
+    {
+      Transform root = m_volumeAnchorControlsRoot != null ? m_volumeAnchorControlsRoot : transform.Find( VolumeAnchorControlsRootName );
+      if ( root == null )
+        return;
+
+      selectedVolumeAnchorIndex = ClampVolumeAnchorIndex( selectedVolumeAnchorIndex );
+      for ( int i = 0; i < VolumeAnchorCount; i++ ) {
+        Transform anchor = root.Find( VolumeAnchorObjectName( i ) );
+        if ( anchor == null )
+          continue;
+
+        var visual = anchor.GetComponent<TargetPointVisual>();
+        if ( visual == null )
+          continue;
+
+        bool selected = i == selectedVolumeAnchorIndex;
+        visual.SetStyle(
+          selected ? selectedVolumeAnchorColor : editableAnchorColor,
+          selected ? selectedVolumeAnchorVisualRadius : editableAnchorVisualRadius );
+        visual.SetVisible( root.gameObject.activeSelf );
+      }
+    }
+
     private static int ClampVolumeAnchorIndex( int index )
     {
-      if ( VolumeAnchorCount <= 0 )
-        return 0;
-
       int wrapped = index % VolumeAnchorCount;
       return wrapped < 0 ? wrapped + VolumeAnchorCount : wrapped;
     }
@@ -1172,7 +1088,23 @@ namespace RLExcavator
       return $"({value.x:0.00}, {value.y:0.00}, {value.z:0.00})";
     }
 
-    private static void DestroyRuntimeObject( Object target )
+    private void DestroyGeneratedVisualObjects()
+    {
+      DestroyGeneratedVisualObject( VolumeVisualObjectName );
+      DestroyGeneratedVisualObject( VolumeEdgeObjectName );
+      m_volumeMeshFilter = null;
+      m_volumeMeshRenderer = null;
+      m_volumeEdgeRoot = null;
+    }
+
+    private void DestroyGeneratedVisualObject( string objectName )
+    {
+      Transform generated = transform.Find( objectName );
+      if ( generated != null )
+        DestroyRuntimeObject( generated.gameObject );
+    }
+
+    private static void DestroyRuntimeObject( UnityEngine.Object target )
     {
       if ( target == null )
         return;
@@ -1181,13 +1113,6 @@ namespace RLExcavator
         Destroy( target );
       else
         DestroyImmediate( target );
-    }
-
-    private static string AnchorObjectName( int index )
-    {
-      int direction = index / RadialCount;
-      int radial = index % RadialCount;
-      return $"Anchor_D{direction}_R{radial}";
     }
 
     private static string VolumeAnchorObjectName( int index )
@@ -1276,6 +1201,70 @@ namespace RLExcavator
       return QuadraticBezier( highNear, nearMid - curveOffset, lowNear, t );
     }
 
+    private Vector3 SampleVolumeSectionLinear( int direction, float height01, float depth01 )
+    {
+      int clampedDirection = Mathf.Clamp( direction, 0, DirectionCount - 1 );
+      int start = clampedDirection * VolumeCornerCount;
+      Vector3 highFar = localVolumeAnchorPoints[ start ];
+      Vector3 lowFar = localVolumeAnchorPoints[ start + 1 ];
+      Vector3 highNear = localVolumeAnchorPoints[ start + 2 ];
+      Vector3 lowNear = localVolumeAnchorPoints[ start + 3 ];
+      Vector3 high = Vector3.Lerp( highNear, highFar, Mathf.Clamp01( depth01 ) );
+      Vector3 low = Vector3.Lerp( lowNear, lowFar, Mathf.Clamp01( depth01 ) );
+      return Vector3.Lerp( high, low, Mathf.Clamp01( height01 ) );
+    }
+
+    private bool IsLocalPointInsideLinearVolume( Vector3 point )
+    {
+      EnsureVolumeAnchorArray();
+
+      for ( int direction = 0; direction < DirectionCount - 1; direction++ ) {
+        int left = direction * VolumeCornerCount;
+        int right = ( direction + 1 ) * VolumeCornerCount;
+
+        Vector3 v000 = localVolumeAnchorPoints[ left + 2 ];
+        Vector3 v001 = localVolumeAnchorPoints[ left ];
+        Vector3 v010 = localVolumeAnchorPoints[ left + 3 ];
+        Vector3 v011 = localVolumeAnchorPoints[ left + 1 ];
+        Vector3 v100 = localVolumeAnchorPoints[ right + 2 ];
+        Vector3 v101 = localVolumeAnchorPoints[ right ];
+        Vector3 v110 = localVolumeAnchorPoints[ right + 3 ];
+        Vector3 v111 = localVolumeAnchorPoints[ right + 1 ];
+
+        if (
+          IsPointInsideTetrahedron( point, v000, v001, v011, v111 ) ||
+          IsPointInsideTetrahedron( point, v000, v011, v010, v111 ) ||
+          IsPointInsideTetrahedron( point, v000, v010, v110, v111 ) ||
+          IsPointInsideTetrahedron( point, v000, v110, v100, v111 ) ||
+          IsPointInsideTetrahedron( point, v000, v100, v101, v111 ) ||
+          IsPointInsideTetrahedron( point, v000, v101, v001, v111 ) )
+          return true;
+      }
+
+      return false;
+    }
+
+    private static bool IsPointInsideTetrahedron( Vector3 point, Vector3 a, Vector3 b, Vector3 c, Vector3 d )
+    {
+      const float epsilon = 0.0001f;
+      float volume = SignedTetrahedronVolume( a, b, c, d );
+      if ( Mathf.Abs( volume ) < 0.000001f )
+        return false;
+
+      float wa = SignedTetrahedronVolume( point, b, c, d ) / volume;
+      float wb = SignedTetrahedronVolume( a, point, c, d ) / volume;
+      float wc = SignedTetrahedronVolume( a, b, point, d ) / volume;
+      float wd = SignedTetrahedronVolume( a, b, c, point ) / volume;
+
+      return wa >= -epsilon && wb >= -epsilon && wc >= -epsilon && wd >= -epsilon
+        && wa <= 1f + epsilon && wb <= 1f + epsilon && wc <= 1f + epsilon && wd <= 1f + epsilon;
+    }
+
+    private static float SignedTetrahedronVolume( Vector3 a, Vector3 b, Vector3 c, Vector3 d )
+    {
+      return Vector3.Dot( b - a, Vector3.Cross( c - a, d - a ) ) / 6f;
+    }
+
     private static Vector3 QuadraticBezier( Vector3 a, Vector3 b, Vector3 c, float t )
     {
       float u = 1f - t;
@@ -1315,7 +1304,7 @@ namespace RLExcavator
 
     private static int[] VolumeMeshTriangles( int rowCount, int directionSampleCount )
     {
-      var triangles = new System.Collections.Generic.List<int>();
+      var triangles = new List<int>();
 
       for ( int direction = 0; direction < directionSampleCount - 1; direction++ ) {
         for ( int row = 0; row < rowCount - 1; row++ ) {
@@ -1369,31 +1358,19 @@ namespace RLExcavator
       return triangles.ToArray();
     }
 
-    private bool IsLocalPointInsideVolumeMesh( Vector3 point )
+    private static void AddQuad( List<int> triangles, int a, int b, int c, int d )
     {
-      Vector3[] vertices = BuildVolumeVerticesLocal();
-      int[] triangles = VolumeMeshTriangles( VolumeSectionRowCount(), VolumeDirectionSampleCount() );
-      int hitCount = 0;
-      Vector3 rayOrigin = point + Vector3.left * 10000f;
-      Vector3 rayDirection = Vector3.right;
-
-      for ( int i = 0; i < triangles.Length; i += 3 ) {
-        if ( RayIntersectsTriangle(
-          rayOrigin,
-          rayDirection,
-          vertices[ triangles[ i ] ],
-          vertices[ triangles[ i + 1 ] ],
-          vertices[ triangles[ i + 2 ] ],
-          out float distance ) && distance >= 0f ) {
-          hitCount++;
-        }
-      }
-
-      return hitCount % 2 == 1;
+      triangles.Add( a );
+      triangles.Add( b );
+      triangles.Add( c );
+      triangles.Add( b );
+      triangles.Add( d );
+      triangles.Add( c );
     }
 
     private Vector3 ClosestLocalPointOnVolumeMesh( Vector3 point )
     {
+      EnsureVolumeAnchorArray();
       Vector3[] vertices = BuildVolumeVerticesLocal();
       int[] triangles = VolumeMeshTriangles( VolumeSectionRowCount(), VolumeDirectionSampleCount() );
       Vector3 best = localVolumeAnchorPoints[ 0 ];
@@ -1414,31 +1391,6 @@ namespace RLExcavator
       }
 
       return best;
-    }
-
-    private static bool RayIntersectsTriangle( Vector3 origin, Vector3 direction, Vector3 a, Vector3 b, Vector3 c, out float distance )
-    {
-      distance = 0f;
-      Vector3 edge1 = b - a;
-      Vector3 edge2 = c - a;
-      Vector3 h = Vector3.Cross( direction, edge2 );
-      float determinant = Vector3.Dot( edge1, h );
-      if ( Mathf.Abs( determinant ) < 0.000001f )
-        return false;
-
-      float inverseDeterminant = 1f / determinant;
-      Vector3 s = origin - a;
-      float u = inverseDeterminant * Vector3.Dot( s, h );
-      if ( u < 0f || u > 1f )
-        return false;
-
-      Vector3 q = Vector3.Cross( s, edge1 );
-      float v = inverseDeterminant * Vector3.Dot( direction, q );
-      if ( v < 0f || u + v > 1f )
-        return false;
-
-      distance = inverseDeterminant * Vector3.Dot( edge2, q );
-      return distance > 0.000001f;
     }
 
     private static Vector3 ClosestPointOnTriangle( Vector3 point, Vector3 a, Vector3 b, Vector3 c )
@@ -1481,39 +1433,9 @@ namespace RLExcavator
       return a + ab * v + ac * w;
     }
 
-    public static Vector3[] Env01CalibrationAnchors()
-    {
-      return DefaultAnchors();
-    }
-
     public static Vector3[] Env01VolumeAnchors()
     {
       return DefaultVolumeAnchors();
-    }
-
-    private static Vector3[] DefaultAnchors()
-    {
-      return new[] {
-        new Vector3( -4.98f, 3.48f, 9.20f ),
-        new Vector3( -5.10f, 3.08f, 10.95f ),
-        new Vector3( -4.77f, 4.23f, 12.18f ),
-
-        new Vector3( -0.34f, 3.46f, 7.00f ),
-        new Vector3( 0.03f, 3.10f, 9.15f ),
-        new Vector3( 1.70f, 4.19f, 9.20f ),
-
-        new Vector3( 1.03f, 3.45f, 3.24f ),
-        new Vector3( 2.82f, 3.15f, 3.39f ),
-        new Vector3( 3.95f, 2.82f, 2.41f ),
-
-        new Vector3( -0.36f, 3.44f, -0.63f ),
-        new Vector3( 0.64f, 3.18f, -2.23f ),
-        new Vector3( -0.10f, 2.78f, -4.24f ),
-
-        new Vector3( -5.13f, 3.42f, -2.80f ),
-        new Vector3( -4.94f, 3.22f, -4.64f ),
-        new Vector3( -4.94f, 2.75f, -5.68f )
-      };
     }
 
     private static Vector3[] DefaultVolumeAnchors()

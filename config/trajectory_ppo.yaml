@@ -5,8 +5,9 @@
 # Use the wrapper for training so checkpoint saves do not try to export ONNX.
 #
 # The behavior name must match the Behavior Parameters component in Unity.
-# The current agent observation size is 37. Do not resume older 31-dim
-# trajectory-only checkpoints with this config.
+# The current scale-excavator observation contract is
+# scale_excavator_v2_38d (38 observations, 4 continuous actions). Do not resume
+# older 31/37-dim trajectory checkpoints with this config.
 behaviors:
   ExcavatorTrajectory:
     trainer_type: ppo

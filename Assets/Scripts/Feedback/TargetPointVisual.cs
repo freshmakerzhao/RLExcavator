@@ -46,6 +46,7 @@ namespace RLExcavator
       color = newColor;
       radius = newRadius;
 
+      CacheExistingVisual();
       if ( Application.isPlaying )
         EnsureVisual();
       else

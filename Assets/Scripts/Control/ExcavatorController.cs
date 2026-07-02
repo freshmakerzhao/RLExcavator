@@ -1,6 +1,7 @@
 using UnityEngine;
 using AGXUnity;
 using AGXRigidBody = AGXUnity.RigidBody;
+using System.Globalization;
 
 namespace RLExcavator
 {
@@ -19,36 +20,39 @@ namespace RLExcavator
   /// 如何在 Hierarchy 找到这些 Constraint：
   ///   Play 后展开挖掘机根节点，AGXUnity 会把每个关节实例化成带 Constraint 组件的 GameObject，
   ///   名字通常含 boom / stick / bucket / cabin(回转) 等。把它们拖到下面对应字段。
-  ///   大臂常由两根液压缸驱动 → boom 用数组，可拖 1~2 个。
-  ///   真实机模型的小臂/铲斗也可能是多缸结构，可用 stickActuators / bucketActuators 同步驱动。
+  ///   boom / stick / bucket 都用数组表示，可拖 1~2 根需要同步驱动的液压缸。
   /// </summary>
   public class ExcavatorController : MonoBehaviour
   {
     [Header("关节约束")]
-    [Tooltip("大臂液压缸，可能有 1~2 根，必须同步驱动")]
+    [Tooltip("大臂液压缸")]
     public Constraint[] boom;
 
     [Tooltip("小臂液压缸")]
-    public Constraint stick;
-
-    [Tooltip("小臂液压缸组。真实模型若有多根小臂缸，把它们拖到这里；旧模型可留空继续使用上面的单根 stick。")]
-    public Constraint[] stickActuators;
+    public Constraint[] stick;
 
     [Tooltip("铲斗液压缸")]
-    public Constraint bucket;
-
-    [Tooltip("铲斗液压缸组。真实模型若有多根铲斗缸，把它们拖到这里；旧模型可留空继续使用上面的单根 bucket。")]
-    public Constraint[] bucketActuators;
+    public Constraint[] bucket;
     
-    [Tooltip("回转（第一版挖土 demo 可留空，锁住底盘不回转）")]
+    [Tooltip("回转")]
     public Constraint swing;
 
     [Header("每个关节的最大目标速度（prismatic=m/s，hinge=rad/s）")]
-    [Tooltip("先给保守值跑通，再按手感/训练效果调大")]
-    public float boomMaxSpeed   = 0.5f;
-    public float stickMaxSpeed  = 0.5f;
-    public float bucketMaxSpeed = 0.6f;
-    public float swingMaxSpeed  = 0.5f;
+    [Tooltip("运行时会被 machine_profile.json 覆盖；Inspector 值仅作读取失败时的兜底。")]
+    public float boomMaxSpeed   = 0f;
+    public float stickMaxSpeed  = 0f;
+    public float bucketMaxSpeed = 0f;
+    public float swingMaxSpeed  = 0f;
+
+    [Header("机型 Profile")]
+    [Tooltip("启动时从 shared/machine_profile.json 读取四个执行器 max_speed，作为速度上限的唯一权威来源。")]
+    public bool loadMaxSpeedsFromMachineProfile = true;
+    [Tooltip("启动应用 profile 速度后打印一行自检日志。")]
+    public bool logMachineProfileSpeedLoad = true;
+    [Tooltip("启动时从 shared/machine_profile.json 读取执行器 range，并写入 AGX RangeController。")]
+    public bool loadRangesFromMachineProfile = true;
+    [Tooltip("启动应用 profile range 后打印一行自检日志。")]
+    public bool logMachineProfileRangeLoad = true;
 
     [Header("速度变化限制")]
     [Tooltip("大臂目标速度每秒最大变化量(m/s^2)，越小越柔和")]
@@ -69,14 +73,10 @@ namespace RLExcavator
     public bool useInspectorHomePose = false;
     [Tooltip("大臂液压缸 home 位移。长度应与 boom 数组一致；两根缸通常填同一组初始读数")]
     public float[] boomHomePose;
-    [Tooltip("小臂液压缸 home 位移")]
-    public float stickHomePose = 0f;
-    [Tooltip("多根小臂液压缸 home 位移。长度应与 stickActuators 数组一致")]
-    public float[] stickActuatorHomePose;
-    [Tooltip("铲斗液压缸 home 位移")]
-    public float bucketHomePose = 0f;
-    [Tooltip("多根铲斗液压缸 home 位移。长度应与 bucketActuators 数组一致")]
-    public float[] bucketActuatorHomePose;
+    [Tooltip("小臂液压缸 home 位移。长度应与 stick 数组一致")]
+    public float[] stickHomePose;
+    [Tooltip("铲斗液压缸 home 位移。长度应与 bucket 数组一致")]
+    public float[] bucketHomePose;
     [Tooltip("回转 home 角度(rad)")]
     public float swingHomePose = 0f;
     [Tooltip("执行复位时保持 LockController 的物理步数")]
@@ -87,14 +87,6 @@ namespace RLExcavator
     public float homePoseTolerance = 0.01f;
     [Tooltip("复位超时但未到达 home 时打印警告")]
     public bool warnOnHomeTimeout = true;
-
-    [Header("当前关节读数（运行时参考）")]
-    public float[] currentBoomPose;
-    public float currentStickPose = 0f;
-    public float[] currentStickActuatorPose;
-    public float currentBucketPose = 0f;
-    public float[] currentBucketActuatorPose;
-    public float currentSwingPose = 0f;
 
     private float m_boomSpeed = 0f;
     private float m_bucketSpeed = 0f;
@@ -108,16 +100,37 @@ namespace RLExcavator
     // 记录每个关节的初始位置/角度，用于 episode 复位。
     // 注意：AGX 是物理引擎，关节不能"瞬移"复位，只能用 LockController 把它拉回初始位姿。
     private float[] m_boomHome;
-    private float   m_stickHome;
-    private float[] m_stickActuatorHome;
-    private float   m_bucketHome;
-    private float[] m_bucketActuatorHome;
+    private float[] m_stickHome;
+    private float[] m_bucketHome;
     private float   m_swingHome;
     private bool    m_homeCaptured = false;
 
     public bool CommandInputEnabled => commandInputEnabled;
 
     // ---------- 生命周期 ----------
+
+    private void Awake()
+    {
+      if ( !loadMaxSpeedsFromMachineProfile && !loadRangesFromMachineProfile )
+        return;
+
+      try {
+        MachineProfile profile = MachineProfileLoader.Load();
+
+        if ( loadMaxSpeedsFromMachineProfile )
+          ApplyMachineProfileSpeeds( profile );
+        if ( loadRangesFromMachineProfile )
+          ApplyMachineProfileRanges( profile );
+
+        if ( loadMaxSpeedsFromMachineProfile && logMachineProfileSpeedLoad )
+          Debug.Log( FormatMachineProfileSpeedLog(), this );
+        if ( loadRangesFromMachineProfile && logMachineProfileRangeLoad )
+          Debug.Log( FormatMachineProfileRangeLog( profile ), this );
+      }
+      catch ( System.Exception exception ) {
+        Debug.LogError( "[ExcavatorController] Failed to apply machine profile: " + exception.Message, this );
+      }
+    }
 
     // 在第一次物理步之后再抓初始姿态（此时 AGX 关节已实例化）。
     // 用 FixedUpdate 里的一次性标记，比 Start 更安全（Start 时 AGX Native 可能还没就绪）。
@@ -126,7 +139,105 @@ namespace RLExcavator
       if ( !m_homeCaptured )
         CaptureHomePose();
 
-      UpdateCurrentPoseReadout();
+    }
+
+    public void ApplyMachineProfileSpeeds( MachineProfile profile )
+    {
+      if ( profile == null )
+        throw new System.ArgumentNullException( nameof( profile ) );
+
+      boomMaxSpeed = profile.GetActuator( "boom" ).MaxSpeed;
+      stickMaxSpeed = profile.GetActuator( "stick" ).MaxSpeed;
+      bucketMaxSpeed = profile.GetActuator( "bucket" ).MaxSpeed;
+      swingMaxSpeed = profile.GetActuator( "swing" ).MaxSpeed;
+    }
+
+    public void ApplyMachineProfileRanges( MachineProfile profile )
+    {
+      if ( profile == null )
+        throw new System.ArgumentNullException( nameof( profile ) );
+
+      ApplyMachineProfileRangeToConstraints( profile.GetActuator( "boom" ), boom );
+      ApplyMachineProfileRangeToConstraints( profile.GetActuator( "stick" ), stick );
+      ApplyMachineProfileRangeToConstraints( profile.GetActuator( "bucket" ), bucket );
+      ApplyMachineProfileRangeToConstraints( profile.GetActuator( "swing" ), swing );
+    }
+
+    private string FormatMachineProfileSpeedLog()
+    {
+      return "[ExcavatorController] max_speed from machine_profile: "
+        + "boom=" + boomMaxSpeed.ToString( "0.###", CultureInfo.InvariantCulture )
+        + ", stick=" + stickMaxSpeed.ToString( "0.###", CultureInfo.InvariantCulture )
+        + ", bucket=" + bucketMaxSpeed.ToString( "0.###", CultureInfo.InvariantCulture )
+        + ", swing=" + swingMaxSpeed.ToString( "0.###", CultureInfo.InvariantCulture );
+    }
+
+    private string FormatMachineProfileRangeLog( MachineProfile profile )
+    {
+      return "[ExcavatorController] range from machine_profile: "
+        + FormatActuatorRange( profile.GetActuator( "boom" ) )
+        + ", " + FormatActuatorRange( profile.GetActuator( "stick" ) )
+        + ", " + FormatActuatorRange( profile.GetActuator( "bucket" ) )
+        + ", " + FormatActuatorRange( profile.GetActuator( "swing" ) );
+    }
+
+    private static string FormatActuatorRange( MachineActuatorProfile actuator )
+    {
+      if ( actuator.HasFiniteRange )
+        return actuator.Name + "=[" + FormatFloat( actuator.RangeMin ) + "," + FormatFloat( actuator.RangeMax ) + "]";
+
+      return actuator.Name + "=continuous";
+    }
+
+    private static string FormatFloat( float value )
+    {
+      return value.ToString( "0.###", CultureInfo.InvariantCulture );
+    }
+
+    private void ApplyMachineProfileRangeToConstraints( MachineActuatorProfile actuator, Constraint[] constraints )
+    {
+      if ( constraints == null || constraints.Length == 0 ) {
+        if ( actuator.RangeEnabledRequired )
+          Debug.LogWarning( "[ExcavatorController] No constraints bound for range-required actuator: " + actuator.Name, this );
+        return;
+      }
+
+      foreach ( var constraint in constraints )
+        ApplyMachineProfileRangeToConstraint( actuator, constraint );
+    }
+
+    private void ApplyMachineProfileRangeToConstraints( MachineActuatorProfile actuator, Constraint constraint )
+    {
+      ApplyMachineProfileRangeToConstraint( actuator, constraint );
+    }
+
+    private void ApplyMachineProfileRangeToConstraint( MachineActuatorProfile actuator, Constraint constraint )
+    {
+      if ( constraint == null ) {
+        if ( actuator.RangeEnabledRequired )
+          Debug.LogWarning( "[ExcavatorController] Null constraint bound for range-required actuator: " + actuator.Name, this );
+        return;
+      }
+
+      if ( !actuator.HasFiniteRange ) {
+        var continuousRange = constraint.GetController<RangeController>();
+        if ( continuousRange != null )
+          continuousRange.Enable = false;
+
+        if ( actuator.RangeEnabledRequired )
+          Debug.LogWarning( "[ExcavatorController] Actuator requires range but profile has no finite range: " + actuator.Name, this );
+        return;
+      }
+
+      var range = constraint.GetController<RangeController>();
+      if ( range == null ) {
+        Debug.LogWarning( "[ExcavatorController] Constraint has no RangeController for actuator "
+          + actuator.Name + ": " + constraint.name, this );
+        return;
+      }
+
+      range.Range = new RangeReal( actuator.RangeMin, actuator.RangeMax );
+      range.Enable = actuator.RangeEnabledRequired;
     }
 
     // ---------- 对外：驱动 ----------
@@ -136,22 +247,27 @@ namespace RLExcavator
     /// </summary>
     public void SetNormalizedSpeeds( float boomCmd, float stickCmd, float bucketCmd, float swingCmd = 0f )
     {
+      float boomInput = Mathf.Clamp( boomCmd, -1f, 1f );
+      float stickInput = Mathf.Clamp( stickCmd, -1f, 1f );
+      float bucketInput = Mathf.Clamp( bucketCmd, -1f, 1f );
+      float swingInput = Mathf.Clamp( swingCmd, -1f, 1f );
+
       if ( !commandInputEnabled || IsHoming )
         return;
 
       float dt = Time.fixedDeltaTime;
-      m_boomSpeed = MoveTowardsSpeed( m_boomSpeed, Mathf.Clamp( boomCmd, -1f, 1f ) * boomMaxSpeed, boomAcceleration, dt );
-      m_bucketSpeed = MoveTowardsSpeed( m_bucketSpeed, Mathf.Clamp( bucketCmd, -1f, 1f ) * bucketMaxSpeed, bucketAcceleration, dt );
+      m_boomSpeed = MoveTowardsSpeed( m_boomSpeed, boomInput * boomMaxSpeed, boomAcceleration, dt );
+      m_bucketSpeed = MoveTowardsSpeed( m_bucketSpeed, bucketInput * bucketMaxSpeed, bucketAcceleration, dt );
 
-      float stickSpeed = Mathf.Clamp( stickCmd, -1f, 1f ) * stickMaxSpeed;
-      float swingSpeed = Mathf.Clamp( swingCmd, -1f, 1f ) * swingMaxSpeed;
+      float stickSpeed = stickInput * stickMaxSpeed;
+      float swingSpeed = swingInput * swingMaxSpeed;
 
       if ( boom != null )
         foreach ( var c in boom )
           DriveConstraint( c, m_boomSpeed );
 
-      DriveConstraintSet( stick, stickActuators, stickSpeed );
-      DriveConstraintSet( bucket, bucketActuators, m_bucketSpeed );
+      DriveConstraintSet( stick, stickSpeed );
+      DriveConstraintSet( bucket, m_bucketSpeed );
       DriveConstraint( swing,  swingSpeed );
     }
 
@@ -163,8 +279,8 @@ namespace RLExcavator
 
       if ( boom != null )
         foreach ( var c in boom ) DriveConstraint( c, 0f );
-      DriveConstraintSet( stick, stickActuators, 0f );
-      DriveConstraintSet( bucket, bucketActuators, 0f );
+      DriveConstraintSet( stick, 0f );
+      DriveConstraintSet( bucket, 0f );
       DriveConstraint( swing,  0f );
     }
 
@@ -198,16 +314,13 @@ namespace RLExcavator
       return Mathf.MoveTowards( current, target, Mathf.Max( acceleration, 0.01f ) * Mathf.Max( deltaTime, 0.001f ) );
     }
 
-    private static void DriveConstraintSet( Constraint primary, Constraint[] actuators, float speed )
+    private static void DriveConstraintSet( Constraint[] constraints, float speed )
     {
-      DriveConstraint( primary, speed );
-
-      if ( actuators == null )
+      if ( constraints == null )
         return;
 
-      foreach ( var c in actuators )
-        if ( c != primary )
-          DriveConstraint( c, speed );
+      foreach ( var c in constraints )
+        DriveConstraint( c, speed );
     }
 
     // 把"目标速度"写进 AGX 的 TargetSpeedController。
@@ -262,10 +375,16 @@ namespace RLExcavator
     }
 
     /// <summary>大臂取第一根缸的归一化位置作为代表。</summary>
-    public float BoomNormalizedPosition   => ( boom != null && boom.Length > 0 ) ? GetNormalizedPosition( boom[ 0 ] ) : 0f;
-    public float StickNormalizedPosition  => GetRepresentativeNormalizedPosition( stick, stickActuators );
-    public float BucketNormalizedPosition => GetRepresentativeNormalizedPosition( bucket, bucketActuators );
+    public float BoomNormalizedPosition   => GetRepresentativeNormalizedPosition( boom );
+    public float StickNormalizedPosition  => GetRepresentativeNormalizedPosition( stick );
+    public float BucketNormalizedPosition => GetRepresentativeNormalizedPosition( bucket );
     public float SwingNormalizedPosition  => GetNormalizedPosition( swing );
+
+    /// <summary>执行器原始位移/角度读数。prismatic=m, hinge=rad。</summary>
+    public float BoomPosition   => GetRepresentativePosition( boom );
+    public float StickPosition  => GetRepresentativePosition( stick );
+    public float BucketPosition => GetRepresentativePosition( bucket );
+    public float SwingPosition  => swing != null ? swing.GetCurrentAngle() : 0f;
 
     // ---------- 对外：episode 复位 ----------
 
@@ -279,29 +398,10 @@ namespace RLExcavator
         for ( int i = 0; i < boom.Length; i++ )
           m_boomHome[ i ] = boom[ i ] != null ? boom[ i ].GetCurrentAngle() : 0f;
       }
-      m_stickHome = stick != null ? stick.GetCurrentAngle() : 0f;
-      m_stickActuatorHome = CaptureConstraintHomePoseArray( stickActuators );
-      m_bucketHome = bucket != null ? bucket.GetCurrentAngle() : 0f;
-      m_bucketActuatorHome = CaptureConstraintHomePoseArray( bucketActuators );
+      m_stickHome = CaptureConstraintHomePoseArray( stick );
+      m_bucketHome = CaptureConstraintHomePoseArray( bucket );
       m_swingHome  = swing  != null ? swing.GetCurrentAngle()  : 0f;
       m_homeCaptured = true;
-    }
-
-    private void UpdateCurrentPoseReadout()
-    {
-      if ( boom != null ) {
-        if ( currentBoomPose == null || currentBoomPose.Length != boom.Length )
-          currentBoomPose = new float[ boom.Length ];
-
-        for ( int i = 0; i < boom.Length; i++ )
-          currentBoomPose[ i ] = boom[ i ] != null ? boom[ i ].GetCurrentAngle() : 0f;
-      }
-
-      currentStickPose = GetRepresentativeCurrentAngle( stick, stickActuators );
-      UpdateCurrentPoseArray( stickActuators, ref currentStickActuatorPose );
-      currentBucketPose = GetRepresentativeCurrentAngle( bucket, bucketActuators );
-      UpdateCurrentPoseArray( bucketActuators, ref currentBucketActuatorPose );
-      currentSwingPose  = swing  != null ? swing.GetCurrentAngle()  : 0f;
     }
 
     /// <summary>把当前姿态复制到 Inspector home 字段，方便人工调好姿态后作为固定 reset 目标。</summary>
@@ -315,10 +415,8 @@ namespace RLExcavator
           boomHomePose[ i ] = m_boomHome[ i ];
       }
 
-      stickHomePose = m_stickHome;
-      stickActuatorHomePose = CopyArray( m_stickActuatorHome );
-      bucketHomePose = m_bucketHome;
-      bucketActuatorHomePose = CopyArray( m_bucketActuatorHome );
+      stickHomePose = CopyArray( m_stickHome );
+      bucketHomePose = CopyArray( m_bucketHome );
       swingHomePose = m_swingHome;
       useInspectorHomePose = true;
     }
@@ -337,10 +435,8 @@ namespace RLExcavator
         for ( int i = 0; i < boom.Length; i++ )
           LockConstraintAt( boom[ i ], enable, GetBoomHomePose( i ) );
 
-      LockConstraintAt( stick, enable, GetStickHomePose() );
-      LockConstraintSetAt( stickActuators, enable, GetStickActuatorHomePose );
-      LockConstraintAt( bucket, enable, GetBucketHomePose() );
-      LockConstraintSetAt( bucketActuators, enable, GetBucketActuatorHomePose );
+      LockConstraintSetAt( stick, enable, GetStickHomePose );
+      LockConstraintSetAt( bucket, enable, GetBucketHomePose );
       LockConstraintAt( swing,  enable, GetSwingHomePose() );
     }
 
@@ -353,6 +449,19 @@ namespace RLExcavator
         StopCoroutine( m_homeRoutine );
 
       m_homeRoutine = StartCoroutine( HomePoseResetRoutine( settleSteps ) );
+    }
+
+    /// <summary>取消正在进行的 home 复位，用于人工接管时立即解除锁定。</summary>
+    public void CancelHomePoseReset()
+    {
+      if ( m_homeRoutine != null ) {
+        StopCoroutine( m_homeRoutine );
+        m_homeRoutine = null;
+      }
+
+      EnsureAllLocksDisabled();
+      StopAll();
+      IsHoming = false;
     }
 
     private System.Collections.IEnumerator HomePoseResetRoutine( int settleSteps )
@@ -447,21 +556,18 @@ namespace RLExcavator
         foreach ( var c in boom )
           DisableLockController( c );
 
-      DisableLockControllerSet( stick, stickActuators );
-      DisableLockControllerSet( bucket, bucketActuators );
+      DisableLockControllerSet( stick );
+      DisableLockControllerSet( bucket );
       DisableLockController( swing );
     }
 
-    private static void DisableLockControllerSet( Constraint primary, Constraint[] actuators )
+    private static void DisableLockControllerSet( Constraint[] constraints )
     {
-      DisableLockController( primary );
-
-      if ( actuators == null )
+      if ( constraints == null )
         return;
 
-      foreach ( var c in actuators )
-        if ( c != primary )
-          DisableLockController( c );
+      foreach ( var c in constraints )
+        DisableLockController( c );
     }
 
     private static void DisableLockController( Constraint c )
@@ -482,30 +588,20 @@ namespace RLExcavator
       return m_boomHome != null && index < m_boomHome.Length ? m_boomHome[ index ] : 0f;
     }
 
-    private float GetStickHomePose()
+    private float GetStickHomePose( int index )
     {
-      return useInspectorHomePose ? stickHomePose : m_stickHome;
+      if ( useInspectorHomePose && stickHomePose != null && index < stickHomePose.Length )
+        return stickHomePose[ index ];
+
+      return m_stickHome != null && index < m_stickHome.Length ? m_stickHome[ index ] : 0f;
     }
 
-    private float GetStickActuatorHomePose( int index )
+    private float GetBucketHomePose( int index )
     {
-      if ( useInspectorHomePose && stickActuatorHomePose != null && index < stickActuatorHomePose.Length )
-        return stickActuatorHomePose[ index ];
+      if ( useInspectorHomePose && bucketHomePose != null && index < bucketHomePose.Length )
+        return bucketHomePose[ index ];
 
-      return m_stickActuatorHome != null && index < m_stickActuatorHome.Length ? m_stickActuatorHome[ index ] : 0f;
-    }
-
-    private float GetBucketHomePose()
-    {
-      return useInspectorHomePose ? bucketHomePose : m_bucketHome;
-    }
-
-    private float GetBucketActuatorHomePose( int index )
-    {
-      if ( useInspectorHomePose && bucketActuatorHomePose != null && index < bucketActuatorHomePose.Length )
-        return bucketActuatorHomePose[ index ];
-
-      return m_bucketActuatorHome != null && index < m_bucketActuatorHome.Length ? m_bucketActuatorHome[ index ] : 0f;
+      return m_bucketHome != null && index < m_bucketHome.Length ? m_bucketHome[ index ] : 0f;
     }
 
     private float GetSwingHomePose()
@@ -526,10 +622,8 @@ namespace RLExcavator
         for ( int i = 0; i < boom.Length; i++ )
           maxError = Mathf.Max( maxError, GetConstraintHomeError( boom[ i ], GetBoomHomePose( i ) ) );
 
-      maxError = Mathf.Max( maxError, GetConstraintHomeError( stick, GetStickHomePose() ) );
-      maxError = Mathf.Max( maxError, GetConstraintSetHomeError( stickActuators, GetStickActuatorHomePose ) );
-      maxError = Mathf.Max( maxError, GetConstraintHomeError( bucket, GetBucketHomePose() ) );
-      maxError = Mathf.Max( maxError, GetConstraintSetHomeError( bucketActuators, GetBucketActuatorHomePose ) );
+      maxError = Mathf.Max( maxError, GetConstraintSetHomeError( stick, GetStickHomePose ) );
+      maxError = Mathf.Max( maxError, GetConstraintSetHomeError( bucket, GetBucketHomePose ) );
       maxError = Mathf.Max( maxError, GetConstraintHomeError( swing, GetSwingHomePose() ) );
 
       return maxError;
@@ -585,41 +679,24 @@ namespace RLExcavator
       return result;
     }
 
-    private static void UpdateCurrentPoseArray( Constraint[] constraints, ref float[] readout )
+    private float GetRepresentativeNormalizedPosition( Constraint[] constraints )
     {
-      if ( constraints == null ) {
-        readout = null;
-        return;
-      }
-
-      if ( readout == null || readout.Length != constraints.Length )
-        readout = new float[ constraints.Length ];
-
-      for ( int i = 0; i < constraints.Length; i++ )
-        readout[ i ] = constraints[ i ] != null ? constraints[ i ].GetCurrentAngle() : 0f;
-    }
-
-    private float GetRepresentativeNormalizedPosition( Constraint primary, Constraint[] actuators )
-    {
-      var representative = FindRepresentativeConstraint( primary, actuators );
+      var representative = FindRepresentativeConstraint( constraints );
       return GetNormalizedPosition( representative );
     }
 
-    private static float GetRepresentativeCurrentAngle( Constraint primary, Constraint[] actuators )
+    private static float GetRepresentativePosition( Constraint[] constraints )
     {
-      var representative = FindRepresentativeConstraint( primary, actuators );
+      var representative = FindRepresentativeConstraint( constraints );
       return representative != null ? representative.GetCurrentAngle() : 0f;
     }
 
-    private static Constraint FindRepresentativeConstraint( Constraint primary, Constraint[] actuators )
+    private static Constraint FindRepresentativeConstraint( Constraint[] constraints )
     {
-      if ( primary != null )
-        return primary;
-
-      if ( actuators == null )
+      if ( constraints == null )
         return null;
 
-      foreach ( var c in actuators )
+      foreach ( var c in constraints )
         if ( c != null )
           return c;
 

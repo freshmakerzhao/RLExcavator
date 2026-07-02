@@ -22,12 +22,22 @@ namespace RLExcavator
     }
 
     public Binding[] bindings;
-    public float driveSpeed = 0.12f;
+    // driveSpeed是每次按键时约束的速度
+    public float driveSpeed = 0.03f;
+    // logConstraintState表示是否打印约束状态
+    public bool logConstraintState = false;
+    // stateLogInterval表示打印约束状态的时间间隔，单位为秒
+    public float stateLogInterval = 0.25f;
+    // m_nextStateLogTime表示下一次打印约束状态的时间
+    private float m_nextStateLogTime;
 
     private void Update()
     {
       if ( bindings == null )
         return;
+
+      bool shouldLogState = logConstraintState && Time.time >= m_nextStateLogTime;
+      bool loggedState = false;
 
       foreach ( Binding binding in bindings ) {
         if ( binding == null )
@@ -40,7 +50,15 @@ namespace RLExcavator
 
         float command = Axis( binding.positiveKey, binding.negativeKey );
         DriveConstraint( binding.constraint, command * Mathf.Abs( driveSpeed ) );
+
+        if ( shouldLogState && Mathf.Abs( command ) > 0f ) {
+          LogConstraintState( binding );
+          loggedState = true;
+        }
       }
+
+      if ( loggedState )
+        m_nextStateLogTime = Time.time + Mathf.Max( 0.02f, stateLogInterval );
     }
 
     private void OnDisable()
@@ -69,6 +87,39 @@ namespace RLExcavator
       motor.Enable = true;
       motor.LockAtZeroSpeed = false;
       motor.Speed = speed;
+    }
+
+    private static void LogConstraintState( Binding binding )
+    {
+      Constraint constraint = binding.constraint;
+      if ( constraint == null )
+        return;
+
+      var range = constraint.GetController<RangeController>();
+      var motor = constraint.GetController<TargetSpeedController>();
+      string rangeText = range != null ?
+                           $"{Format( range.Range.Min )}, {Format( range.Range.Max )}" :
+                           "none";
+      string rangeForceText = range != null ? Format( range.GetCurrentForce() ) : "none";
+      string motorForceText = motor != null ? Format( motor.GetCurrentForce() ) : "none";
+      string motorSpeedText = motor != null ? Format( motor.Speed ) : "none";
+
+      Debug.Log(
+        $"[ConstraintTester] {BindingName( binding )} pos={Format( constraint.GetCurrentAngle() )} " +
+        $"range=({rangeText}) rangeEnabled={( range != null && range.Enable )} " +
+        $"rangeForce={rangeForceText} motorSpeed={motorSpeedText} motorForce={motorForceText}" );
+    }
+
+    private static string Format( float value )
+    {
+      if ( float.IsPositiveInfinity( value ) )
+        return "Infinity";
+      if ( float.IsNegativeInfinity( value ) )
+        return "-Infinity";
+      if ( float.IsNaN( value ) )
+        return "NaN";
+
+      return value.ToString( "0.####" );
     }
 
     private static string BindingName( Binding binding )
