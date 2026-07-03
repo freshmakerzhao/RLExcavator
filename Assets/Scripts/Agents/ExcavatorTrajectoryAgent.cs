@@ -321,6 +321,7 @@ namespace RLExcavator
     private int m_stuckWindowCount = 0;
     private float m_stuckWindowMaxActionMagnitude = 0f;
     private float m_previousMotionTime = 0f;
+    private int m_completedPathSerial = 0;
     private MachineProfile m_machineProfile = null;
 
     // UI / 调试只读属性
@@ -345,6 +346,9 @@ namespace RLExcavator
 
     /// <summary>当前路径完成进度，范围 0 到 1</summary>
     public float CurrentPathProgress => trajectory != null ? trajectory.Progress : 0f;
+
+    /// <summary>每次完整路径成功完成时递增。用于 demo 状态机跨 episode reset 稳定检测完成事件。</summary>
+    public int CompletedPathSerial => m_completedPathSerial;
 
     public TrajectoryTaskMode CurrentTaskMode => taskMode;
     public float CurrentBucketPitchDeg => CurrentBucketPitchDegrees();
@@ -524,6 +528,7 @@ namespace RLExcavator
         if ( completed ) {
           m_episodeCompletedPath = true;
           completedThisStep = true;
+          m_completedPathSerial++;
           AddReward( kCompleteReward );
           if ( debugEpisodeEvents )
             Debug.Log( $"[ExcavatorTrajectoryAgent] Path complete. episode={CurrentEpisode}, score={GetCumulativeReward():F3}" );

@@ -15,8 +15,7 @@ namespace RLExcavator
     {
       PerceptionMapping = 0,
       TrajectoryPlanning = 1,
-      TrajectoryTracking = 2,
-      ManualControl = 3
+      ManualControl = 2
     }
 
     [Header("References")]
@@ -46,10 +45,10 @@ namespace RLExcavator
     [Header("Minimap")]
     public Vector2Int minimapTextureSize = new Vector2Int( 800, 480 );
 
-    private readonly Button[] m_tabButtons = new Button[ 4 ];
-    private readonly Image[] m_tabImages = new Image[ 4 ];
-    private readonly Outline[] m_tabOutlines = new Outline[ 4 ];
-    private readonly RectTransform[] m_tabPages = new RectTransform[ 4 ];
+    private readonly Button[] m_tabButtons = new Button[ 3 ];
+    private readonly Image[] m_tabImages = new Image[ 3 ];
+    private readonly Outline[] m_tabOutlines = new Outline[ 3 ];
+    private readonly RectTransform[] m_tabPages = new RectTransform[ 3 ];
 
     private GameObject m_root;
     private RectTransform m_leftMenuPanel;
@@ -60,7 +59,7 @@ namespace RLExcavator
     private AspectRatioFitter m_minimapFitter;
     private Font m_font;
     private RenderTexture m_minimapRenderTexture;
-    private DemoTab m_activeTab = DemoTab.TrajectoryTracking;
+    private DemoTab m_activeTab = DemoTab.TrajectoryPlanning;
 
     private const float kMenuRowStep = 42f;
     private const float kMenuButtonHeight = 34f;
@@ -75,9 +74,9 @@ namespace RLExcavator
     private static readonly Color s_textColor = new Color( 0.92f, 0.96f, 1.0f, 1.0f );
     private static readonly Color s_mutedTextColor = new Color( 0.70f, 0.82f, 0.92f, 1.0f );
 
-    private static readonly string[] s_tabLabels = { "感知建图", "生成轨迹", "轨迹追踪", "手动控制" };
-    private static readonly string[] s_pageNames = { "Page_PerceptionMapping", "Page_TrajectoryPlanning", "Page_TrajectoryTracking", "Page_ManualControl" };
-    private static readonly string[] s_menuTitles = { "感知建图", "生成轨迹", "轨迹追踪", "手动控制" };
+    private static readonly string[] s_tabLabels = { "感知建图", "生成轨迹", "手动控制" };
+    private static readonly string[] s_pageNames = { "Page_PerceptionMapping", "Page_TrajectoryPlanning", "Page_ManualControl" };
+    private static readonly string[] s_menuTitles = { "感知建图", "生成轨迹", "手动控制" };
 
     private void Awake()
     {
@@ -334,7 +333,6 @@ namespace RLExcavator
 
       BuildPerceptionPage( m_tabPages[ (int)DemoTab.PerceptionMapping ] );
       BuildTrajectoryPlanningPage( m_tabPages[ (int)DemoTab.TrajectoryPlanning ] );
-      BuildTrajectoryTrackingPage( m_tabPages[ (int)DemoTab.TrajectoryTracking ] );
       BuildManualControlPage( m_tabPages[ (int)DemoTab.ManualControl ] );
     }
 
@@ -349,31 +347,16 @@ namespace RLExcavator
 
     private void BuildTrajectoryPlanningPage( RectTransform page )
     {
-      AddMenuButton( page, "赴挖掘点模式", 0, taskManager.SetModeMoveToDig, true );
-      AddMenuButton( page, "运土保持模式", 1, taskManager.SetModeCarryMaterial, true );
-      AddMenuButton( page, "选起点后点画面", 2, taskManager.SelectPlanStartPoint, true );
-      AddMenuButton( page, "选终点后点画面", 3, taskManager.SelectPlanEndPoint, true );
-      AddMenuButton( page, "控制点前移", 4, taskManager.MoveSelectedPlanPointForward, true );
-      AddMenuButton( page, "控制点后移", 5, taskManager.MoveSelectedPlanPointBackward, true );
-      AddMenuButton( page, "控制点左移", 6, taskManager.MoveSelectedPlanPointLeft, true );
-      AddMenuButton( page, "控制点右移", 7, taskManager.MoveSelectedPlanPointRight, true );
-      AddMenuButton( page, "控制点上移", 8, taskManager.MoveSelectedPlanPointUp, true );
-      AddMenuButton( page, "控制点下移", 9, taskManager.MoveSelectedPlanPointDown, true );
-      AddMenuButton( page, "生成轨迹", 10, taskManager.PlanPath, true );
-      AddMenuButton( page, "生成并追踪", 11, taskManager.PlanAndStartTracking, true );
-      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 13 );
-    }
-
-    private void BuildTrajectoryTrackingPage( RectTransform page )
-    {
-      AddMenuButton( page, "赴挖掘点模式", 0, taskManager.SetModeMoveToDig, true );
-      AddMenuButton( page, "运土保持模式", 1, taskManager.SetModeCarryMaterial, true );
-      AddMenuButton( page, "生成轨迹", 2, taskManager.PlanPath, true );
-      AddMenuButton( page, "开始追踪", 3, taskManager.StartTracking, true );
-      AddMenuButton( page, "停止追踪", 4, taskManager.StopTracking, true );
-      AddMenuButton( page, "生成并追踪", 5, taskManager.PlanAndStartTracking, true );
-      AddMenuButton( page, "重置演示", 6, taskManager.ResetDemo, true );
-      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n进度：-\n编辑点：-\n起点：-\n终点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 8 );
+      AddMenuButton( page, "选择挖掘点", 0, taskManager.SelectDigPoint, true );
+      AddMenuButton( page, "选择倾倒点", 1, taskManager.SelectDumpPoint, true );
+      AddMenuButton( page, "控制点前移", 2, taskManager.MoveSelectedPlanPointForward, true );
+      AddMenuButton( page, "控制点后移", 3, taskManager.MoveSelectedPlanPointBackward, true );
+      AddMenuButton( page, "控制点左移", 4, taskManager.MoveSelectedPlanPointLeft, true );
+      AddMenuButton( page, "控制点右移", 5, taskManager.MoveSelectedPlanPointRight, true );
+      AddMenuButton( page, "控制点上移", 6, taskManager.MoveSelectedPlanPointUp, true );
+      AddMenuButton( page, "控制点下移", 7, taskManager.MoveSelectedPlanPointDown, true );
+      AddMenuButton( page, "执行", 8, taskManager.ExecuteDigDumpTask, true );
+      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n自动作业：-\n固定动作：-\n进度：-\n编辑点：-\n挖掘点：-\n倾倒点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 10 );
     }
 
     private void BuildManualControlPage( RectTransform page )
@@ -382,10 +365,12 @@ namespace RLExcavator
       AddMenuButton( page, "编辑运土区域", 1, taskManager.EditCarryMaterialReachableWorkspace, true );
       AddMenuButton( page, "隐藏可达区域", 2, taskManager.HideReachableWorkspaceForManualEdit, true );
       AddMenuButton( page, "停止关节运动", 3, taskManager.StopManualMotion, true );
-      AddMenuButton( page, "上一个边界点", 4, taskManager.SelectPreviousWorkspaceBoundaryPoint, true );
-      AddMenuButton( page, "下一个边界点", 5, taskManager.SelectNextWorkspaceBoundaryPoint, true );
-      AddMenuButton( page, "应用铲斗到边界点", 6, taskManager.ApplyBucketTipToSelectedWorkspaceBoundaryPoint, true );
-      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n手动输入：-\n可达区域：-\n边界点：-\n键盘：I/K 大臂，T/G 小臂，J/L 铲斗，F/H 回转\n铲斗尖局部：-", 7 );
+      AddMenuButton( page, "挖掘测试", 4, taskManager.StartDigTest, true );
+      AddMenuButton( page, "倾倒测试", 5, taskManager.StartDumpTest, true );
+      AddMenuButton( page, "上一个边界点", 6, taskManager.SelectPreviousWorkspaceBoundaryPoint, true );
+      AddMenuButton( page, "下一个边界点", 7, taskManager.SelectNextWorkspaceBoundaryPoint, true );
+      AddMenuButton( page, "应用铲斗到边界点", 8, taskManager.ApplyBucketTipToSelectedWorkspaceBoundaryPoint, true );
+      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n手动输入：-\n固定动作：-\n可达区域：-\n边界点：-\n键盘：I/K 大臂，T/G 小臂，J/L 铲斗，F/H 回转\n铲斗尖局部：-", 9 );
     }
 
     private void BuildMinimapMonitor( Transform parent )
@@ -468,31 +453,26 @@ namespace RLExcavator
         m_tabButtons[ i ].onClick.AddListener( () => SwitchTab( (DemoTab)index ) );
       }
 
-      WirePageButton( DemoTab.TrajectoryPlanning, "Button_赴挖掘点模式", taskManager.SetModeMoveToDig );
-      WirePageButton( DemoTab.TrajectoryPlanning, "Button_运土保持模式", taskManager.SetModeCarryMaterial );
-      WirePageButton( DemoTab.TrajectoryPlanning, "Button_选起点后点画面", taskManager.SelectPlanStartPoint );
-      WirePageButton( DemoTab.TrajectoryPlanning, "Button_选终点后点画面", taskManager.SelectPlanEndPoint );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_选择挖掘点", taskManager.SelectDigPoint );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_选择倾倒点", taskManager.SelectDumpPoint );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_选起点后点画面", taskManager.SelectDigPoint );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_选终点后点画面", taskManager.SelectDumpPoint );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点前移", taskManager.MoveSelectedPlanPointForward );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点后移", taskManager.MoveSelectedPlanPointBackward );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点左移", taskManager.MoveSelectedPlanPointLeft );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点右移", taskManager.MoveSelectedPlanPointRight );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点上移", taskManager.MoveSelectedPlanPointUp );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点下移", taskManager.MoveSelectedPlanPointDown );
-      WirePageButton( DemoTab.TrajectoryPlanning, "Button_生成轨迹", taskManager.PlanPath );
-      WirePageButton( DemoTab.TrajectoryPlanning, "Button_生成并追踪", taskManager.PlanAndStartTracking );
-
-      WirePageButton( DemoTab.TrajectoryTracking, "Button_赴挖掘点模式", taskManager.SetModeMoveToDig );
-      WirePageButton( DemoTab.TrajectoryTracking, "Button_运土保持模式", taskManager.SetModeCarryMaterial );
-      WirePageButton( DemoTab.TrajectoryTracking, "Button_生成轨迹", taskManager.PlanPath );
-      WirePageButton( DemoTab.TrajectoryTracking, "Button_开始追踪", taskManager.StartTracking );
-      WirePageButton( DemoTab.TrajectoryTracking, "Button_停止追踪", taskManager.StopTracking );
-      WirePageButton( DemoTab.TrajectoryTracking, "Button_生成并追踪", taskManager.PlanAndStartTracking );
-      WirePageButton( DemoTab.TrajectoryTracking, "Button_重置演示", taskManager.ResetDemo );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_执行", taskManager.ExecuteDigDumpTask );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_生成轨迹", taskManager.ExecuteDigDumpTask );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_生成并追踪", taskManager.ExecuteDigDumpTask );
 
       WirePageButton( DemoTab.ManualControl, "Button_编辑挖掘点区域", taskManager.EditMoveToDigReachableWorkspace );
       WirePageButton( DemoTab.ManualControl, "Button_编辑运土区域", taskManager.EditCarryMaterialReachableWorkspace );
       WirePageButton( DemoTab.ManualControl, "Button_隐藏可达区域", taskManager.HideReachableWorkspaceForManualEdit );
       WirePageButton( DemoTab.ManualControl, "Button_停止关节运动", taskManager.StopManualMotion );
+      WirePageButton( DemoTab.ManualControl, "Button_挖掘测试", taskManager.StartDigTest );
+      WirePageButton( DemoTab.ManualControl, "Button_倾倒测试", taskManager.StartDumpTest );
       WirePageButton( DemoTab.ManualControl, "Button_上一个边界点", taskManager.SelectPreviousWorkspaceBoundaryPoint );
       WirePageButton( DemoTab.ManualControl, "Button_下一个边界点", taskManager.SelectNextWorkspaceBoundaryPoint );
       WirePageButton( DemoTab.ManualControl, "Button_应用铲斗到边界点", taskManager.ApplyBucketTipToSelectedWorkspaceBoundaryPoint );
@@ -610,10 +590,7 @@ namespace RLExcavator
           FitLeftMenuHeight( 4, 5 );
           break;
         case DemoTab.TrajectoryPlanning:
-          FitLeftMenuHeight( 12, 13 );
-          break;
-        case DemoTab.TrajectoryTracking:
-          FitLeftMenuHeight( 7, 8 );
+          FitLeftMenuHeight( 9, 10 );
           break;
         case DemoTab.ManualControl:
           FitLeftMenuHeight( 8, 8 );

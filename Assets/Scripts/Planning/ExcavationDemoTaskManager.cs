@@ -19,6 +19,7 @@ namespace RLExcavator
       PathPlanned,
       Tracking,
       ManualControl,
+      AutoTask,
       Completed
     }
 
@@ -39,6 +40,8 @@ namespace RLExcavator
     public ReachableWorkspaceVisualizer carryMaterialReachableWorkspace;
     public DecisionRequester decisionRequester;
     public Text statusText;
+    [Tooltip("完整挖掘-运输-倾倒任务编排。UI 只调用它，不在 TaskManager 内部写任务流程。")]
+    public ExcavationCycleTask excavationCycleTask;
 
     [Header("Calibration")]
     [Tooltip("用于显示铲斗尖局部坐标的参考系。建议绑定 TrajectoryEnvironment 或 RLExcavatorTraj。为空时自动使用 agent.environmentRoot 或 TrajectoryProvider。")]
@@ -84,10 +87,13 @@ namespace RLExcavator
 
     private ExcavatorKeyboardTester m_manualKeyboardTester;
     private ExcavatorTrajectoryAgent.TrajectoryTaskMode m_taskModeWithoutAgent = ExcavatorTrajectoryAgent.TrajectoryTaskMode.MoveToDig;
+    private bool m_cycleTaskEventsBound = false;
 
     private void Awake()
     {
       ResolveMissingReferences();
+      EnsureCycleTaskReferences();
+      BindCycleTaskEvents();
 
       if ( disableAgentWhenStopped )
         SetAgentEnabled( false );
@@ -95,6 +101,8 @@ namespace RLExcavator
 
     private void Start()
     {
+      EnsureCycleTaskReferences();
+
       if ( agent != null && disableRandomTaskModeOnStart )
         agent.randomizeTaskModeOnEpisodeBegin = false;
 
@@ -114,8 +122,15 @@ namespace RLExcavator
       UpdateStatus();
     }
 
+    private void OnDestroy()
+    {
+      UnbindCycleTaskEvents();
+    }
+
     private void Update()
     {
+      SyncStateFromCycleTask();
+
       if ( stopWhenPathCompleted && state == DemoState.Tracking && trajectory != null && trajectory.PathCompleted ) {
         StopTracking();
         state = DemoState.Completed;
@@ -151,22 +166,34 @@ namespace RLExcavator
 
     public void SelectPlanStartPoint()
     {
-      if ( planner == null ) {
-        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing planner reference." );
-        return;
-      }
-
-      planner.SelectStartPoint();
-      UpdateStatus();
+      SelectDigPoint();
     }
 
     public void SelectPlanEndPoint()
+    {
+      SelectDumpPoint();
+    }
+
+    public void SelectDigPoint()
     {
       if ( planner == null ) {
         Debug.LogWarning( "[ExcavationDemoTaskManager] Missing planner reference." );
         return;
       }
 
+      SetTaskMode( ExcavatorTrajectoryAgent.TrajectoryTaskMode.MoveToDig );
+      planner.SelectStartPoint();
+      UpdateStatus();
+    }
+
+    public void SelectDumpPoint()
+    {
+      if ( planner == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing planner reference." );
+        return;
+      }
+
+      SetTaskMode( ExcavatorTrajectoryAgent.TrajectoryTaskMode.CarryMaterial );
       planner.SelectEndPoint();
       UpdateStatus();
     }
@@ -232,39 +259,62 @@ namespace RLExcavator
     [ContextMenu("开始追踪")]
     public void StartTracking()
     {
+      TryStartTracking( DemoState.Tracking );
+    }
+
+    private bool TryStartTracking( DemoState trackingState )
+    {
+      StopFixedAction( false );
+
       if ( agent == null ) {
         Debug.LogWarning( "[ExcavationDemoTaskManager] Missing trajectory agent reference." );
-        return;
+        return false;
       }
 
       if ( !CanUseInferenceControlMode() )
-        return;
+        return false;
 
       SetInferenceControlMode();
 
       if ( !CanRunDemoControl() )
-        return;
+        return false;
 
       if ( requirePathBeforeTracking && state != DemoState.PathPlanned ) {
         Debug.LogWarning( "[ExcavationDemoTaskManager] Please plan a path before starting tracking." );
-        return;
+        return false;
       }
 
       if ( controller == null ) {
         Debug.LogWarning( "[ExcavationDemoTaskManager] Missing controller reference." );
-        return;
+        return false;
       }
 
       SetAgentEnabled( true );
       SetManualKeyboardTesterEnabled( false );
       controller.SetCommandInputEnabled( true );
       SetDecisionRequesterEnabled( true );
-      state = DemoState.Tracking;
+      state = trackingState;
       UpdateStatus();
+      return true;
     }
 
     [ContextMenu("停止追踪")]
     public void StopTracking()
+    {
+      if ( IsCycleTaskRunning() ) {
+        StopCycleTask( true );
+        return;
+      }
+
+      StopTrackingControls();
+
+      if ( state == DemoState.Tracking || state == DemoState.AutoTask )
+        state = DemoState.Idle;
+
+      UpdateStatus();
+    }
+
+    private void StopTrackingControls()
     {
       if ( CanRunDemoControl() ) {
         if ( controller != null )
@@ -276,11 +326,6 @@ namespace RLExcavator
         if ( disableAgentWhenStopped )
           SetAgentEnabled( false );
       }
-
-      if ( state == DemoState.Tracking )
-        state = DemoState.Idle;
-
-      UpdateStatus();
     }
 
     public void PlanAndStartTracking()
@@ -289,8 +334,32 @@ namespace RLExcavator
       StartTracking();
     }
 
+    [ContextMenu("执行")]
+    public void ExecuteDigDumpTask()
+    {
+      EnsureCycleTaskReferences();
+
+      if ( excavationCycleTask == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing ExcavationCycleTask reference." );
+        return;
+      }
+
+      if ( excavationCycleTask.IsCycleRunning ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Auto task is already running." );
+        return;
+      }
+
+      SetManualKeyboardTesterEnabled( false );
+      excavationCycleTask.ExecuteDigTransportDump();
+      state = DemoState.AutoTask;
+      UpdateStatus();
+    }
+
+    // 开始手动控制，禁用决策请求器和 Agent，启用键盘测试器
     public void StartManualControl()
     {
+      StopCycleTask( true );
+
       if ( controller == null ) {
         Debug.LogWarning( "[ExcavationDemoTaskManager] Missing controller reference." );
         return;
@@ -308,6 +377,9 @@ namespace RLExcavator
 
     public void StopManualControl()
     {
+      StopCycleTask( true );
+      StopFixedAction( false );
+
       if ( controller != null ) {
         controller.StopAll();
         controller.SetCommandInputEnabled( false );
@@ -337,8 +409,54 @@ namespace RLExcavator
 
     public void StopManualMotion()
     {
+      StopCycleTask( true );
+      StopFixedAction( true );
       if ( controller != null )
         controller.StopAll();
+      UpdateStatus();
+    }
+
+    [ContextMenu("挖掘测试")]
+    public void StartDigTest()
+    {
+      if ( controller == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing controller reference." );
+        return;
+      }
+
+      EnsureCycleTaskReferences();
+      if ( excavationCycleTask == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing ExcavationCycleTask reference." );
+        return;
+      }
+
+      StopFixedAction( false );
+      StartManualControl();
+      SetManualKeyboardTesterEnabled( false );
+      controller.SetCommandInputEnabled( true );
+      excavationCycleTask.StartDigTest();
+      UpdateStatus();
+    }
+
+    [ContextMenu("倾倒测试")]
+    public void StartDumpTest()
+    {
+      if ( controller == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing controller reference." );
+        return;
+      }
+
+      EnsureCycleTaskReferences();
+      if ( excavationCycleTask == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing ExcavationCycleTask reference." );
+        return;
+      }
+
+      StopFixedAction( false );
+      StartManualControl();
+      SetManualKeyboardTesterEnabled( false );
+      controller.SetCommandInputEnabled( true );
+      excavationCycleTask.StartDumpTest();
       UpdateStatus();
     }
 
@@ -546,6 +664,9 @@ namespace RLExcavator
     [ContextMenu("重置演示")]
     public void ResetDemo()
     {
+      StopCycleTask( false );
+      StopFixedAction( false );
+
       if ( controller != null ) {
         controller.SetCommandInputEnabled( false );
         controller.StopAll();
@@ -689,13 +810,15 @@ namespace RLExcavator
       string mode = TaskModeLabel( CurrentDemoTaskMode() );
       string behaviorMode = BehaviorModeLabel();
       string control = controller != null && controller.CommandInputEnabled ? "开启" : "关闭";
-      string manualInput = state == DemoState.ManualControl ? "键盘接管" : "关闭";
+      string manualInput = excavationCycleTask != null && excavationCycleTask.IsFixedActionRunning ? "固定动作接管" : state == DemoState.ManualControl ? "键盘接管" : "关闭";
+      string autoTaskStatus = excavationCycleTask != null ? excavationCycleTask.AutoTaskStatus : "未绑定";
+      string fixedActionStatus = excavationCycleTask != null ? excavationCycleTask.FixedActionStatus : "未绑定";
       string progress = agent != null ? agent.CurrentPathProgress.ToString( "P0" ) : "0%";
       string editable = planner != null ? EditablePointLabel( planner.editableControlPoint ) : "未绑定";
-      string startpoint = planner != null && planner.TryGetStartPoint( out Vector3 start )
+      string digPoint = planner != null && planner.TryGetStartPoint( out Vector3 start )
         ? FormatVector( start )
         : "未绑定";
-      string endpoint = planner != null && planner.TryGetEndPoint( out Vector3 end )
+      string dumpPoint = planner != null && planner.TryGetEndPoint( out Vector3 end )
         ? FormatVector( end )
         : "未绑定";
       string planning = planner != null ? planner.LastPlanningSummary : "未绑定";
@@ -714,15 +837,97 @@ namespace RLExcavator
         $"行为模式：{behaviorMode}\n" +
         $"控制输入：{control}\n" +
         $"手动输入：{manualInput}\n" +
+        $"自动作业：{autoTaskStatus}\n" +
+        $"固定动作：{fixedActionStatus}\n" +
         $"进度：{progress}\n" +
         $"编辑点：{editable}\n" +
-        $"起点：{startpoint}\n" +
-        $"终点：{endpoint}\n" +
+        $"挖掘点：{digPoint}\n" +
+        $"倾倒点：{dumpPoint}\n" +
         $"规划：{planning}\n" +
         $"点选：{picking}\n" +
         $"可达区域：{workspaceName}\n" +
         $"边界点：{workspacePoint}\n" +
         $"铲斗尖局部：{bucketTipLocal}";
+    }
+
+    private void EnsureCycleTaskReferences()
+    {
+      if ( excavationCycleTask == null )
+        excavationCycleTask = GetComponent<ExcavationCycleTask>();
+
+      if ( excavationCycleTask == null )
+        return;
+
+      excavationCycleTask.agent = agent;
+      excavationCycleTask.controller = controller;
+      excavationCycleTask.planner = planner;
+      excavationCycleTask.trajectory = trajectory;
+      excavationCycleTask.decisionRequester = decisionRequester;
+      excavationCycleTask.requireInferenceOnlyBehavior = requireInferenceOnlyBehavior;
+      excavationCycleTask.disableDecisionRequesterWhenStopped = disableDecisionRequesterWhenStopped;
+      excavationCycleTask.disableAgentWhenStopped = disableAgentWhenStopped;
+      BindCycleTaskEvents();
+    }
+
+    private void BindCycleTaskEvents()
+    {
+      if ( excavationCycleTask == null || m_cycleTaskEventsBound )
+        return;
+
+      excavationCycleTask.FixedActionCompleted += OnCycleTaskFixedActionCompleted;
+      m_cycleTaskEventsBound = true;
+    }
+
+    private void UnbindCycleTaskEvents()
+    {
+      if ( excavationCycleTask != null && m_cycleTaskEventsBound )
+        excavationCycleTask.FixedActionCompleted -= OnCycleTaskFixedActionCompleted;
+
+      m_cycleTaskEventsBound = false;
+    }
+
+    private void OnCycleTaskFixedActionCompleted()
+    {
+      if ( state == DemoState.ManualControl )
+        SetManualKeyboardTesterEnabled( true );
+      UpdateStatus();
+    }
+
+    private bool IsCycleTaskRunning()
+    {
+      return excavationCycleTask != null && excavationCycleTask.IsCycleRunning;
+    }
+
+    private void StopCycleTask( bool stopMotion )
+    {
+      if ( excavationCycleTask != null )
+        excavationCycleTask.StopTask( stopMotion );
+
+      if ( state == DemoState.AutoTask )
+        state = DemoState.Idle;
+      UpdateStatus();
+    }
+
+    private void StopFixedAction( bool notifyWhenCompleted )
+    {
+      if ( excavationCycleTask != null )
+        excavationCycleTask.StopFixedAction( notifyWhenCompleted );
+    }
+
+    private void SyncStateFromCycleTask()
+    {
+      if ( excavationCycleTask == null )
+        return;
+
+      if ( excavationCycleTask.IsCycleRunning ) {
+        state = DemoState.AutoTask;
+        return;
+      }
+
+      if ( state != DemoState.AutoTask )
+        return;
+
+      state = excavationCycleTask.LastRunSucceeded ? DemoState.Completed : DemoState.Idle;
     }
 
     private void MoveSelectedWorkspaceBoundaryPoint( Vector3 localDirection )
@@ -929,6 +1134,8 @@ namespace RLExcavator
           return "追踪中";
         case DemoState.ManualControl:
           return "手动控制";
+        case DemoState.AutoTask:
+          return "自动作业中";
         case DemoState.Completed:
           return "已完成";
         default:
@@ -950,7 +1157,7 @@ namespace RLExcavator
 
     private static string EditablePointLabel( SimpleTrajectoryPlanner.EditableControlPoint value )
     {
-      return value == SimpleTrajectoryPlanner.EditableControlPoint.Start ? "起点" : "终点";
+      return value == SimpleTrajectoryPlanner.EditableControlPoint.Start ? "挖掘点" : "倾倒点";
     }
 
     private string BehaviorModeLabel()
@@ -990,6 +1197,7 @@ namespace RLExcavator
       return false;
     }
 
+    // 启用或禁用手动键盘测试器
     private void SetManualKeyboardTesterEnabled( bool enabled )
     {
       ExcavatorKeyboardTester tester = ManualKeyboardTester();

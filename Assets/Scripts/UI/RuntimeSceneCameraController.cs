@@ -43,7 +43,13 @@ namespace RLExcavator
     public bool requireRightMouseForKeyboardMove = true;
 
     [Header("Optional")]
-    [Tooltip("Alt + 左键环绕的目标。为空时使用镜头前方固定距离点。")]
+    [Tooltip("右键拖拽围绕目标旋转；关闭后右键为原地转向。")]
+    public bool rightMouseOrbitsTarget = true;
+
+    [Tooltip("为空时自动查找 MachineRoot 作为环绕锚点。")]
+    public bool autoFindOrbitTarget = true;
+
+    [Tooltip("右键/Alt 左键环绕的目标。为空时使用镜头前方固定距离点。")]
     public Transform orbitTarget;
 
     public bool FreeModeEnabled => freeModeEnabled;
@@ -58,6 +64,7 @@ namespace RLExcavator
     {
       CacheFixedPose();
       FindFixedCameraScripts();
+      ResolveOrbitTarget();
       freeModeEnabled = true;
       PauseFixedCameraScripts();
       // SetFreeModeEnabled( true );
@@ -76,7 +83,10 @@ namespace RLExcavator
 
       Vector2 mouseDelta = MouseDelta();
       if ( IsRightMousePressed() ) {
-        RotateInPlace( mouseDelta );
+        if ( rightMouseOrbitsTarget )
+          Orbit( mouseDelta );
+        else
+          RotateInPlace( mouseDelta );
         MoveFromKeyboard();
         CaptureCursor();
       }
@@ -187,6 +197,35 @@ namespace RLExcavator
         if ( script != null )
           script.enabled = m_fixedCameraScriptStates[ i ];
       }
+    }
+
+    private void ResolveOrbitTarget()
+    {
+      if ( !autoFindOrbitTarget || orbitTarget != null )
+        return;
+
+      Transform bestTarget = null;
+      float bestDistanceSq = float.PositiveInfinity;
+      ExcavatorFrameRegistry[] registries = FindObjectsByType<ExcavatorFrameRegistry>( FindObjectsInactive.Include, FindObjectsSortMode.None );
+      for ( int i = 0; i < registries.Length; i++ ) {
+        ExcavatorFrameRegistry registry = registries[ i ];
+        if ( registry == null )
+          continue;
+
+        registry.ResolveMissingReferences();
+        Transform candidate = registry.MachineRoot != null ? registry.MachineRoot : registry.BucketTip;
+        if ( candidate == null )
+          continue;
+
+        float distanceSq = ( candidate.position - transform.position ).sqrMagnitude;
+        if ( distanceSq >= bestDistanceSq )
+          continue;
+
+        bestTarget = candidate;
+        bestDistanceSq = distanceSq;
+      }
+
+      orbitTarget = bestTarget;
     }
 
     private void RotateInPlace( Vector2 mouseDelta )

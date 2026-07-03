@@ -94,6 +94,11 @@ namespace RLExcavator
     private Vector3 m_initialRootPosition = Vector3.zero;
     private Quaternion m_initialRootRotation = Quaternion.identity;
     private bool m_rootPoseCaptured = false;
+    private bool m_zeroSpeedPositionHoldEnabled = false;
+    private bool m_boomZeroSpeedHoldEnabled = false;
+    private bool m_stickZeroSpeedHoldEnabled = false;
+    private bool m_bucketZeroSpeedHoldEnabled = false;
+    private bool m_swingZeroSpeedHoldEnabled = false;
 
     public bool IsHoming { get; private set; } = false;
 
@@ -106,6 +111,14 @@ namespace RLExcavator
     private bool    m_homeCaptured = false;
 
     public bool CommandInputEnabled => commandInputEnabled;
+    public float LastBoomCommand { get; private set; } = 0f;
+    public float LastStickCommand { get; private set; } = 0f;
+    public float LastBucketCommand { get; private set; } = 0f;
+    public float LastSwingCommand { get; private set; } = 0f;
+    public float LastBoomTargetSpeed { get; private set; } = 0f;
+    public float LastStickTargetSpeed { get; private set; } = 0f;
+    public float LastBucketTargetSpeed { get; private set; } = 0f;
+    public float LastSwingTargetSpeed { get; private set; } = 0f;
 
     // ---------- 生命周期 ----------
 
@@ -255,20 +268,43 @@ namespace RLExcavator
       if ( !commandInputEnabled || IsHoming )
         return;
 
+      LastBoomCommand = boomInput;
+      LastStickCommand = stickInput;
+      LastBucketCommand = bucketInput;
+      LastSwingCommand = swingInput;
+
+      bool holdBoom = m_zeroSpeedPositionHoldEnabled && IsZeroCommand( boomInput );
+      bool holdStick = m_zeroSpeedPositionHoldEnabled && IsZeroCommand( stickInput );
+      bool holdBucket = m_zeroSpeedPositionHoldEnabled && IsZeroCommand( bucketInput );
+      bool holdSwing = m_zeroSpeedPositionHoldEnabled && IsZeroCommand( swingInput );
+
+      SetConstraintSetPositionHold( boom, ref m_boomZeroSpeedHoldEnabled, holdBoom );
+      SetConstraintSetPositionHold( stick, ref m_stickZeroSpeedHoldEnabled, holdStick );
+      SetConstraintSetPositionHold( bucket, ref m_bucketZeroSpeedHoldEnabled, holdBucket );
+      SetConstraintPositionHold( swing, ref m_swingZeroSpeedHoldEnabled, holdSwing );
+
       float dt = Time.fixedDeltaTime;
-      m_boomSpeed = MoveTowardsSpeed( m_boomSpeed, boomInput * boomMaxSpeed, boomAcceleration, dt );
-      m_bucketSpeed = MoveTowardsSpeed( m_bucketSpeed, bucketInput * bucketMaxSpeed, bucketAcceleration, dt );
+      m_boomSpeed = holdBoom ? 0f : MoveTowardsSpeed( m_boomSpeed, boomInput * boomMaxSpeed, boomAcceleration, dt );
+      m_bucketSpeed = holdBucket ? 0f : MoveTowardsSpeed( m_bucketSpeed, bucketInput * bucketMaxSpeed, bucketAcceleration, dt );
 
       float stickSpeed = stickInput * stickMaxSpeed;
       float swingSpeed = swingInput * swingMaxSpeed;
 
-      if ( boom != null )
+      LastBoomTargetSpeed = m_boomSpeed;
+      LastStickTargetSpeed = stickSpeed;
+      LastBucketTargetSpeed = m_bucketSpeed;
+      LastSwingTargetSpeed = swingSpeed;
+
+      if ( boom != null && !holdBoom )
         foreach ( var c in boom )
           DriveConstraint( c, m_boomSpeed );
 
-      DriveConstraintSet( stick, stickSpeed );
-      DriveConstraintSet( bucket, m_bucketSpeed );
-      DriveConstraint( swing,  swingSpeed );
+      if ( !holdStick )
+        DriveConstraintSet( stick, stickSpeed );
+      if ( !holdBucket )
+        DriveConstraintSet( bucket, m_bucketSpeed );
+      if ( !holdSwing )
+        DriveConstraint( swing,  swingSpeed );
     }
 
     /// <summary>所有关节停下（目标速度=0）。</summary>
@@ -276,12 +312,39 @@ namespace RLExcavator
     {
       m_boomSpeed = 0f;
       m_bucketSpeed = 0f;
+      LastBoomCommand = 0f;
+      LastStickCommand = 0f;
+      LastBucketCommand = 0f;
+      LastSwingCommand = 0f;
+      LastBoomTargetSpeed = 0f;
+      LastStickTargetSpeed = 0f;
+      LastBucketTargetSpeed = 0f;
+      LastSwingTargetSpeed = 0f;
+
+      if ( m_zeroSpeedPositionHoldEnabled ) {
+        SetConstraintSetPositionHold( boom, ref m_boomZeroSpeedHoldEnabled, true );
+        SetConstraintSetPositionHold( stick, ref m_stickZeroSpeedHoldEnabled, true );
+        SetConstraintSetPositionHold( bucket, ref m_bucketZeroSpeedHoldEnabled, true );
+        SetConstraintPositionHold( swing, ref m_swingZeroSpeedHoldEnabled, true );
+        return;
+      }
 
       if ( boom != null )
         foreach ( var c in boom ) DriveConstraint( c, 0f );
       DriveConstraintSet( stick, 0f );
       DriveConstraintSet( bucket, 0f );
       DriveConstraint( swing,  0f );
+    }
+
+    /// <summary>固定动作伺服模式下，把零速关节锁在当前位置；RL/手动控制默认关闭。</summary>
+    public void SetZeroSpeedPositionHoldEnabled( bool enabled )
+    {
+      if ( m_zeroSpeedPositionHoldEnabled == enabled )
+        return;
+
+      m_zeroSpeedPositionHoldEnabled = enabled;
+      if ( !enabled )
+        ClearZeroSpeedPositionHolds();
     }
 
     public void SetCommandInputEnabled( bool enabled )
@@ -552,6 +615,12 @@ namespace RLExcavator
 
     private void EnsureAllLocksDisabled()
     {
+      m_zeroSpeedPositionHoldEnabled = false;
+      m_boomZeroSpeedHoldEnabled = false;
+      m_stickZeroSpeedHoldEnabled = false;
+      m_bucketZeroSpeedHoldEnabled = false;
+      m_swingZeroSpeedHoldEnabled = false;
+
       if ( boom != null )
         foreach ( var c in boom )
           DisableLockController( c );
@@ -559,6 +628,49 @@ namespace RLExcavator
       DisableLockControllerSet( stick );
       DisableLockControllerSet( bucket );
       DisableLockController( swing );
+    }
+
+    private void ClearZeroSpeedPositionHolds()
+    {
+      SetConstraintSetPositionHold( boom, ref m_boomZeroSpeedHoldEnabled, false );
+      SetConstraintSetPositionHold( stick, ref m_stickZeroSpeedHoldEnabled, false );
+      SetConstraintSetPositionHold( bucket, ref m_bucketZeroSpeedHoldEnabled, false );
+      SetConstraintPositionHold( swing, ref m_swingZeroSpeedHoldEnabled, false );
+    }
+
+    private static bool IsZeroCommand( float command )
+    {
+      return Mathf.Abs( command ) <= 0.0001f;
+    }
+
+    private static void SetConstraintSetPositionHold( Constraint[] constraints, ref bool holdEnabled, bool enabled )
+    {
+      if ( holdEnabled == enabled )
+        return;
+
+      holdEnabled = enabled;
+      if ( constraints == null )
+        return;
+
+      foreach ( var constraint in constraints )
+        SetConstraintPositionHold( constraint, enabled );
+    }
+
+    private static void SetConstraintPositionHold( Constraint constraint, ref bool holdEnabled, bool enabled )
+    {
+      if ( holdEnabled == enabled )
+        return;
+
+      holdEnabled = enabled;
+      SetConstraintPositionHold( constraint, enabled );
+    }
+
+    private static void SetConstraintPositionHold( Constraint constraint, bool enabled )
+    {
+      if ( constraint == null )
+        return;
+
+      LockConstraintAt( constraint, enabled, constraint.GetCurrentAngle() );
     }
 
     private static void DisableLockControllerSet( Constraint[] constraints )

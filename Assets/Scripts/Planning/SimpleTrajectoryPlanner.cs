@@ -4,7 +4,7 @@ using UnityEngine;
 namespace RLExcavator
 {
   /// <summary>
-  /// 最小轨迹规划器：根据起点和终点生成一条可由 TrajectoryProvider 跟踪的 waypoint 路径。
+  /// 最小轨迹规划器：根据当前铲尖、挖掘点和倾倒点生成可由 TrajectoryProvider 跟踪的 waypoint 路径。
   /// 第一版只负责接口闭环；后续可在保持输出接口不变的前提下替换为 RRT*。
   /// </summary>
   public class SimpleTrajectoryPlanner : MonoBehaviour
@@ -26,10 +26,10 @@ namespace RLExcavator
     [Tooltip("接收规划结果的轨迹提供器")]
     public TrajectoryProvider trajectory;
 
-    [Tooltip("规划起点控制点。Demo 中建议绑定一个可见的空物体")]
+    [Tooltip("挖掘点控制点。字段名保留 startPoint 是为了兼容已有场景序列化。")]
     public Transform startPoint;
 
-    [Tooltip("规划终点控制点。Demo 中建议绑定一个可见的空物体")]
+    [Tooltip("倾倒点控制点。字段名保留 endPoint 是为了兼容已有场景序列化。")]
     public Transform endPoint;
 
     [Header("Path shape")]
@@ -39,7 +39,7 @@ namespace RLExcavator
     [Tooltip("生成 waypoint 数量。当前策略训练主要使用 5 个点，demo 第一版建议保持 5")]
     public int waypointCount = 5;
 
-    [Tooltip("起终点距离较远时，按最大段长自动增加 waypoint 数量")]
+    [Tooltip("当前段起点到目标点距离较远时，按最大段长自动增加 waypoint 数量")]
     public bool fitWaypointCountToDistance = false;
 
     [Tooltip("自动增加 waypoint 时允许的最大相邻 waypoint 距离")]
@@ -67,19 +67,19 @@ namespace RLExcavator
     [Tooltip("CartesianRrtStar 使用 ReachableWorkspaceVisualizer 的 3D 体积作为规划边界，而不是使用下方手动 Bounds。")]
     public bool useReachableWorkspaceVolumeForCartesianRrt = true;
 
-    [Tooltip("规划前将起点/终点夹到可达空间最近点，避免给策略输入明显不可达目标。")]
+    [Tooltip("规划前将当前段起点/目标点夹到可达空间最近点，避免给策略输入明显不可达目标。")]
     public bool clampEndpointsToWorkspace = true;
 
-    [Tooltip("夹取后的起点/终点是否回写到可见控制点对象。关闭时只影响本次规划路径。")]
+    [Tooltip("夹取后的控制点是否回写到可见对象。自动作业运行时会临时关闭，避免覆盖挖掘点/倾倒点。")]
     public bool writeClampedEndpointsBack = true;
 
-    [Tooltip("通过 UI 移动起点/终点后，是否自动夹到可达空间最近点。")]
+    [Tooltip("通过 UI 移动挖掘点/倾倒点后，是否自动夹到当前模式可达空间最近点。")]
     public bool clampMovedControlPointsToWorkspace = true;
 
     [Tooltip("非参数域轨迹写入 TrajectoryProvider 前，将 waypoint 投影回当前 3D 可达空间。")]
     public bool clampGeneratedWaypointsToWorkspace = true;
 
-    [Tooltip("起点/终点被夹取超过该距离时打印 warning，单位米。")]
+    [Tooltip("当前段起点/目标点被夹取超过该距离时打印 warning，单位米。")]
     public float endpointClampWarningDistance = 0.75f;
 
     [Tooltip("输出 waypoint 被投影超过该距离时打印 warning，单位米。")]
@@ -141,7 +141,7 @@ namespace RLExcavator
 
     public Color startPointColor = new Color( 0.25f, 0.85f, 0.35f, 1f );
     public Color endPointColor = new Color( 1f, 0.35f, 0.15f, 1f );
-    public float controlPointVisualRadius = 0.22f;
+    public float controlPointVisualRadius = 0.06f;
 
     [Header("Debug")]
     public bool drawGizmos = true;
@@ -311,6 +311,18 @@ namespace RLExcavator
         trajectory.SetPlannedPath( path );
       else
         trajectory.QueuePlannedPath( path );
+    }
+
+    public void PlanRuntimePath( Vector3 startWorld, Vector3 goalWorld )
+    {
+      bool previousWriteBack = writeClampedEndpointsBack;
+      writeClampedEndpointsBack = false;
+      try {
+        Plan( startWorld, goalWorld );
+      }
+      finally {
+        writeClampedEndpointsBack = previousWriteBack;
+      }
     }
 
     public Vector3[] GeneratePath( Vector3 startWorld, Vector3 goalWorld )
@@ -1067,7 +1079,7 @@ namespace RLExcavator
       return true;
     }
 
-    public string EditablePointName => editableControlPoint == EditableControlPoint.Start ? "起点" : "终点";
+    public string EditablePointName => editableControlPoint == EditableControlPoint.Start ? "挖掘点" : "倾倒点";
 
     private Transform SelectedControlPointTransform()
     {

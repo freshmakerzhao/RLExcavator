@@ -7,7 +7,7 @@ namespace RLExcavator
   /// <summary>
   /// Lets the demo operator set the active planning control point from the Game view.
   /// The selected point is owned by SimpleTrajectoryPlanner; this script only translates
-  /// mouse input into world-space point updates.
+  /// mouse input into world-space dig/dump point updates.
   /// </summary>
   public class DemoPointPicker : MonoBehaviour
   {
@@ -16,7 +16,7 @@ namespace RLExcavator
     public Camera pickingCamera;
 
     [Header("Picking")]
-    [Tooltip("开启后，鼠标点击 UI 按钮时不会修改起点/终点。")]
+    [Tooltip("开启后，鼠标点击 UI 按钮时不会修改挖掘点/倾倒点。")]
     public bool ignoreClicksOverUi = true;
 
     [Tooltip("优先通过 Physics Raycast 点击平台、地面或可达区域辅助面。")]

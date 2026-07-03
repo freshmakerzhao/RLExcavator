@@ -179,7 +179,7 @@ namespace RLExcavator.Tests
     }
 
     [Test]
-    public void SwitchingTrackingTabDoesNotForceInferenceMode()
+    public void SwitchingPlanningTabDoesNotForceInferenceMode()
     {
       Type managerType = FindType( "RLExcavator.ExcavationDemoTaskManager" );
       Type uiType = FindType( "RLExcavator.ExcavationDemoRuntimeUI" );
@@ -203,7 +203,7 @@ namespace RLExcavator.Tests
         SetObjectField( ui, "taskManager", manager );
 
         Type tabType = uiType.GetNestedType( "DemoTab", BindingFlags.NonPublic );
-        InvokePrivateMethod( ui, "SwitchTab", EnumValue( tabType, "TrajectoryTracking" ) );
+        InvokePrivateMethod( ui, "SwitchTab", EnumValue( tabType, "TrajectoryPlanning" ) );
 
         Assert.That( GetPropertyString( behaviorParameters, "BehaviorType" ), Is.EqualTo( "HeuristicOnly" ) );
       }
