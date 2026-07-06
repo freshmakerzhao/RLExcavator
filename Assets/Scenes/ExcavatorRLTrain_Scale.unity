@@ -732,6 +732,8 @@ MonoBehaviour:
   zoomSensitivity: 0.02
   orbitDistance: 6
   requireRightMouseForKeyboardMove: 1
+  rightMouseOrbitsTarget: 1
+  autoFindOrbitTarget: 1
   orbitTarget: {fileID: 0}
 --- !u!1 &485021449
 GameObject:

@@ -17,20 +17,28 @@ namespace RLExcavator.Tests
       var gameObject = new GameObject( "ExcavatorControllerProfileSpeedTest" );
       try {
         Component controller = gameObject.AddComponent( controllerType );
-        SetFloatField( controller, "boomMaxSpeed", 1f );
-        SetFloatField( controller, "stickMaxSpeed", 1f );
-        SetFloatField( controller, "bucketMaxSpeed", 1f );
-        SetFloatField( controller, "swingMaxSpeed", 1f );
+        SetFloatField( controller, "boomMaxSpeedPositive", 1f );
+        SetFloatField( controller, "boomMaxSpeedNegative", 1f );
+        SetFloatField( controller, "stickMaxSpeedPositive", 1f );
+        SetFloatField( controller, "stickMaxSpeedNegative", 1f );
+        SetFloatField( controller, "bucketMaxSpeedPositive", 1f );
+        SetFloatField( controller, "bucketMaxSpeedNegative", 1f );
 
         MethodInfo applyMethod = controllerType.GetMethod( "ApplyMachineProfileSpeeds", BindingFlags.Instance | BindingFlags.Public );
         Assert.That( applyMethod, Is.Not.Null, "ExcavatorController must expose ApplyMachineProfileSpeeds(MachineProfile)." );
 
         applyMethod.Invoke( controller, new object[] { profile } );
 
-        Assert.That( GetFloatField( controller, "boomMaxSpeed" ), Is.EqualTo( 0.06f ).Within( 1e-6f ) );
-        Assert.That( GetFloatField( controller, "stickMaxSpeed" ), Is.EqualTo( 0.06f ).Within( 1e-6f ) );
-        Assert.That( GetFloatField( controller, "bucketMaxSpeed" ), Is.EqualTo( 0.06f ).Within( 1e-6f ) );
-        Assert.That( GetFloatField( controller, "swingMaxSpeed" ), Is.EqualTo( 0.6f ).Within( 1e-6f ) );
+        Assert.That( GetFloatField( controller, "boomMaxSpeedPositive" ), Is.EqualTo( 0.0351f ).Within( 1e-6f ) );
+        Assert.That( GetFloatField( controller, "boomMaxSpeedNegative" ), Is.EqualTo( 0.0185f ).Within( 1e-6f ) );
+        Assert.That( GetFloatField( controller, "stickMaxSpeedPositive" ), Is.EqualTo( 0.0444f ).Within( 1e-6f ) );
+        Assert.That( GetFloatField( controller, "stickMaxSpeedNegative" ), Is.EqualTo( 0.0357f ).Within( 1e-6f ) );
+        Assert.That( GetFloatField( controller, "bucketMaxSpeedPositive" ), Is.EqualTo( 0.0342f ).Within( 1e-6f ) );
+        Assert.That( GetFloatField( controller, "bucketMaxSpeedNegative" ), Is.EqualTo( 0.0419f ).Within( 1e-6f ) );
+        Assert.That( InvokeFloatMethod( controller, "MaxAbsSpeed", "boom" ), Is.EqualTo( 0.0351f ).Within( 1e-6f ) );
+        Assert.That( InvokeFloatMethod( controller, "MaxAbsSpeed", "stick" ), Is.EqualTo( 0.0444f ).Within( 1e-6f ) );
+        Assert.That( InvokeFloatMethod( controller, "MaxAbsSpeed", "bucket" ), Is.EqualTo( 0.0419f ).Within( 1e-6f ) );
+        Assert.That( InvokeFloatMethod( controller, "MaxAbsSpeed", "swing" ), Is.EqualTo( 0.6f ).Within( 1e-6f ) );
       }
       finally {
         UnityEngine.Object.DestroyImmediate( gameObject );
@@ -71,6 +79,13 @@ namespace RLExcavator.Tests
       FieldInfo field = target.GetType().GetField( fieldName, BindingFlags.Instance | BindingFlags.Public );
       Assert.That( field, Is.Not.Null, "Missing public field: " + fieldName );
       return (float)field.GetValue( target );
+    }
+
+    private static float InvokeFloatMethod( object target, string methodName, string argument )
+    {
+      MethodInfo method = target.GetType().GetMethod( methodName, BindingFlags.Instance | BindingFlags.Public );
+      Assert.That( method, Is.Not.Null, "Missing public method: " + methodName );
+      return (float)method.Invoke( target, new object[] { argument } );
     }
 
     private static string SharedProfilePath()

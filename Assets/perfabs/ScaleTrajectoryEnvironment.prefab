@@ -74,7 +74,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -183,7 +183,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -235,7 +235,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: d7280653dc774625b47a330733dc1950, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TrajectoryProvider
   waypoints:
   - {fileID: 2554865990489028697}
@@ -251,6 +251,10 @@ MonoBehaviour:
   moveToDigReachableWorkspace: {fileID: 7770348305050722185}
   carryMaterialReachableWorkspace: {fileID: 8922187226899671838}
   reachableWorkspaceMinEndpointDistance: 0.1
+  useCurrentTipAsPathStart: 0
+  currentTipPathStart: {fileID: 0}
+  reachableWorkspaceMaxEndpointDistance: 0
+  nearbyPathParameterRadius: 0.12
   reachableWorkspaceCurveStrength: 0.16
   reachableWorkspaceUseCurvedPaths: 1
   reachableWorkspaceDirectionJitter: 0.08
@@ -308,7 +312,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b121c190ebade39d89d7bbcc0a4f2be, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ReachableWorkspaceVisualizer
   frameRegistry: {fileID: 4336152341639758177}
   useFrameRegistryMachineRoot: 1
@@ -397,7 +401,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -444,7 +448,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -493,7 +497,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 6a9ab00a2b035f9478e3faf9f46c0b2a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_collisionsEnabled: 1
@@ -511,7 +515,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 8e1d5063f7b24d26a1f0748d9f33eefe, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.SuccessIndicator
   targetRenderer: {fileID: 2986233476781610911}
   successColor: {r: 0.1, g: 0.85, b: 0.25, a: 1}
@@ -589,7 +593,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 16b1d2f95a604a29a89a26e856f5251a, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TargetPointVisual
   color: {r: 1, g: 0.85, b: 0.05, a: 1}
   radius: 0.18
@@ -669,7 +673,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5b121c190ebade39d89d7bbcc0a4f2be, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ReachableWorkspaceVisualizer
   frameRegistry: {fileID: 4336152341639758177}
   useFrameRegistryMachineRoot: 1
@@ -818,7 +822,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a39fce5ca1a43ed488bf0d4d38bbabea, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_shape: {fileID: 2039899555608394529}
@@ -832,7 +836,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f51c5940a8ebcfc4997616eb2929ad13, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: 
   m_serializationVersion: 1
   m_component: {fileID: 2039899555608394529}
@@ -845,6 +849,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 6431493750905359489}
+  - component: {fileID: 8124162301506475589}
   m_Layer: 0
   m_Name: ScaleTrajectoryEnvironment
   m_TagString: Untagged
@@ -872,6 +877,24 @@ Transform:
   - {fileID: 1903730991770540074}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &8124162301506475589
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8395339075214260905}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a322999a85827b601930259a0b5ca20a, type: 3}
+  m_Name:
+  m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.TrajectoryTrainingCurriculum
+  trajectoryProvider: {fileID: 0}
+  trajectoryAgent: {fileID: 0}
+  stage: 2
+  applyOnAwake: 1
+  applyInEditMode: 0
+  logAppliedSettings: 1
 --- !u!1001 &3382891498918585160
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -980,7 +1003,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: a8113d603d8caa9cb83548247d3381d9, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorFrameRegistry
 --- !u!4 &4755494407847581118 stripped
 Transform:
@@ -1001,7 +1024,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c6ef4816f8ff65f9abd3833058aa9a95, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorController
 --- !u!4 &7346041029316710544 stripped
 Transform:
@@ -1028,7 +1051,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 5d1c4e0b1822b495aa52bc52839ecb30, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.Policies.BehaviorParameters
   m_BrainParameters:
     VectorObservationSize: 38
@@ -1059,7 +1082,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 1182bf9c73b0498ea588875ee5f2eddb, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorTrajectoryAgent
   agentParameters:
     maxStep: 0
@@ -1140,7 +1163,7 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 3a5c9d521e5ef4759a8246a07d52221e, type: 3}
-  m_Name: 
+  m_Name:
   m_EditorClassIdentifier: Unity.ML-Agents::Unity.MLAgents.DecisionRequester
   DecisionPeriod: 5
   DecisionStep: 0

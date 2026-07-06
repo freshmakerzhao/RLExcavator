@@ -133,8 +133,8 @@ namespace RLExcavator
     [Tooltip("当前 UI 正在编辑的规划控制点")]
     public EditableControlPoint editableControlPoint = EditableControlPoint.End;
 
-    [Tooltip("UI 每次移动控制点的距离，单位为 Unity 世界坐标米")]
-    public float endpointMoveStep = 0.5f;
+    [Tooltip("UI 每次移动挖掘点/倾倒点的距离，单位为 Unity 世界坐标米。")]
+    public float endpointMoveStep = 0.05f;
 
     [Tooltip("控制点前后左右移动的参考坐标系。为空时使用当前 planner 物体坐标系")]
     public Transform endpointMoveFrame;
@@ -295,7 +295,7 @@ namespace RLExcavator
 
       Transform moveFrame = endpointMoveFrame != null ? endpointMoveFrame : transform;
       Vector3 worldDirection = moveFrame.TransformDirection( localDirection.normalized );
-      point.position += worldDirection * Mathf.Max( endpointMoveStep, 0.01f );
+      point.position += worldDirection * Mathf.Max( endpointMoveStep, 0.001f );
       ClampControlPointIfNeeded( point );
     }
 

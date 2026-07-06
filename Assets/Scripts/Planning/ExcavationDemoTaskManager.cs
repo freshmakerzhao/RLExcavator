@@ -82,6 +82,24 @@ namespace RLExcavator
     [Tooltip("切换 MoveToDig/CarryMaterial 时隐藏非当前模式的可达空间编辑显示。")]
     public bool hideInactiveReachableWorkspacesOnModeSwitch = true;
 
+    [Header("Init joint pose")]
+    [Tooltip("Play 启动时用关节位置伺服回到初始关节姿态。")]
+    public bool applyInitJointPoseOnStart = false;
+
+    [Tooltip("完整任务倾倒结束后，用关节位置伺服回到初始关节姿态。手动停止任务时不会自动回位。")]
+    public bool returnToInitJointPoseAfterCycle = true;
+
+    [Tooltip("初始关节姿态，归一化顺序为 boom、stick、bucket、swing。")]
+    public ExcavationCycleTask.NormalizedJointDelta initNormalizedJointPose;
+
+    [Tooltip("回到初始关节姿态的最长时间。")]
+    [Min( 0.1f )]
+    public float returnToInitJointPoseTimeoutSeconds = 8f;
+
+    [Header("Trajectory display")]
+    [Tooltip("执行任务和生成轨迹时是否显示 waypoint 轨迹点。关闭后仍会正常规划和跟踪，只隐藏可视化。")]
+    public bool showTrajectoryPath = false;
+
     [Header("Runtime")]
     public DemoState state = DemoState.Idle;
 
@@ -102,6 +120,7 @@ namespace RLExcavator
     private void Start()
     {
       EnsureCycleTaskReferences();
+      ApplyInitJointPoseIfEnabled();
 
       if ( agent != null && disableRandomTaskModeOnStart )
         agent.randomizeTaskModeOnEpisodeBegin = false;
@@ -250,9 +269,45 @@ namespace RLExcavator
       if ( !planner.TryPlanConfiguredPath() )
         return;
 
-      if ( trajectory != null )
-        trajectory.SetPathVisualsVisible( true );
+      ApplyTrajectoryPathVisibility();
       state = DemoState.PathPlanned;
+      UpdateStatus();
+    }
+
+    public void ToggleTrajectoryPathVisible()
+    {
+      showTrajectoryPath = !showTrajectoryPath;
+      ApplyTrajectoryPathVisibility();
+      UpdateStatus();
+    }
+
+    public void ShowTrajectoryPath()
+    {
+      showTrajectoryPath = true;
+      ApplyTrajectoryPathVisibility();
+      UpdateStatus();
+    }
+
+    public void HideTrajectoryPath()
+    {
+      showTrajectoryPath = false;
+      ApplyTrajectoryPathVisibility();
+      UpdateStatus();
+    }
+
+    [ContextMenu("Capture Current Joint Pose As Init")]
+    public void CaptureCurrentJointPoseAsInit()
+    {
+      if ( controller == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing controller reference." );
+        return;
+      }
+
+      initNormalizedJointPose = new ExcavationCycleTask.NormalizedJointDelta(
+        controller.BoomNormalizedPosition,
+        controller.StickNormalizedPosition,
+        controller.BucketNormalizedPosition,
+        controller.SwingNormalizedPosition );
       UpdateStatus();
     }
 
@@ -349,6 +404,7 @@ namespace RLExcavator
         return;
       }
 
+      ApplyTrajectoryPathVisibility();
       SetManualKeyboardTesterEnabled( false );
       excavationCycleTask.ExecuteDigTransportDump();
       state = DemoState.AutoTask;
@@ -813,6 +869,7 @@ namespace RLExcavator
       string manualInput = excavationCycleTask != null && excavationCycleTask.IsFixedActionRunning ? "固定动作接管" : state == DemoState.ManualControl ? "键盘接管" : "关闭";
       string autoTaskStatus = excavationCycleTask != null ? excavationCycleTask.AutoTaskStatus : "未绑定";
       string fixedActionStatus = excavationCycleTask != null ? excavationCycleTask.FixedActionStatus : "未绑定";
+      string trajectoryVisibility = showTrajectoryPath ? "显示" : "隐藏";
       string progress = agent != null ? agent.CurrentPathProgress.ToString( "P0" ) : "0%";
       string editable = planner != null ? EditablePointLabel( planner.editableControlPoint ) : "未绑定";
       string digPoint = planner != null && planner.TryGetStartPoint( out Vector3 start )
@@ -839,6 +896,7 @@ namespace RLExcavator
         $"手动输入：{manualInput}\n" +
         $"自动作业：{autoTaskStatus}\n" +
         $"固定动作：{fixedActionStatus}\n" +
+        $"轨迹显示：{trajectoryVisibility}\n" +
         $"进度：{progress}\n" +
         $"编辑点：{editable}\n" +
         $"挖掘点：{digPoint}\n" +
@@ -866,6 +924,10 @@ namespace RLExcavator
       excavationCycleTask.requireInferenceOnlyBehavior = requireInferenceOnlyBehavior;
       excavationCycleTask.disableDecisionRequesterWhenStopped = disableDecisionRequesterWhenStopped;
       excavationCycleTask.disableAgentWhenStopped = disableAgentWhenStopped;
+      excavationCycleTask.showTrajectoryPathDuringExecution = showTrajectoryPath;
+      excavationCycleTask.returnToInitJointPoseAfterCycle = returnToInitJointPoseAfterCycle;
+      excavationCycleTask.initNormalizedJointPose = initNormalizedJointPose;
+      excavationCycleTask.returnToInitJointPoseTimeoutSeconds = returnToInitJointPoseTimeoutSeconds;
       BindCycleTaskEvents();
     }
 
@@ -875,13 +937,16 @@ namespace RLExcavator
         return;
 
       excavationCycleTask.FixedActionCompleted += OnCycleTaskFixedActionCompleted;
+      excavationCycleTask.CycleFinished += OnCycleTaskFinished;
       m_cycleTaskEventsBound = true;
     }
 
     private void UnbindCycleTaskEvents()
     {
-      if ( excavationCycleTask != null && m_cycleTaskEventsBound )
+      if ( excavationCycleTask != null && m_cycleTaskEventsBound ) {
         excavationCycleTask.FixedActionCompleted -= OnCycleTaskFixedActionCompleted;
+        excavationCycleTask.CycleFinished -= OnCycleTaskFinished;
+      }
 
       m_cycleTaskEventsBound = false;
     }
@@ -890,6 +955,12 @@ namespace RLExcavator
     {
       if ( state == DemoState.ManualControl )
         SetManualKeyboardTesterEnabled( true );
+      UpdateStatus();
+    }
+
+    private void OnCycleTaskFinished( bool success, string reason )
+    {
+      ApplyTrajectoryPathVisibility();
       UpdateStatus();
     }
 
@@ -928,6 +999,30 @@ namespace RLExcavator
         return;
 
       state = excavationCycleTask.LastRunSucceeded ? DemoState.Completed : DemoState.Idle;
+    }
+
+    private void ApplyTrajectoryPathVisibility()
+    {
+      if ( trajectory != null )
+        trajectory.SetPathVisualsVisible( showTrajectoryPath );
+
+      if ( excavationCycleTask != null )
+        excavationCycleTask.showTrajectoryPathDuringExecution = showTrajectoryPath;
+    }
+
+    private void ApplyInitJointPoseIfEnabled()
+    {
+      if ( !applyInitJointPoseOnStart )
+        return;
+
+      EnsureCycleTaskReferences();
+      if ( excavationCycleTask == null ) {
+        Debug.LogWarning( "[ExcavationDemoTaskManager] Missing ExcavationCycleTask reference." );
+        return;
+      }
+
+      SetManualKeyboardTesterEnabled( false );
+      excavationCycleTask.StartReturnToNormalizedJointPose( "回初始姿态", initNormalizedJointPose.ToVector4(), false );
     }
 
     private void MoveSelectedWorkspaceBoundaryPoint( Vector3 localDirection )

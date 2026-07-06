@@ -13,7 +13,7 @@ namespace RLExcavator
   ///   松开按键 = 该关节停止。
   ///
   /// 验证目标：能把铲斗插进土堆、卷斗挖起一斗土、抬臂提起来。手感不对就回到
-  /// ExcavatorController 调 *MaxSpeed，或检查关节是否拖反/拖错。
+  /// ExcavatorController 调正/反向速度上限，或检查关节是否拖反/拖错。
   /// </summary>
   [RequireComponent( typeof( ExcavatorController ) )]
   public class ExcavatorKeyboardTester : MonoBehaviour

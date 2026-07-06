@@ -152,10 +152,10 @@ namespace RLExcavator
       rootPosition = rootFrame.position;
       rootEulerAngles = rootFrame.eulerAngles;
 
-      boom.Capture( excavator.boom, SafeReadFloat( () => excavator.BoomNormalizedPosition ), excavator.boomMaxSpeed );
-      stick.Capture( excavator.stick, SafeReadFloat( () => excavator.StickNormalizedPosition ), excavator.stickMaxSpeed );
-      bucket.Capture( excavator.bucket, SafeReadFloat( () => excavator.BucketNormalizedPosition ), excavator.bucketMaxSpeed );
-      swing.Capture( excavator.swing, SafeReadFloat( () => excavator.SwingNormalizedPosition ), excavator.swingMaxSpeed );
+      boom.Capture( excavator.boom, SafeReadFloat( () => excavator.BoomNormalizedPosition ), excavator.MaxAbsSpeed( "boom" ) );
+      stick.Capture( excavator.stick, SafeReadFloat( () => excavator.StickNormalizedPosition ), excavator.MaxAbsSpeed( "stick" ) );
+      bucket.Capture( excavator.bucket, SafeReadFloat( () => excavator.BucketNormalizedPosition ), excavator.MaxAbsSpeed( "bucket" ) );
+      swing.Capture( excavator.swing, SafeReadFloat( () => excavator.SwingNormalizedPosition ), excavator.MaxAbsSpeed( "swing" ) );
 
       CaptureBucketPitch();
       CaptureObservedTransforms();

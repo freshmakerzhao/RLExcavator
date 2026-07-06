@@ -21,6 +21,7 @@ namespace RLExcavator
       PlanningToDump,
       TrackingToDump,
       Dumping,
+      ReturningToInit,
       Completed,
       Failed
     }
@@ -136,6 +137,20 @@ namespace RLExcavator
 
     [Tooltip("停止追踪时禁用 Agent。")]
     public bool disableAgentWhenStopped = true;
+
+    [Tooltip("完整任务执行期间是否显示 waypoint 轨迹点。关闭只隐藏可视化，不影响规划和跟踪。")]
+    public bool showTrajectoryPathDuringExecution = false;
+
+    [Header("Return to init joint pose")]
+    [Tooltip("完整任务倾倒结束后，用关节位置伺服回到初始关节姿态。")]
+    public bool returnToInitJointPoseAfterCycle = false;
+
+    [Tooltip("初始关节姿态，归一化顺序为 boom、stick、bucket、swing。")]
+    public NormalizedJointDelta initNormalizedJointPose;
+
+    [Tooltip("回到初始关节姿态的最长时间。")]
+    [Min( 0.1f )]
+    public float returnToInitJointPoseTimeoutSeconds = 8f;
 
     [Header("Runtime")]
     public CycleState state = CycleState.Idle;
@@ -326,6 +341,16 @@ namespace RLExcavator
       if ( !IsCycleRunning )
         yield break;
 
+      if ( returnToInitJointPoseAfterCycle ) {
+        state = CycleState.ReturningToInit;
+        yield return RunAutoJointServoToNormalizedPose(
+          "回初始姿态",
+          initNormalizedJointPose.ToVector4(),
+          returnToInitJointPoseTimeoutSeconds );
+        if ( !IsCycleRunning )
+          yield break;
+      }
+
       FinishTask( true, "完成" );
     }
 
@@ -388,7 +413,7 @@ namespace RLExcavator
       state = mode == ExcavatorTrajectoryAgent.TrajectoryTaskMode.MoveToDig ? CycleState.PlanningToDig : CycleState.PlanningToDump;
       planner.PlanRuntimePath( bucketTip.position, targetWorld );
       if ( trajectory != null )
-        trajectory.SetPathVisualsVisible( true );
+        trajectory.SetPathVisualsVisible( showTrajectoryPathDuringExecution );
       return true;
     }
 
@@ -450,6 +475,70 @@ namespace RLExcavator
       yield return m_fixedActionRoutine;
       if ( controller != null )
         controller.SetCommandInputEnabled( false );
+    }
+
+    public void StartReturnToNormalizedJointPose( string actionLabel, Vector4 targetNormalizedQpos, bool notifyWhenCompleted )
+    {
+      if ( controller == null ) {
+        Debug.LogWarning( "[ExcavationCycleTask] Missing controller reference." );
+        return;
+      }
+
+      StopFixedAction( false );
+      StopTrackingControls();
+      controller.SetCommandInputEnabled( true );
+      m_fixedActionRoutine = StartCoroutine(
+        RunJointServoToNormalizedPose(
+          string.IsNullOrEmpty( actionLabel ) ? "回初始姿态" : actionLabel,
+          targetNormalizedQpos,
+          returnToInitJointPoseTimeoutSeconds,
+          notifyWhenCompleted ) );
+    }
+
+    private IEnumerator RunAutoJointServoToNormalizedPose( string actionLabel, Vector4 targetNormalizedQpos, float timeoutSeconds )
+    {
+      if ( controller == null )
+        yield break;
+
+      SetDecisionRequesterEnabled( false );
+      SetAgentEnabled( false );
+      controller.SetCommandInputEnabled( true );
+      AutoTaskStatus = actionLabel;
+      m_fixedActionRoutine = StartCoroutine( RunJointServoToNormalizedPose( actionLabel, targetNormalizedQpos, timeoutSeconds, false ) );
+      yield return m_fixedActionRoutine;
+      if ( controller != null )
+        controller.SetCommandInputEnabled( false );
+    }
+
+    private IEnumerator RunJointServoToNormalizedPose( string actionLabel, Vector4 targetNormalizedQpos, float timeoutSeconds, bool notifyWhenCompleted )
+    {
+      Vector4 targetQpos = ClampNormalizedJointPose( targetNormalizedQpos );
+      float startedAt = Time.time;
+      float timeout = Mathf.Max( timeoutSeconds, 0.1f );
+
+      while ( Time.time - startedAt < timeout ) {
+        if ( controller == null )
+          yield break;
+
+        Vector4 error = targetQpos - CurrentNormalizedJointPose();
+        float maxError = MaxAbs( error );
+        FixedActionStatus = $"{actionLabel}：误差 {maxError:0.000}";
+
+        if ( maxError <= fixedActionPositionTolerance )
+          break;
+
+        Vector4 action = ServoActionFromError( error );
+        controller.SetNormalizedSpeeds( action.x, action.y, action.z, action.w );
+        yield return new WaitForFixedUpdate();
+      }
+
+      if ( controller != null )
+        controller.StopAll();
+
+      FixedActionStatus = $"{actionLabel}完成";
+      m_fixedActionRoutine = null;
+      if ( notifyWhenCompleted )
+        FixedActionCompleted?.Invoke();
     }
 
     private IEnumerator RunJointServoSequence( string actionLabel, JointServoTarget[] targets, bool notifyWhenCompleted )

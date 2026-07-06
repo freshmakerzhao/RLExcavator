@@ -23,14 +23,16 @@ namespace RLExcavator.Tests
     {
       MachineProfile profile = MachineProfileLoader.LoadFromPath( SharedProfilePath() );
 
-      AssertActuator( profile.GetActuator( "boom" ), 0, "prismatic", 0.06f, true, -0.095f, 0.080f );
-      AssertActuator( profile.GetActuator( "stick" ), 1, "prismatic", 0.06f, true, -0.060f, 0.090f );
-      AssertActuator( profile.GetActuator( "bucket" ), 2, "prismatic", 0.06f, true, -0.085f, 0.045f );
+      AssertActuator( profile.GetActuator( "boom" ), 0, "prismatic", 0.0351f, 0.0185f, true, -0.095f, 0.080f );
+      AssertActuator( profile.GetActuator( "stick" ), 1, "prismatic", 0.0444f, 0.0357f, true, -0.060f, 0.090f );
+      AssertActuator( profile.GetActuator( "bucket" ), 2, "prismatic", 0.0342f, 0.0419f, true, -0.085f, 0.045f );
 
       MachineActuatorProfile swing = profile.GetActuator( "swing" );
       Assert.That( swing.ActionIndex, Is.EqualTo( 3 ) );
       Assert.That( swing.JointType, Is.EqualTo( "revolute_continuous" ) );
-      Assert.That( swing.MaxSpeed, Is.EqualTo( 0.6f ).Within( 1e-6f ) );
+      Assert.That( swing.MaxSpeedPositive, Is.EqualTo( 0.6f ).Within( 1e-6f ) );
+      Assert.That( swing.MaxSpeedNegative, Is.EqualTo( 0.6f ).Within( 1e-6f ) );
+      Assert.That( swing.MaxAbsSpeed, Is.EqualTo( 0.6f ).Within( 1e-6f ) );
       Assert.That( swing.HasFiniteRange, Is.False );
       Assert.That( swing.RangeEnabledRequired, Is.False );
       Assert.That( swing.Sign, Is.EqualTo( 1 ) );
@@ -64,14 +66,17 @@ namespace RLExcavator.Tests
       MachineActuatorProfile actuator,
       int actionIndex,
       string jointType,
-      float maxSpeed,
+      float maxSpeedPositive,
+      float maxSpeedNegative,
       bool rangeEnabledRequired,
       float rangeMin,
       float rangeMax )
     {
       Assert.That( actuator.ActionIndex, Is.EqualTo( actionIndex ) );
       Assert.That( actuator.JointType, Is.EqualTo( jointType ) );
-      Assert.That( actuator.MaxSpeed, Is.EqualTo( maxSpeed ).Within( 1e-6f ) );
+      Assert.That( actuator.MaxSpeedPositive, Is.EqualTo( maxSpeedPositive ).Within( 1e-6f ) );
+      Assert.That( actuator.MaxSpeedNegative, Is.EqualTo( maxSpeedNegative ).Within( 1e-6f ) );
+      Assert.That( actuator.MaxAbsSpeed, Is.EqualTo( Mathf.Max( maxSpeedPositive, maxSpeedNegative ) ).Within( 1e-6f ) );
       Assert.That( actuator.HasFiniteRange, Is.True );
       Assert.That( actuator.RangeMin, Is.EqualTo( rangeMin ).Within( 1e-6f ) );
       Assert.That( actuator.RangeMax, Is.EqualTo( rangeMax ).Within( 1e-6f ) );

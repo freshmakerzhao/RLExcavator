@@ -175,10 +175,14 @@ MonoBehaviour:
   - {fileID: 4848019375109599418}
   - {fileID: 3513877145254154132}
   swing: {fileID: 5208031346925919721}
-  boomMaxSpeed: 0
-  stickMaxSpeed: 0
-  bucketMaxSpeed: 0
-  swingMaxSpeed: 0
+  boomMaxSpeedPositive: 0
+  boomMaxSpeedNegative: 0
+  stickMaxSpeedPositive: 0
+  stickMaxSpeedNegative: 0
+  bucketMaxSpeedPositive: 0
+  bucketMaxSpeedNegative: 0
+  swingMaxSpeedPositive: 0
+  swingMaxSpeedNegative: 0
   loadMaxSpeedsFromMachineProfile: 1
   logMachineProfileSpeedLoad: 0
   loadRangesFromMachineProfile: 1

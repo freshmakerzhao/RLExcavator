@@ -23,10 +23,10 @@ namespace RLExcavator
     [Tooltip("任务执行开始/结束时自动开始和导出记录。")]
     public bool recordOnCycleTask = true;
 
-    [Tooltip("导出目录名，位于 Unity Application.persistentDataPath 下。")]
+    [Tooltip("CSV 导出目录。相对路径位于 Unity persistentDataPath 下；绝对路径直接使用。")]
     public string outputDirectoryName = "open_loop_velocity_exports";
 
-    [Tooltip("导出的 CSV 顶部写入 profile/action_order/max_speed 等元信息注释。")]
+    [Tooltip("导出的 CSV 顶部写入 profile/action_order/正反向速度等元信息注释。")]
     public bool includeMetadataComments = true;
 
     [Tooltip("每次开始记录时清空上一轮样本。")]
@@ -221,7 +221,7 @@ namespace RLExcavator
 
     private void ExportCsv( bool success, string reason )
     {
-      string directory = Path.Combine( Application.persistentDataPath, outputDirectoryName );
+      string directory = ResolveOutputDirectory();
       Directory.CreateDirectory( directory );
 
       MachineProfile profile = TryLoadProfile();
@@ -233,6 +233,16 @@ namespace RLExcavator
       File.WriteAllText( path, BuildCsv( profile, success, reason ), Encoding.UTF8 );
       m_lastExportPath = path;
       Debug.Log( $"[OpenLoopVelocityRecorder] Exported {m_samples.Count} samples to {path}", this );
+    }
+
+    private string ResolveOutputDirectory()
+    {
+      if ( string.IsNullOrWhiteSpace( outputDirectoryName ) )
+        return Application.persistentDataPath;
+
+      return Path.IsPathRooted( outputDirectoryName )
+        ? outputDirectoryName
+        : Path.Combine( Application.persistentDataPath, outputDirectoryName );
     }
 
     private string BuildCsv( MachineProfile profile, bool success, string reason )
@@ -277,7 +287,9 @@ namespace RLExcavator
     {
       MachineActuatorProfile actuator = profile.GetActuator( actuatorName );
       builder.AppendLine( "# actuator_" + actuatorName
-        + "_max_speed=" + actuator.MaxSpeed.ToString( "G9", CultureInfo.InvariantCulture )
+        + "_max_abs_speed=" + actuator.MaxAbsSpeed.ToString( "G9", CultureInfo.InvariantCulture )
+        + ",max_speed_positive=" + actuator.MaxSpeedPositive.ToString( "G9", CultureInfo.InvariantCulture )
+        + ",max_speed_negative=" + actuator.MaxSpeedNegative.ToString( "G9", CultureInfo.InvariantCulture )
         + ",sign=" + actuator.Sign.ToString( CultureInfo.InvariantCulture )
         + ",deploy_sign=" + actuator.DeploySign.ToString( CultureInfo.InvariantCulture )
         + ",joint_type=" + actuator.JointType );

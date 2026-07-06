@@ -38,14 +38,25 @@ namespace RLExcavator
     public Constraint swing;
 
     [Header("每个关节的最大目标速度（prismatic=m/s，hinge=rad/s）")]
-    [Tooltip("运行时会被 machine_profile.json 覆盖；Inspector 值仅作读取失败时的兜底。")]
-    public float boomMaxSpeed   = 0f;
-    public float stickMaxSpeed  = 0f;
-    public float bucketMaxSpeed = 0f;
-    public float swingMaxSpeed  = 0f;
+    [Tooltip("正向 action 使用的速度上限；运行时由 profile 覆盖。")]
+    public float boomMaxSpeedPositive = 0f;
+    [Tooltip("反向 action 使用的速度上限；运行时由 profile 覆盖。")]
+    public float boomMaxSpeedNegative = 0f;
+    [Tooltip("正向 action 使用的速度上限；运行时由 profile 覆盖。")]
+    public float stickMaxSpeedPositive = 0f;
+    [Tooltip("反向 action 使用的速度上限；运行时由 profile 覆盖。")]
+    public float stickMaxSpeedNegative = 0f;
+    [Tooltip("正向 action 使用的速度上限；运行时由 profile 覆盖。")]
+    public float bucketMaxSpeedPositive = 0f;
+    [Tooltip("反向 action 使用的速度上限；运行时由 profile 覆盖。")]
+    public float bucketMaxSpeedNegative = 0f;
+    [Tooltip("正向 action 使用的速度上限；运行时由 profile 覆盖。")]
+    public float swingMaxSpeedPositive = 0f;
+    [Tooltip("反向 action 使用的速度上限；运行时由 profile 覆盖。")]
+    public float swingMaxSpeedNegative = 0f;
 
     [Header("机型 Profile")]
-    [Tooltip("启动时从 shared/machine_profile.json 读取四个执行器 max_speed，作为速度上限的唯一权威来源。")]
+    [Tooltip("启动时从 shared/machine_profile.json 读取四个执行器正/反向速度上限，作为速度上限的唯一权威来源。")]
     public bool loadMaxSpeedsFromMachineProfile = true;
     [Tooltip("启动应用 profile 速度后打印一行自检日志。")]
     public bool logMachineProfileSpeedLoad = true;
@@ -159,10 +170,10 @@ namespace RLExcavator
       if ( profile == null )
         throw new System.ArgumentNullException( nameof( profile ) );
 
-      boomMaxSpeed = profile.GetActuator( "boom" ).MaxSpeed;
-      stickMaxSpeed = profile.GetActuator( "stick" ).MaxSpeed;
-      bucketMaxSpeed = profile.GetActuator( "bucket" ).MaxSpeed;
-      swingMaxSpeed = profile.GetActuator( "swing" ).MaxSpeed;
+      ApplyMachineProfileSpeed( profile.GetActuator( "boom" ), out boomMaxSpeedPositive, out boomMaxSpeedNegative );
+      ApplyMachineProfileSpeed( profile.GetActuator( "stick" ), out stickMaxSpeedPositive, out stickMaxSpeedNegative );
+      ApplyMachineProfileSpeed( profile.GetActuator( "bucket" ), out bucketMaxSpeedPositive, out bucketMaxSpeedNegative );
+      ApplyMachineProfileSpeed( profile.GetActuator( "swing" ), out swingMaxSpeedPositive, out swingMaxSpeedNegative );
     }
 
     public void ApplyMachineProfileRanges( MachineProfile profile )
@@ -178,11 +189,26 @@ namespace RLExcavator
 
     private string FormatMachineProfileSpeedLog()
     {
-      return "[ExcavatorController] max_speed from machine_profile: "
-        + "boom=" + boomMaxSpeed.ToString( "0.###", CultureInfo.InvariantCulture )
-        + ", stick=" + stickMaxSpeed.ToString( "0.###", CultureInfo.InvariantCulture )
-        + ", bucket=" + bucketMaxSpeed.ToString( "0.###", CultureInfo.InvariantCulture )
-        + ", swing=" + swingMaxSpeed.ToString( "0.###", CultureInfo.InvariantCulture );
+      return "[ExcavatorController] signed speed limits from machine_profile: "
+        + "boom=" + FormatSignedSpeed( boomMaxSpeedPositive, boomMaxSpeedNegative )
+        + ", stick=" + FormatSignedSpeed( stickMaxSpeedPositive, stickMaxSpeedNegative )
+        + ", bucket=" + FormatSignedSpeed( bucketMaxSpeedPositive, bucketMaxSpeedNegative )
+        + ", swing=" + FormatSignedSpeed( swingMaxSpeedPositive, swingMaxSpeedNegative );
+    }
+
+    private static void ApplyMachineProfileSpeed(
+      MachineActuatorProfile actuator,
+      out float maxSpeedPositive,
+      out float maxSpeedNegative )
+    {
+      maxSpeedPositive = actuator.MaxSpeedPositive;
+      maxSpeedNegative = actuator.MaxSpeedNegative;
+    }
+
+    private static string FormatSignedSpeed( float positive, float negative )
+    {
+      return "+" + positive.ToString( "0.###", CultureInfo.InvariantCulture )
+        + "/-" + negative.ToString( "0.###", CultureInfo.InvariantCulture );
     }
 
     private string FormatMachineProfileRangeLog( MachineProfile profile )
@@ -284,11 +310,11 @@ namespace RLExcavator
       SetConstraintPositionHold( swing, ref m_swingZeroSpeedHoldEnabled, holdSwing );
 
       float dt = Time.fixedDeltaTime;
-      m_boomSpeed = holdBoom ? 0f : MoveTowardsSpeed( m_boomSpeed, boomInput * boomMaxSpeed, boomAcceleration, dt );
-      m_bucketSpeed = holdBucket ? 0f : MoveTowardsSpeed( m_bucketSpeed, bucketInput * bucketMaxSpeed, bucketAcceleration, dt );
+      m_boomSpeed = holdBoom ? 0f : MoveTowardsSpeed( m_boomSpeed, CommandToTargetSpeed( boomInput, boomMaxSpeedPositive, boomMaxSpeedNegative ), boomAcceleration, dt );
+      m_bucketSpeed = holdBucket ? 0f : MoveTowardsSpeed( m_bucketSpeed, CommandToTargetSpeed( bucketInput, bucketMaxSpeedPositive, bucketMaxSpeedNegative ), bucketAcceleration, dt );
 
-      float stickSpeed = stickInput * stickMaxSpeed;
-      float swingSpeed = swingInput * swingMaxSpeed;
+      float stickSpeed = CommandToTargetSpeed( stickInput, stickMaxSpeedPositive, stickMaxSpeedNegative );
+      float swingSpeed = CommandToTargetSpeed( swingInput, swingMaxSpeedPositive, swingMaxSpeedNegative );
 
       LastBoomTargetSpeed = m_boomSpeed;
       LastStickTargetSpeed = stickSpeed;
@@ -305,6 +331,41 @@ namespace RLExcavator
         DriveConstraintSet( bucket, m_bucketSpeed );
       if ( !holdSwing )
         DriveConstraint( swing,  swingSpeed );
+    }
+
+    public float MaxAbsSpeed( string actuatorName )
+    {
+      if ( actuatorName == "boom" )
+        return Mathf.Max( boomMaxSpeedPositive, boomMaxSpeedNegative );
+      if ( actuatorName == "stick" )
+        return Mathf.Max( stickMaxSpeedPositive, stickMaxSpeedNegative );
+      if ( actuatorName == "bucket" )
+        return Mathf.Max( bucketMaxSpeedPositive, bucketMaxSpeedNegative );
+      if ( actuatorName == "swing" )
+        return Mathf.Max( swingMaxSpeedPositive, swingMaxSpeedNegative );
+
+      return 0f;
+    }
+
+    public float MaxSpeedForDirection( string actuatorName, float signedCommandOrVelocity )
+    {
+      if ( actuatorName == "boom" )
+        return signedCommandOrVelocity < 0f ? boomMaxSpeedNegative : boomMaxSpeedPositive;
+      if ( actuatorName == "stick" )
+        return signedCommandOrVelocity < 0f ? stickMaxSpeedNegative : stickMaxSpeedPositive;
+      if ( actuatorName == "bucket" )
+        return signedCommandOrVelocity < 0f ? bucketMaxSpeedNegative : bucketMaxSpeedPositive;
+      if ( actuatorName == "swing" )
+        return signedCommandOrVelocity < 0f ? swingMaxSpeedNegative : swingMaxSpeedPositive;
+
+      return 0f;
+    }
+
+    private static float CommandToTargetSpeed( float normalizedCommand, float positiveMaxSpeed, float negativeMaxSpeed )
+    {
+      float selectedMaxSpeed = normalizedCommand < 0f ? negativeMaxSpeed : positiveMaxSpeed;
+
+      return normalizedCommand * Mathf.Max( 0f, selectedMaxSpeed );
     }
 
     /// <summary>所有关节停下（目标速度=0）。</summary>

@@ -36,6 +36,19 @@ namespace RLExcavator
     [Tooltip("ReachableWorkspaceVolume 模式下起点和终点的最小空间距离。")]
     public float reachableWorkspaceMinEndpointDistance = 1.0f;
 
+    [Tooltip("EasyTraining 时把第一个 waypoint 固定到当前铲尖附近。")]
+    public bool useCurrentTipAsPathStart = false;
+
+    [Tooltip("EasyTraining 起点参考。为空时尝试使用当前 Trajectory Agent 的 bucketTip。")]
+    public Transform currentTipPathStart;
+
+    [Tooltip("EasyTraining 时终点距离起点的最大空间距离，单位米；<=0 表示不限制。")]
+    public float reachableWorkspaceMaxEndpointDistance = 0f;
+
+    [Tooltip("EasyTraining 时在可达空间参数里的局部采样半径。")]
+    [Range( 0.01f, 0.5f )]
+    public float nearbyPathParameterRadius = 0.12f;
+
     [Tooltip("ReachableWorkspaceVolume 模式下路径中段的弯曲扰动强度。")]
     [Range( 0f, 0.5f )]
     public float reachableWorkspaceCurveStrength = 0.16f;
@@ -244,17 +257,24 @@ namespace RLExcavator
       if ( workspace == null )
         return false;
 
-      Vector3 startParameters = RandomReachableWorkspaceVolumeParameters();
+      Vector3 startParameters = StartVolumeParameters( workspace );
       Vector3 endParameters = RandomReachableWorkspaceVolumeParameters();
       float minDistance = Mathf.Max( reachableWorkspaceMinEndpointDistance, 0f );
+      float maxDistance = Mathf.Max( reachableWorkspaceMaxEndpointDistance, 0f );
       Vector3 start = workspace.SampleWorldVolume( startParameters.x, startParameters.y, startParameters.z );
       Vector3 end = workspace.SampleWorldVolume( endParameters.x, endParameters.y, endParameters.z );
-      for ( int i = 0; i < 24; i++ ) {
-        endParameters = RandomReachableWorkspaceVolumeParameters();
-        end = workspace.SampleWorldVolume( endParameters.x, endParameters.y, endParameters.z );
 
-        if ( ( end - start ).magnitude >= minDistance )
-          break;
+      if ( useCurrentTipAsPathStart && currentTipPathStart != null && maxDistance > 0f ) {
+        endParameters = NearbyEndVolumeParameters( workspace, startParameters, start, minDistance, maxDistance );
+      }
+      else {
+        for ( int i = 0; i < 24; i++ ) {
+          endParameters = RandomReachableWorkspaceVolumeParameters();
+          end = workspace.SampleWorldVolume( endParameters.x, endParameters.y, endParameters.z );
+
+          if ( ( end - start ).magnitude >= minDistance )
+            break;
+        }
       }
 
       float curveStrength = reachableWorkspaceUseCurvedPaths ? Mathf.Clamp01( reachableWorkspaceCurveStrength ) : 0f;
@@ -287,12 +307,71 @@ namespace RLExcavator
       return true;
     }
 
+    private Vector3 StartVolumeParameters( ReachableWorkspaceVisualizer workspace )
+    {
+      ResolveCurrentTipPathStartIfNeeded();
+
+      if ( useCurrentTipAsPathStart && currentTipPathStart != null )
+        return ClampVolumeParameters( workspace.ClosestWorldVolumeParameters( currentTipPathStart.position ) );
+
+      return RandomReachableWorkspaceVolumeParameters();
+    }
+
+    private Vector3 NearbyEndVolumeParameters(
+      ReachableWorkspaceVisualizer workspace,
+      Vector3 startParameters,
+      Vector3 startWorld,
+      float minDistance,
+      float maxDistance )
+    {
+      Vector3 bestParameters = startParameters;
+      float bestScore = float.PositiveInfinity;
+      float targetDistance = Mathf.Lerp( minDistance, maxDistance, 0.65f );
+      float radius = Mathf.Clamp( nearbyPathParameterRadius, 0.01f, 0.5f );
+
+      for ( int i = 0; i < 48; i++ ) {
+        Vector3 offset = Random.insideUnitSphere * radius;
+        Vector3 candidateParameters = ClampVolumeParameters( startParameters + offset );
+        Vector3 candidateWorld = workspace.SampleWorldVolume( candidateParameters );
+        float distance = Vector3.Distance( startWorld, candidateWorld );
+        bool insideDistanceBand = distance >= minDistance && distance <= maxDistance;
+        float score = Mathf.Abs( distance - targetDistance ) + ( insideDistanceBand ? 0f : 10f );
+
+        if ( score < bestScore ) {
+          bestScore = score;
+          bestParameters = candidateParameters;
+        }
+
+        if ( insideDistanceBand )
+          return candidateParameters;
+      }
+
+      return bestParameters;
+    }
+
+    private void ResolveCurrentTipPathStartIfNeeded()
+    {
+      if ( currentTipPathStart != null )
+        return;
+
+      if ( taskModeSource != null && taskModeSource.bucketTip != null )
+        currentTipPathStart = taskModeSource.bucketTip;
+    }
+
     private static Vector3 RandomReachableWorkspaceVolumeParameters()
     {
       return new Vector3(
         Random.Range( 0.02f, 0.98f ),
         Random.Range( 0.1f, 0.9f ),
         Random.Range( 0.1f, 0.9f ) );
+    }
+
+    private static Vector3 ClampVolumeParameters( Vector3 parameters )
+    {
+      return new Vector3(
+        Mathf.Clamp( parameters.x, 0.02f, 0.98f ),
+        Mathf.Clamp( parameters.y, 0.08f, 0.92f ),
+        Mathf.Clamp( parameters.z, 0.08f, 0.92f ) );
     }
 
     private static Vector3 SampleContainedReachableWorkspacePoint(

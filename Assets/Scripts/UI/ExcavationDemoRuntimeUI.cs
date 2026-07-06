@@ -89,6 +89,7 @@ namespace RLExcavator
 
       if ( TryBindExistingHud() ) {
         EnsureEventSystem();
+        EnsureTrajectoryPlanningControls();
         WireRuntimeButtons();
         ConfigureMinimapFeed();
         SwitchTab( m_activeTab );
@@ -356,7 +357,8 @@ namespace RLExcavator
       AddMenuButton( page, "控制点上移", 6, taskManager.MoveSelectedPlanPointUp, true );
       AddMenuButton( page, "控制点下移", 7, taskManager.MoveSelectedPlanPointDown, true );
       AddMenuButton( page, "执行", 8, taskManager.ExecuteDigDumpTask, true );
-      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n自动作业：-\n固定动作：-\n进度：-\n编辑点：-\n挖掘点：-\n倾倒点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 10 );
+      AddMenuButton( page, "轨迹显示开关", 9, taskManager.ToggleTrajectoryPathVisible, true );
+      AddStatusBlock( page, "状态：-\n模式：-\n行为模式：-\n控制输入：-\n自动作业：-\n固定动作：-\n轨迹显示：-\n进度：-\n编辑点：-\n挖掘点：-\n倾倒点：-\n规划：-\n点选：-\n可达区域：-\n铲斗尖局部：-", 11 );
     }
 
     private void BuildManualControlPage( RectTransform page )
@@ -464,6 +466,7 @@ namespace RLExcavator
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点上移", taskManager.MoveSelectedPlanPointUp );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_控制点下移", taskManager.MoveSelectedPlanPointDown );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_执行", taskManager.ExecuteDigDumpTask );
+      WirePageButton( DemoTab.TrajectoryPlanning, "Button_轨迹显示开关", taskManager.ToggleTrajectoryPathVisible );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_生成轨迹", taskManager.ExecuteDigDumpTask );
       WirePageButton( DemoTab.TrajectoryPlanning, "Button_生成并追踪", taskManager.ExecuteDigDumpTask );
 
@@ -476,6 +479,22 @@ namespace RLExcavator
       WirePageButton( DemoTab.ManualControl, "Button_上一个边界点", taskManager.SelectPreviousWorkspaceBoundaryPoint );
       WirePageButton( DemoTab.ManualControl, "Button_下一个边界点", taskManager.SelectNextWorkspaceBoundaryPoint );
       WirePageButton( DemoTab.ManualControl, "Button_应用铲斗到边界点", taskManager.ApplyBucketTipToSelectedWorkspaceBoundaryPoint );
+    }
+
+    private void EnsureTrajectoryPlanningControls()
+    {
+      RectTransform page = PageForTab( DemoTab.TrajectoryPlanning );
+      if ( page == null || taskManager == null )
+        return;
+
+      if ( FindPageButton( DemoTab.TrajectoryPlanning, "Button_轨迹显示开关" ) == null )
+        AddMenuButton( page, "轨迹显示开关", 9, taskManager.ToggleTrajectoryPathVisible, true );
+
+      RectTransform statusBlock = FindRect( page, "StatusBlock" );
+      if ( statusBlock != null )
+        statusBlock.anchoredPosition = new Vector2( 0f, -11 * kMenuRowStep );
+
+      FitLeftMenuHeight( 10, 11 );
     }
 
     private void WirePageButton( DemoTab tab, string buttonName, UnityEngine.Events.UnityAction action )
@@ -590,7 +609,7 @@ namespace RLExcavator
           FitLeftMenuHeight( 4, 5 );
           break;
         case DemoTab.TrajectoryPlanning:
-          FitLeftMenuHeight( 9, 10 );
+          FitLeftMenuHeight( 10, 11 );
           break;
         case DemoTab.ManualControl:
           FitLeftMenuHeight( 8, 8 );

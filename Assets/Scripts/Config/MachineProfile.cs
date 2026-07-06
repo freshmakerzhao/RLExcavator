@@ -105,7 +105,8 @@ namespace RLExcavator
       string name,
       int actionIndex,
       string jointType,
-      float maxSpeed,
+      float maxSpeedPositive,
+      float maxSpeedNegative,
       bool hasFiniteRange,
       float rangeMin,
       float rangeMax,
@@ -121,11 +122,16 @@ namespace RLExcavator
         throw new ArgumentException( "Actuator joint_type must not be empty.", nameof( jointType ) );
       if ( string.IsNullOrEmpty( deployDrive ) )
         throw new ArgumentException( "Actuator deploy_drive must not be empty.", nameof( deployDrive ) );
+      if ( maxSpeedPositive <= 0f )
+        throw new ArgumentOutOfRangeException( nameof( maxSpeedPositive ), "Actuator max_speed_positive must be positive." );
+      if ( maxSpeedNegative <= 0f )
+        throw new ArgumentOutOfRangeException( nameof( maxSpeedNegative ), "Actuator max_speed_negative must be positive." );
 
       Name = name;
       ActionIndex = actionIndex;
       JointType = jointType;
-      MaxSpeed = maxSpeed;
+      MaxSpeedPositive = maxSpeedPositive;
+      MaxSpeedNegative = maxSpeedNegative;
       HasFiniteRange = hasFiniteRange;
       RangeMin = rangeMin;
       RangeMax = rangeMax;
@@ -139,7 +145,12 @@ namespace RLExcavator
     public string Name { get; }
     public int ActionIndex { get; }
     public string JointType { get; }
-    public float MaxSpeed { get; }
+    public float MaxSpeedPositive { get; }
+    public float MaxSpeedNegative { get; }
+    public float MaxAbsSpeed
+    {
+      get { return Math.Max( MaxSpeedPositive, MaxSpeedNegative ); }
+    }
     public bool HasFiniteRange { get; }
     public float RangeMin { get; }
     public float RangeMax { get; }
@@ -148,6 +159,11 @@ namespace RLExcavator
     public int DeploySign { get; }
     public int DeployPcaChannel { get; }
     public string DeployDrive { get; }
+
+    public float MaxSpeedForDirection( float signedCommandOrVelocity )
+    {
+      return signedCommandOrVelocity < 0f ? MaxSpeedNegative : MaxSpeedPositive;
+    }
   }
 
   public sealed class MachineObservationSchema

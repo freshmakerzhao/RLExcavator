@@ -966,30 +966,22 @@ namespace RLExcavator
     private float NormalizedActuatorVelocity( string actuatorName, float rawVelocity )
     {
       MachineActuatorProfile actuator = ActuatorProfile( actuatorName );
-      float maxSpeed = actuator != null ? actuator.MaxSpeed : FallbackMaxSpeed( actuatorName );
       int sign = actuator != null && actuator.Sign != 0 ? actuator.Sign : 1;
+      float signedVelocity = rawVelocity * sign;
+      float maxSpeed = actuator != null ? actuator.MaxSpeedForDirection( signedVelocity ) : FallbackMaxSpeed( actuatorName, signedVelocity );
 
       if ( maxSpeed <= 1e-6f )
         return 0f;
 
-      return Mathf.Clamp( rawVelocity * sign / maxSpeed, -1f, 1f );
+      return Mathf.Clamp( signedVelocity / maxSpeed, -1f, 1f );
     }
 
-    private float FallbackMaxSpeed( string actuatorName )
+    private float FallbackMaxSpeed( string actuatorName, float signedVelocity )
     {
       if ( controller == null )
         return 0f;
 
-      if ( actuatorName == "boom" )
-        return controller.boomMaxSpeed;
-      if ( actuatorName == "stick" )
-        return controller.stickMaxSpeed;
-      if ( actuatorName == "bucket" )
-        return controller.bucketMaxSpeed;
-      if ( actuatorName == "swing" )
-        return controller.swingMaxSpeed;
-
-      return 0f;
+      return controller.MaxSpeedForDirection( actuatorName, signedVelocity );
     }
 
     private Vector3 CurrentTipBasePosition()

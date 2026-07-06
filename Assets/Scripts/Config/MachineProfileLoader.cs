@@ -12,7 +12,7 @@ namespace RLExcavator
     [Tooltip("启动时读取 shared/machine_profile.json。关闭后仍可通过静态 LoadFromPath/LoadFromJson 使用。")]
     public bool loadOnStart = true;
 
-    [Tooltip("启动读取成功后打印 action_order、max_speed 与 obs 维度，作为场景侧接线自检。")]
+    [Tooltip("启动读取成功后打印 action_order、正反向速度与 obs 维度，作为场景侧接线自检。")]
     public bool logProfileOnStart = true;
 
     public MachineProfile Profile { get; private set; }
@@ -91,12 +91,14 @@ namespace RLExcavator
       var speeds = new List<string>();
       for ( int i = 0; i < actionOrder.Length; i++ ) {
         MachineActuatorProfile actuator = profile.GetActuator( actionOrder[ i ] );
-        speeds.Add( actuator.Name + "=" + actuator.MaxSpeed.ToString( "0.###", CultureInfo.InvariantCulture ) );
+        speeds.Add( actuator.Name
+          + "=+" + actuator.MaxSpeedPositive.ToString( "0.###", CultureInfo.InvariantCulture )
+          + "/-" + actuator.MaxSpeedNegative.ToString( "0.###", CultureInfo.InvariantCulture ) );
       }
 
       return "[MachineProfile] machine_id=" + profile.MachineId
         + " action_order=[" + string.Join( ",", actionOrder ) + "]"
-        + " max_speed=[" + string.Join( ",", speeds.ToArray() ) + "]"
+        + " max_speed_signed=[" + string.Join( ",", speeds.ToArray() ) + "]"
         + " reachable_workspace_file=" + profile.ReachableWorkspaceFile
         + " obs_id=" + profile.ObservationSchema.Id
         + " total_dim=" + profile.ObservationSchema.TotalDim
@@ -113,7 +115,8 @@ namespace RLExcavator
         name,
         ExtractInt( actuatorJson, "action_index" ),
         ExtractString( actuatorJson, "joint_type" ),
-        ExtractFloat( actuatorJson, "max_speed" ),
+        ExtractFloat( actuatorJson, "max_speed_positive" ),
+        ExtractFloat( actuatorJson, "max_speed_negative" ),
         hasFiniteRange,
         rangeMin,
         rangeMax,
