@@ -1072,29 +1072,6 @@ MonoBehaviour:
   randomMaxSegmentLength: 2.4
   trendLateralJitter: 0.8
   trendVerticalJitter: 0.45
-  calibratedFanFrame: {fileID: 0}
-  calibratedFanLocalPoints:
-  - {x: -4.98, y: 3.48, z: 9.2}
-  - {x: -5.1, y: 3.08, z: 10.95}
-  - {x: -4.77, y: 4.23, z: 12.18}
-  - {x: -0.34, y: 3.46, z: 7}
-  - {x: 0.03, y: 3.1, z: 9.15}
-  - {x: 1.7, y: 4.19, z: 9.2}
-  - {x: 1.03, y: 3.45, z: 3.24}
-  - {x: 2.82, y: 3.15, z: 3.39}
-  - {x: 3.95, y: 2.82, z: 2.41}
-  - {x: -0.36, y: 3.44, z: -0.63}
-  - {x: 0.64, y: 3.18, z: -2.23}
-  - {x: -0.1, y: 2.78, z: -4.24}
-  - {x: -5.13, y: 3.42, z: -2.8}
-  - {x: -4.94, y: 3.22, z: -4.64}
-  - {x: -4.94, y: 2.75, z: -5.68}
-  calibratedFanMinDirectionSpan: 0.35
-  calibratedFanDirectionJitter: 0.08
-  calibratedFanRangeJitter: 0.12
-  calibratedFanVerticalJitter: 0.15
-  calibratedFanUseCurvedPaths: 1
-  calibratedFanCurveStrength: 0.18
   taskModeSource: {fileID: 0}
   moveToDigReachableWorkspace: {fileID: 0}
   carryMaterialReachableWorkspace: {fileID: 0}
@@ -1145,6 +1122,9 @@ MonoBehaviour:
   reachableWorkspaceCurveStrength: 0.16
   reachableWorkspaceUseCurvedPaths: 1
   reachableWorkspaceMinDirectionSpan: 0.3
+  reachableWorkspaceDirectionJitter: 0.08
+  reachableWorkspaceHeightJitter: 0.12
+  reachableWorkspaceDepthJitter: 0.12
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -2280,29 +2260,6 @@ MonoBehaviour:
   randomMaxSegmentLength: 2.4
   trendLateralJitter: 0.8
   trendVerticalJitter: 0.45
-  calibratedFanFrame: {fileID: 0}
-  calibratedFanLocalPoints:
-  - {x: -4.98, y: 3.48, z: 9.2}
-  - {x: -5.1, y: 3.08, z: 10.95}
-  - {x: -4.77, y: 4.23, z: 12.18}
-  - {x: -0.34, y: 3.46, z: 7}
-  - {x: 0.03, y: 3.1, z: 9.15}
-  - {x: 1.7, y: 4.19, z: 9.2}
-  - {x: 1.03, y: 3.45, z: 3.24}
-  - {x: 2.82, y: 3.15, z: 3.39}
-  - {x: 3.95, y: 2.82, z: 2.41}
-  - {x: -0.36, y: 3.44, z: -0.63}
-  - {x: 0.64, y: 3.18, z: -2.23}
-  - {x: -0.1, y: 2.78, z: -4.24}
-  - {x: -5.13, y: 3.42, z: -2.8}
-  - {x: -4.94, y: 3.22, z: -4.64}
-  - {x: -4.94, y: 2.75, z: -5.68}
-  calibratedFanMinDirectionSpan: 0.35
-  calibratedFanDirectionJitter: 0.08
-  calibratedFanRangeJitter: 0.12
-  calibratedFanVerticalJitter: 0.15
-  calibratedFanUseCurvedPaths: 1
-  calibratedFanCurveStrength: 0.18
   taskModeSource: {fileID: 0}
   moveToDigReachableWorkspace: {fileID: 0}
   carryMaterialReachableWorkspace: {fileID: 0}
@@ -2353,6 +2310,9 @@ MonoBehaviour:
   reachableWorkspaceCurveStrength: 0.16
   reachableWorkspaceUseCurvedPaths: 1
   reachableWorkspaceMinDirectionSpan: 0.3
+  reachableWorkspaceDirectionJitter: 0.08
+  reachableWorkspaceHeightJitter: 0.12
+  reachableWorkspaceDepthJitter: 0.12
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -2691,29 +2651,6 @@ MonoBehaviour:
   randomMaxSegmentLength: 2.4
   trendLateralJitter: 0.8
   trendVerticalJitter: 0.45
-  calibratedFanFrame: {fileID: 0}
-  calibratedFanLocalPoints:
-  - {x: -4.98, y: 3.48, z: 9.2}
-  - {x: -5.1, y: 3.08, z: 10.95}
-  - {x: -4.77, y: 4.23, z: 12.18}
-  - {x: -0.34, y: 3.46, z: 7}
-  - {x: 0.03, y: 3.1, z: 9.15}
-  - {x: 1.7, y: 4.19, z: 9.2}
-  - {x: 1.03, y: 3.45, z: 3.24}
-  - {x: 2.82, y: 3.15, z: 3.39}
-  - {x: 3.95, y: 2.82, z: 2.41}
-  - {x: -0.36, y: 3.44, z: -0.63}
-  - {x: 0.64, y: 3.18, z: -2.23}
-  - {x: -0.1, y: 2.78, z: -4.24}
-  - {x: -5.13, y: 3.42, z: -2.8}
-  - {x: -4.94, y: 3.22, z: -4.64}
-  - {x: -4.94, y: 2.75, z: -5.68}
-  calibratedFanMinDirectionSpan: 0.35
-  calibratedFanDirectionJitter: 0.08
-  calibratedFanRangeJitter: 0.12
-  calibratedFanVerticalJitter: 0.15
-  calibratedFanUseCurvedPaths: 1
-  calibratedFanCurveStrength: 0.18
   taskModeSource: {fileID: 0}
   moveToDigReachableWorkspace: {fileID: 0}
   carryMaterialReachableWorkspace: {fileID: 0}
@@ -2764,6 +2701,9 @@ MonoBehaviour:
   reachableWorkspaceCurveStrength: 0.16
   reachableWorkspaceUseCurvedPaths: 1
   reachableWorkspaceMinDirectionSpan: 0.3
+  reachableWorkspaceDirectionJitter: 0.08
+  reachableWorkspaceHeightJitter: 0.12
+  reachableWorkspaceDepthJitter: 0.12
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
@@ -9949,29 +9889,6 @@ MonoBehaviour:
   randomMaxSegmentLength: 2.4
   trendLateralJitter: 0.8
   trendVerticalJitter: 0.45
-  calibratedFanFrame: {fileID: 0}
-  calibratedFanLocalPoints:
-  - {x: -4.98, y: 3.48, z: 9.2}
-  - {x: -5.1, y: 3.08, z: 10.95}
-  - {x: -4.77, y: 4.23, z: 12.18}
-  - {x: -0.34, y: 3.46, z: 7}
-  - {x: 0.03, y: 3.1, z: 9.15}
-  - {x: 1.7, y: 4.19, z: 9.2}
-  - {x: 1.03, y: 3.45, z: 3.24}
-  - {x: 2.82, y: 3.15, z: 3.39}
-  - {x: 3.95, y: 2.82, z: 2.41}
-  - {x: -0.36, y: 3.44, z: -0.63}
-  - {x: 0.64, y: 3.18, z: -2.23}
-  - {x: -0.1, y: 2.78, z: -4.24}
-  - {x: -5.13, y: 3.42, z: -2.8}
-  - {x: -4.94, y: 3.22, z: -4.64}
-  - {x: -4.94, y: 2.75, z: -5.68}
-  calibratedFanMinDirectionSpan: 0.5
-  calibratedFanDirectionJitter: 0.08
-  calibratedFanRangeJitter: 0.12
-  calibratedFanVerticalJitter: 0.15
-  calibratedFanUseCurvedPaths: 1
-  calibratedFanCurveStrength: 0.18
   taskModeSource: {fileID: 0}
   moveToDigReachableWorkspace: {fileID: 0}
   carryMaterialReachableWorkspace: {fileID: 0}
@@ -10022,6 +9939,9 @@ MonoBehaviour:
   reachableWorkspaceCurveStrength: 0.16
   reachableWorkspaceUseCurvedPaths: 1
   reachableWorkspaceMinDirectionSpan: 0.3
+  reachableWorkspaceDirectionJitter: 0.08
+  reachableWorkspaceHeightJitter: 0.12
+  reachableWorkspaceDepthJitter: 0.12
   drawGizmos: 1
   pathColor: {r: 0.1, g: 0.8, b: 1, a: 1}
   currentTargetColor: {r: 1, g: 0.85, b: 0.1, a: 1}
