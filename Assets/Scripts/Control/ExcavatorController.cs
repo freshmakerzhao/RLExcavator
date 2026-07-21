@@ -64,6 +64,8 @@ namespace RLExcavator
     public bool loadRangesFromMachineProfile = true;
     [Tooltip("启动应用 profile range 后打印一行自检日志。")]
     public bool logMachineProfileRangeLoad = true;
+    [Tooltip("启动应用 profile 双向归一化命令死区后打印一行自检日志。")]
+    public bool logMachineProfileCommandDeadzoneLoad = true;
 
     [Header("速度变化限制")]
     [Tooltip("大臂目标速度每秒最大变化量(m/s^2)，越小越柔和")]
@@ -110,6 +112,14 @@ namespace RLExcavator
     private bool m_stickZeroSpeedHoldEnabled = false;
     private bool m_bucketZeroSpeedHoldEnabled = false;
     private bool m_swingZeroSpeedHoldEnabled = false;
+    private float m_boomCommandDeadzonePositiveNormalized = 0f;
+    private float m_boomCommandDeadzoneNegativeNormalized = 0f;
+    private float m_stickCommandDeadzonePositiveNormalized = 0f;
+    private float m_stickCommandDeadzoneNegativeNormalized = 0f;
+    private float m_bucketCommandDeadzonePositiveNormalized = 0f;
+    private float m_bucketCommandDeadzoneNegativeNormalized = 0f;
+    private float m_swingCommandDeadzonePositiveNormalized = 0f;
+    private float m_swingCommandDeadzoneNegativeNormalized = 0f;
 
     public bool IsHoming { get; private set; } = false;
 
@@ -135,12 +145,10 @@ namespace RLExcavator
 
     private void Awake()
     {
-      if ( !loadMaxSpeedsFromMachineProfile && !loadRangesFromMachineProfile )
-        return;
-
       try {
         MachineProfile profile = MachineProfileLoader.Load();
 
+        ApplyMachineProfileCommandDeadzones( profile );
         if ( loadMaxSpeedsFromMachineProfile )
           ApplyMachineProfileSpeeds( profile );
         if ( loadRangesFromMachineProfile )
@@ -150,6 +158,8 @@ namespace RLExcavator
           Debug.Log( FormatMachineProfileSpeedLog(), this );
         if ( loadRangesFromMachineProfile && logMachineProfileRangeLoad )
           Debug.Log( FormatMachineProfileRangeLog( profile ), this );
+        if ( logMachineProfileCommandDeadzoneLoad )
+          Debug.Log( FormatMachineProfileCommandDeadzoneLog(), this );
       }
       catch ( System.Exception exception ) {
         Debug.LogError( "[ExcavatorController] Failed to apply machine profile: " + exception.Message, this );
@@ -187,6 +197,29 @@ namespace RLExcavator
       ApplyMachineProfileRangeToConstraints( profile.GetActuator( "swing" ), swing );
     }
 
+    public void ApplyMachineProfileCommandDeadzones( MachineProfile profile )
+    {
+      if ( profile == null )
+        throw new System.ArgumentNullException( nameof( profile ) );
+
+      ApplyMachineProfileCommandDeadzone(
+        profile.GetActuator( "boom" ),
+        out m_boomCommandDeadzonePositiveNormalized,
+        out m_boomCommandDeadzoneNegativeNormalized );
+      ApplyMachineProfileCommandDeadzone(
+        profile.GetActuator( "stick" ),
+        out m_stickCommandDeadzonePositiveNormalized,
+        out m_stickCommandDeadzoneNegativeNormalized );
+      ApplyMachineProfileCommandDeadzone(
+        profile.GetActuator( "bucket" ),
+        out m_bucketCommandDeadzonePositiveNormalized,
+        out m_bucketCommandDeadzoneNegativeNormalized );
+      ApplyMachineProfileCommandDeadzone(
+        profile.GetActuator( "swing" ),
+        out m_swingCommandDeadzonePositiveNormalized,
+        out m_swingCommandDeadzoneNegativeNormalized );
+    }
+
     private string FormatMachineProfileSpeedLog()
     {
       return "[ExcavatorController] signed speed limits from machine_profile: "
@@ -205,7 +238,31 @@ namespace RLExcavator
       maxSpeedNegative = actuator.MaxSpeedNegative;
     }
 
+    private static void ApplyMachineProfileCommandDeadzone(
+      MachineActuatorProfile actuator,
+      out float positiveNormalized,
+      out float negativeNormalized )
+    {
+      positiveNormalized = actuator.CommandDeadzonePositiveNormalized;
+      negativeNormalized = actuator.CommandDeadzoneNegativeNormalized;
+    }
+
     private static string FormatSignedSpeed( float positive, float negative )
+    {
+      return "+" + positive.ToString( "0.###", CultureInfo.InvariantCulture )
+        + "/-" + negative.ToString( "0.###", CultureInfo.InvariantCulture );
+    }
+
+    private string FormatMachineProfileCommandDeadzoneLog()
+    {
+      return "[ExcavatorController] normalized command deadzones from machine_profile: "
+        + "boom=" + FormatSignedDeadzone( m_boomCommandDeadzonePositiveNormalized, m_boomCommandDeadzoneNegativeNormalized )
+        + ", stick=" + FormatSignedDeadzone( m_stickCommandDeadzonePositiveNormalized, m_stickCommandDeadzoneNegativeNormalized )
+        + ", bucket=" + FormatSignedDeadzone( m_bucketCommandDeadzonePositiveNormalized, m_bucketCommandDeadzoneNegativeNormalized )
+        + ", swing=" + FormatSignedDeadzone( m_swingCommandDeadzonePositiveNormalized, m_swingCommandDeadzoneNegativeNormalized );
+    }
+
+    private static string FormatSignedDeadzone( float positive, float negative )
     {
       return "+" + positive.ToString( "0.###", CultureInfo.InvariantCulture )
         + "/-" + negative.ToString( "0.###", CultureInfo.InvariantCulture );
@@ -291,6 +348,23 @@ namespace RLExcavator
       float bucketInput = Mathf.Clamp( bucketCmd, -1f, 1f );
       float swingInput = Mathf.Clamp( swingCmd, -1f, 1f );
 
+      boomInput = ApplyNormalizedCommandDeadzone(
+        boomInput,
+        m_boomCommandDeadzonePositiveNormalized,
+        m_boomCommandDeadzoneNegativeNormalized );
+      stickInput = ApplyNormalizedCommandDeadzone(
+        stickInput,
+        m_stickCommandDeadzonePositiveNormalized,
+        m_stickCommandDeadzoneNegativeNormalized );
+      bucketInput = ApplyNormalizedCommandDeadzone(
+        bucketInput,
+        m_bucketCommandDeadzonePositiveNormalized,
+        m_bucketCommandDeadzoneNegativeNormalized );
+      swingInput = ApplyNormalizedCommandDeadzone(
+        swingInput,
+        m_swingCommandDeadzonePositiveNormalized,
+        m_swingCommandDeadzoneNegativeNormalized );
+
       if ( !commandInputEnabled || IsHoming )
         return;
 
@@ -366,6 +440,15 @@ namespace RLExcavator
       float selectedMaxSpeed = normalizedCommand < 0f ? negativeMaxSpeed : positiveMaxSpeed;
 
       return normalizedCommand * Mathf.Max( 0f, selectedMaxSpeed );
+    }
+
+    private static float ApplyNormalizedCommandDeadzone(
+      float normalizedCommand,
+      float positiveDeadzone,
+      float negativeDeadzone )
+    {
+      float deadzone = normalizedCommand < 0f ? negativeDeadzone : positiveDeadzone;
+      return Mathf.Abs( normalizedCommand ) <= deadzone ? 0f : normalizedCommand;
     }
 
     /// <summary>所有关节停下（目标速度=0）。</summary>

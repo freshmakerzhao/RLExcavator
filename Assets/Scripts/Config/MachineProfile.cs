@@ -107,12 +107,13 @@ namespace RLExcavator
       string jointType,
       float maxSpeedPositive,
       float maxSpeedNegative,
+      float commandDeadzonePositiveNormalized,
+      float commandDeadzoneNegativeNormalized,
       bool hasFiniteRange,
       float rangeMin,
       float rangeMax,
       bool rangeEnabledRequired,
       int sign,
-      int deploySign,
       int deployPcaChannel,
       string deployDrive )
     {
@@ -126,18 +127,25 @@ namespace RLExcavator
         throw new ArgumentOutOfRangeException( nameof( maxSpeedPositive ), "Actuator max_speed_positive must be positive." );
       if ( maxSpeedNegative <= 0f )
         throw new ArgumentOutOfRangeException( nameof( maxSpeedNegative ), "Actuator max_speed_negative must be positive." );
+      if ( float.IsNaN( commandDeadzonePositiveNormalized ) || float.IsInfinity( commandDeadzonePositiveNormalized )
+        || commandDeadzonePositiveNormalized < 0f || commandDeadzonePositiveNormalized >= 1f )
+        throw new ArgumentOutOfRangeException( nameof( commandDeadzonePositiveNormalized ), "Actuator command_deadzone_positive_normalized must be in [0, 1)." );
+      if ( float.IsNaN( commandDeadzoneNegativeNormalized ) || float.IsInfinity( commandDeadzoneNegativeNormalized )
+        || commandDeadzoneNegativeNormalized < 0f || commandDeadzoneNegativeNormalized >= 1f )
+        throw new ArgumentOutOfRangeException( nameof( commandDeadzoneNegativeNormalized ), "Actuator command_deadzone_negative_normalized must be in [0, 1)." );
 
       Name = name;
       ActionIndex = actionIndex;
       JointType = jointType;
       MaxSpeedPositive = maxSpeedPositive;
       MaxSpeedNegative = maxSpeedNegative;
+      CommandDeadzonePositiveNormalized = commandDeadzonePositiveNormalized;
+      CommandDeadzoneNegativeNormalized = commandDeadzoneNegativeNormalized;
       HasFiniteRange = hasFiniteRange;
       RangeMin = rangeMin;
       RangeMax = rangeMax;
       RangeEnabledRequired = rangeEnabledRequired;
       Sign = sign;
-      DeploySign = deploySign;
       DeployPcaChannel = deployPcaChannel;
       DeployDrive = deployDrive;
     }
@@ -147,6 +155,8 @@ namespace RLExcavator
     public string JointType { get; }
     public float MaxSpeedPositive { get; }
     public float MaxSpeedNegative { get; }
+    public float CommandDeadzonePositiveNormalized { get; }
+    public float CommandDeadzoneNegativeNormalized { get; }
     public float MaxAbsSpeed
     {
       get { return Math.Max( MaxSpeedPositive, MaxSpeedNegative ); }
@@ -156,7 +166,6 @@ namespace RLExcavator
     public float RangeMax { get; }
     public bool RangeEnabledRequired { get; }
     public int Sign { get; }
-    public int DeploySign { get; }
     public int DeployPcaChannel { get; }
     public string DeployDrive { get; }
 

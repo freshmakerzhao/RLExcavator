@@ -41,6 +41,7 @@ namespace RLExcavator
     private const float kSmoothRewardWeight = 0.05f;
     private const float kEnergyRewardWeight = 0.01f;
     private const float kTimePenalty = 0.001f;
+    private const float kDeadzoneNonzeroActionPenaltyPerAxis = 0.003f;
 
     // Inspector 引用
 
@@ -316,6 +317,8 @@ namespace RLExcavator
     private float m_episodeBucketPitchProgressSum = 0f;
     private float m_episodeWaypointBonusScaleSum = 0f;
     private int m_episodeWaypointBonusScaleSamples = 0;
+    private Vector4 m_episodeDeadzoneNonzeroActionCounts = Vector4.zero;
+    private float m_episodeDeadzoneNonzeroPenaltySum = 0f;
     private bool m_hasPreviousMotionState = false;
     private Vector3 m_stuckWindowStartTipBase = Vector3.zero;
     private int m_stuckWindowCount = 0;
@@ -358,6 +361,31 @@ namespace RLExcavator
     public int CurrentWaypointSteps => m_stepsOnCurrentWaypoint;
     public int CurrentOutOfBoundsSteps => m_outOfBoundsSteps;
     public int CurrentStuckWindowSamples => m_stuckWindowCount;
+    public Vector4 LastRawPolicyAction { get; private set; } = Vector4.zero;
+
+    /// <summary>
+    /// 标记会被方向性死区吞掉的非零策略动作。零动作和越过死区的动作不标记。
+    /// </summary>
+    public static Vector4 DirectionalDeadzoneNonzeroMask( Vector4 rawAction, MachineProfile profile )
+    {
+      if ( profile == null )
+        throw new System.ArgumentNullException( nameof( profile ) );
+
+      return new Vector4(
+        IsNonzeroInsideDirectionalDeadzone( rawAction.x, profile.GetActuator( "boom" ) ) ? 1f : 0f,
+        IsNonzeroInsideDirectionalDeadzone( rawAction.y, profile.GetActuator( "stick" ) ) ? 1f : 0f,
+        IsNonzeroInsideDirectionalDeadzone( rawAction.z, profile.GetActuator( "bucket" ) ) ? 1f : 0f,
+        IsNonzeroInsideDirectionalDeadzone( rawAction.w, profile.GetActuator( "swing" ) ) ? 1f : 0f );
+    }
+
+    /// <summary>
+    /// 返回当前原始策略动作的死区内非零惩罚，单位为每个受影响轴 -0.003。
+    /// </summary>
+    public static float DeadzoneNonzeroActionPenalty( Vector4 rawAction, MachineProfile profile )
+    {
+      Vector4 mask = DirectionalDeadzoneNonzeroMask( rawAction, profile );
+      return -kDeadzoneNonzeroActionPenaltyPerAxis * ( mask.x + mask.y + mask.z + mask.w );
+    }
 
     public override void Initialize()
     {
@@ -410,6 +438,8 @@ namespace RLExcavator
       m_episodeBucketPitchProgressSum = 0f;
       m_episodeWaypointBonusScaleSum = 0f;
       m_episodeWaypointBonusScaleSamples = 0;
+      m_episodeDeadzoneNonzeroActionCounts = Vector4.zero;
+      m_episodeDeadzoneNonzeroPenaltySum = 0f;
 
       if ( randomizeTaskModeOnEpisodeBegin )
         taskMode = Random.value < 0.5f ? TrajectoryTaskMode.MoveToDig : TrajectoryTaskMode.CarryMaterial;
@@ -481,6 +511,7 @@ namespace RLExcavator
       float bucket = a.Length > 2 ? a[ 2 ] : 0f;
       float swing = a.Length > 3 ? a[ 3 ] : 0f;
       Vector4 action = new Vector4( boom, stick, bucket, swing );
+      LastRawPolicyAction = action;
 
       if ( debugActions && m_debugActionPrintCount < debugActionPrints ) {
         Debug.Log( $"[ExcavatorTrajectoryAgent] action boom={boom:F3}, stick={stick:F3}, bucket={bucket:F3}, swing={swing:F3}" );
@@ -557,6 +588,14 @@ namespace RLExcavator
       float pitchPenalty = -kPitchRewardWeight * bucketPitchError;
       float smoothPenalty = -kSmoothRewardWeight * actionDeltaMeanSquare;
       float energyPenalty = -kEnergyRewardWeight * actionMeanSquare;
+      Vector4 deadzoneNonzeroMask = m_machineProfile != null
+        ? DirectionalDeadzoneNonzeroMask( action, m_machineProfile )
+        : Vector4.zero;
+      float deadzonePenalty = m_machineProfile != null
+        ? DeadzoneNonzeroActionPenalty( action, m_machineProfile )
+        : 0f;
+      m_episodeDeadzoneNonzeroActionCounts += deadzoneNonzeroMask;
+      m_episodeDeadzoneNonzeroPenaltySum += deadzonePenalty;
 
       AddReward( progressReward );
       AddReward( trackingPenalty );
@@ -564,6 +603,7 @@ namespace RLExcavator
       AddReward( pitchPenalty );
       AddReward( smoothPenalty );
       AddReward( energyPenalty );
+      AddReward( deadzonePenalty );
       AddReward( -kTimePenalty );
 
       DebugRewardTerms(
@@ -573,6 +613,7 @@ namespace RLExcavator
         pitchPenalty,
         smoothPenalty,
         energyPenalty,
+        deadzonePenalty,
         distance,
         progress,
         tubeCrossTrackRatio,
@@ -684,6 +725,7 @@ namespace RLExcavator
       float meanPositiveProgress = m_episodePositiveProgressSum / sampleCount;
       float meanBucketPitchErrorDeg = m_episodeBucketPitchErrorSum / sampleCount * Mathf.Max( bucketPitchNormalizerDeg, 1f );
       float meanWaypointBonusScale = m_episodeWaypointBonusScaleSamples > 0 ? m_episodeWaypointBonusScaleSum / m_episodeWaypointBonusScaleSamples : 0f;
+      Vector4 deadzoneNonzeroRate = m_episodeDeadzoneNonzeroActionCounts / sampleCount;
 
       var stats = Academy.Instance.StatsRecorder;
       stats.Add( "Trajectory/SuccessRate", success, StatAggregationMethod.Average );
@@ -703,6 +745,12 @@ namespace RLExcavator
       stats.Add( "Trajectory/BucketPitchErrorDeg", meanBucketPitchErrorDeg, StatAggregationMethod.Average );
       stats.Add( "Trajectory/BucketPitchProgress", m_episodeBucketPitchProgressSum, StatAggregationMethod.Average );
       stats.Add( "Trajectory/WaypointBonusScale", meanWaypointBonusScale, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneNonzeroAxesPerStep", deadzoneNonzeroRate.x + deadzoneNonzeroRate.y + deadzoneNonzeroRate.z + deadzoneNonzeroRate.w, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzonePenaltyPerStep", m_episodeDeadzoneNonzeroPenaltySum / sampleCount, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneNonzeroRateBoom", deadzoneNonzeroRate.x, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneNonzeroRateStick", deadzoneNonzeroRate.y, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneNonzeroRateBucket", deadzoneNonzeroRate.z, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneNonzeroRateSwing", deadzoneNonzeroRate.w, StatAggregationMethod.Average );
 
       string taskPrefix = taskMode == TrajectoryTaskMode.CarryMaterial ? "Trajectory/CarryMaterial" : "Trajectory/MoveToDig";
       stats.Add( $"{taskPrefix}/SuccessRate", success, StatAggregationMethod.Average );
@@ -851,6 +899,7 @@ namespace RLExcavator
     private void ResetMotionHistory()
     {
       m_previousAction = Vector4.zero;
+      LastRawPolicyAction = Vector4.zero;
       m_previousJointPose = new Vector4(
         CurrentBoomPosition(),
         CurrentStickPosition(),
@@ -869,11 +918,11 @@ namespace RLExcavator
 
     private void LoadMachineProfileAndApplyObservationConstants()
     {
-      if ( !loadObservationNormalizersFromMachineProfile )
-        return;
-
       try {
         m_machineProfile = MachineProfileLoader.Load();
+        if ( !loadObservationNormalizersFromMachineProfile )
+          return;
+
         MachineObservationSchema schema = m_machineProfile.ObservationSchema;
 
         if ( schema.TotalDim != kLockedObservationSize )
@@ -1082,6 +1131,7 @@ namespace RLExcavator
       float pitchPenalty,
       float smoothPenalty,
       float energyPenalty,
+      float deadzonePenalty,
       float distance,
       float progress,
       float tubeCrossTrackRatio,
@@ -1093,10 +1143,25 @@ namespace RLExcavator
       Debug.Log(
         "[ExcavatorTrajectoryAgent] reward "
         + $"progress={progressReward:F4}, tracking={trackingPenalty:F4}, tube={tubePenalty:F4}, "
-        + $"pitch={pitchPenalty:F4}, smooth={smoothPenalty:F4}, energy={energyPenalty:F4}, time={-kTimePenalty:F4}, "
+        + $"pitch={pitchPenalty:F4}, smooth={smoothPenalty:F4}, energy={energyPenalty:F4}, deadzone={deadzonePenalty:F4}, time={-kTimePenalty:F4}, "
         + $"distance={distance:F3}, pathProgress={progress:F3}, tubeRatio={tubeCrossTrackRatio:F3}, pitchErrDeg={bucketPitchErrorAbsDeg:F1}",
         this );
       m_debugRewardPrintCount++;
+    }
+
+    private static bool IsNonzeroInsideDirectionalDeadzone( float rawAction, MachineActuatorProfile actuator )
+    {
+      if ( float.IsNaN( rawAction ) || float.IsInfinity( rawAction ) )
+        return false;
+
+      float command = Mathf.Clamp( rawAction, -1f, 1f );
+      if ( command == 0f )
+        return false;
+
+      float deadzone = command < 0f
+        ? actuator.CommandDeadzoneNegativeNormalized
+        : actuator.CommandDeadzonePositiveNormalized;
+      return Mathf.Abs( command ) <= deadzone;
     }
 
     private float TargetBucketPitchDegrees()

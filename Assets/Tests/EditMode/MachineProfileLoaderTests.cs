@@ -36,7 +36,6 @@ namespace RLExcavator.Tests
       Assert.That( swing.HasFiniteRange, Is.False );
       Assert.That( swing.RangeEnabledRequired, Is.False );
       Assert.That( swing.Sign, Is.EqualTo( 1 ) );
-      Assert.That( swing.DeploySign, Is.EqualTo( 1 ) );
     }
 
     [Test]
@@ -82,7 +81,6 @@ namespace RLExcavator.Tests
       Assert.That( actuator.RangeMax, Is.EqualTo( rangeMax ).Within( 1e-6f ) );
       Assert.That( actuator.RangeEnabledRequired, Is.EqualTo( rangeEnabledRequired ) );
       Assert.That( actuator.Sign, Is.EqualTo( 1 ) );
-      Assert.That( actuator.DeploySign, Is.EqualTo( 1 ) );
     }
 
     private static string SharedProfilePath()

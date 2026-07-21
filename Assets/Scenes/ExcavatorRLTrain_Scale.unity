@@ -782,6 +782,11 @@ MonoBehaviour:
   color: {r: 1, g: 0.42, b: 0.05, a: 1}
   radius: 0.025
   faceCamera: 0
+--- !u!1 &532378880 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8395339075214260905, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+  m_PrefabInstance: {fileID: 1177695121}
+  m_PrefabAsset: {fileID: 0}
 --- !u!1 &540958329
 GameObject:
   m_ObjectHideFlags: 0
@@ -5908,10 +5913,10 @@ PrefabInstance:
     - target: {fileID: 5818160797840576068, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 0}
+      objectReference: {fileID: 5022602860645237092, guid: 192266bb8500f559cb1f03a8da12c706, type: 3}
     - target: {fileID: 5818160797840576068, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_BehaviorType
-      value: 0
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 6431493750905359489, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6132,7 +6137,10 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4611614386193310809, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1167694655}
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8395339075214260905, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1177695127}
   m_SourcePrefab: {fileID: 100100000, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
 --- !u!4 &1177695122 stripped
 Transform:
@@ -6171,6 +6179,28 @@ Transform:
   m_CorrespondingSourceObject: {fileID: 5240238253777038746, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
   m_PrefabInstance: {fileID: 1177695121}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &1177695127
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 532378880}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3dd611f8e8d5d4a0a784f1ead1b697d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.OpenLoopVelocityRecorder
+  cycleTask: {fileID: 0}
+  controller: {fileID: 0}
+  agent: {fileID: 0}
+  frameRegistry: {fileID: 0}
+  recordOnCycleTask: 1
+  outputDirectoryName: open_loop_velocity_exports
+  includeMetadataComments: 1
+  clearSamplesOnStart: 1
+  m_isRecording: 1
+  m_lastExportPath: 
 --- !u!1 &1291947566
 GameObject:
   m_ObjectHideFlags: 0

@@ -11,7 +11,7 @@
 
 **环境**
 - 仓库根:`/home/zhaoshuai/workspace_uinty/RL_prj`;其下 `RLExcavator/`(Unity)、`deploy_scale_model/`(ORIN)、`shared/`、`config/`、`tools/` 同级。
-- 单一来源数据:`shared/machine_profile.json`(schema 0.2.0)。**机型常数只改这一处**;C#/Python 不得重新硬编码。
+- 单一来源数据:`shared/machine_profile.json`(schema 0.3.0)。**机型常数只改这一处**;C#/Python 不得重新硬编码。
 - Unity 不能在 Editor 已打开时跑 batchmode 编译;本机无 `dotnet/csc/mcs`。**C# 改完由人到 Unity Console 看红错确认。**
 - 训练/导出:`tools/mlagents_train_no_onnx.py`、`tools/mlagents_export_legacy_onnx.py`(导出 `dynamo=False`)。
 
@@ -47,11 +47,7 @@
 - Unity:`OnActionReceived` 读 `a[0..3]` 按上序传 `controller.SetNormalizedSpeeds(boom,stick,bucket,swing)`。
 - 维度公式(供换机型):`action_dim = len(action_order) = N`。
 
-**方向/符号约定(可纯配置适配)**:每个执行器在 profile 有两个符号位:
-- `sign`(仿真侧语义,默认 +1):定义"+action 对应哪个物理方向"。**训练前拟定并锁定**;改它=改训练参考系→需重训。
-- `deploy_sign`(真机侧,默认 +1):真机接线若与仿真反向,**只改这一位即可对齐,不重训**。
-仿真按 `sign` 绑定;真机最终命令符号 = `sign × deploy_sign`,观测的位/速也同此符号,保证闭环一致。左右镜像缸的物理反相在 Unity 执行器绑定层各自处理,不影响这里的语义符号。
-→ **正方向现在自行拟定即可;以后真机发现反了,改 `deploy_sign` 配置就能适配。**
+**方向/符号约定**:`sign` 是仿真侧语义，定义“+action 对应哪个仿真物理方向”。**训练前拟定并锁定**；改它等于改变训练参考系，需重训。PC 与 Orin 保持 ONNX 输出符号；真机接线、阀控和编码器方向只能在 STM32 低层实现中适配，不能通过 Profile 重新解释策略动作。
 
 ### 2.2 观测 observation(38 维,逐 index 锁定)
 **参考系**:`base_frame` = 底盘固定系(**不随 swing 转**)。铲斗尖位姿 `tip = Rot(swing) · armFK(boom,stick,bucket)`。
@@ -141,7 +137,7 @@ Unity `CollectObservations` 与部署观测构造器**都必须严格按下表�
 
 ---
 
-## 5. 单一来源:`shared/machine_profile.json`(已更新到 0.2.0)
+## 5. 单一来源:`shared/machine_profile.json`(已更新到 0.3.0)
 
 Unity 与部署共读;机型常数只改此处。已含:`action_order`、四执行器(max_speed/range/ff_table/deploy_pca_channel)、`observation_schema`(id=scale_excavator_v2_38d、total_dim=38、normalizers)、`deploy`(ip/port/rate/deadzone/servo/pump/safety)。
 **契约 vs 接线**:物理契约入 JSON;Unity 的 Constraint 引用、部署的 PCA 通道各自本地,用同一 actuator 名对齐。**部署到 ORIN 时 JSON 随包同步,勿手抄。**
@@ -154,7 +150,7 @@ Unity 与部署共读;机型常数只改此处。已含:`action_order`、四执�
 卡片字段:`ID · 优先级 · 依赖 · 文件 · 动作 · 验收`。
 
 ### 地基
-- **F-T0 单一来源 JSON** — ✅ 已完成(`shared/machine_profile.json` 0.2.0)。
+- **F-T0 单一来源 JSON** — ✅ 已完成(`shared/machine_profile.json` 0.3.0)。
 - **F-T1 Unity 读取器** · P1 · 依赖 F-T0 · 新增 `Assets/Scripts/Config/MachineProfile.cs` + `MachineProfileLoader.cs`
   - 动作:数据类映射 JSON(`JsonUtility` 不支持 Dictionary → actuators 用数组+name 字段);Editor 读 `Path.Combine(Application.dataPath,"../../shared/machine_profile.json")`,Build 读 `StreamingAssets`(加 Editor 拷贝步骤);提供 `Load()` 与按名取执行器/归一化常数。
   - 验收:场景启动打印 action_order、三缸 max_speed=0.03、obs total_dim=38,与 JSON 一致。
@@ -285,5 +281,5 @@ P2-T3 → P2-T7（需记录脚本）→ P2-T8   ← 真机标定回来后
 P3-T1..T4：P1/P2 稳定后启动
 ```
 **立即三件**:P1-T1(开 Range)、P1-T2(maxSpeed=0.03)、P2-T1(R1+读 JSON)。
-**已确认**:swing 角/角速度传感器(R10 解决)。**自行拟定、后续纯配置适配**:执行器正方向——训练前用 profile `sign` 锁定;真机若反向只改 `deploy_sign`,不重训(见 §2.1 符号约定)。
+**已确认**:swing 角/角速度传感器(R10 解决)。执行器正方向在训练前用 profile `sign` 锁定；真机低层方向由 STM32 固件适配（见 §2.1 符号约定）。
 ```
