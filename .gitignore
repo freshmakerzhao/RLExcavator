@@ -54,3 +54,5 @@ Assets/ML-Agents.meta
 # assets need to be versioned.
 Assets/models/*.obj
 Assets/models/*.obj.meta
+
+open_loop_velocity_exports

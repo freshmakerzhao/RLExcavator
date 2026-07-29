@@ -23,7 +23,7 @@ namespace RLExcavator
     [Tooltip("任务执行开始/结束时自动开始和导出记录。")]
     public bool recordOnCycleTask = true;
 
-    [Tooltip("CSV 导出目录。相对路径位于 Unity persistentDataPath 下；绝对路径直接使用。")]
+    [Tooltip("CSV 导出目录。相对路径位于 Unity 项目根目录下；绝对路径直接使用。")]
     public string outputDirectoryName = "open_loop_velocity_exports";
 
     [Tooltip("导出的 CSV 顶部写入 profile/action_order/正反向速度等元信息注释。")]
@@ -54,6 +54,10 @@ namespace RLExcavator
       public float unityTime;
       public string phase;
       public string mode;
+      public float boomPolicyActionRaw;
+      public float stickPolicyActionRaw;
+      public float bucketPolicyActionRaw;
+      public float swingPolicyActionRaw;
       public float boomAction;
       public float stickAction;
       public float bucketAction;
@@ -94,6 +98,13 @@ namespace RLExcavator
     {
       if ( !m_isRecording )
         return;
+
+      ResolveReferences();
+      if ( controller == null ) {
+        m_isRecording = false;
+        Debug.LogWarning( "[OpenLoopVelocityRecorder] Recording stopped because the controller reference is missing.", this );
+        return;
+      }
 
       RecordSample();
     }
@@ -141,10 +152,16 @@ namespace RLExcavator
     {
       if ( cycleTask == null )
         cycleTask = GetComponent<ExcavationCycleTask>();
+      if ( cycleTask == null )
+        cycleTask = GetComponentInChildren<ExcavationCycleTask>( true );
       if ( controller == null && cycleTask != null )
         controller = cycleTask.controller;
       if ( agent == null && cycleTask != null )
         agent = cycleTask.agent;
+      if ( controller == null )
+        controller = GetComponentInChildren<ExcavatorController>( true );
+      if ( agent == null )
+        agent = GetComponentInChildren<ExcavatorTrajectoryAgent>( true );
       if ( frameRegistry == null && agent != null )
         frameRegistry = agent.frameRegistry;
       if ( frameRegistry == null && controller != null )
@@ -191,6 +208,7 @@ namespace RLExcavator
       Vector3 tipLocal = localFrame != null && bucketTip != null
         ? localFrame.InverseTransformPoint( tipWorld )
         : Vector3.zero;
+      Vector4 rawPolicyAction = agent != null ? agent.LastRawPolicyAction : Vector4.zero;
 
       m_samples.Add( new Sample {
         index = m_sampleIndex++,
@@ -198,6 +216,10 @@ namespace RLExcavator
         unityTime = Time.time,
         phase = cycleTask != null ? cycleTask.state.ToString() : "",
         mode = agent != null ? agent.CurrentTaskMode.ToString() : "",
+        boomPolicyActionRaw = rawPolicyAction.x,
+        stickPolicyActionRaw = rawPolicyAction.y,
+        bucketPolicyActionRaw = rawPolicyAction.z,
+        swingPolicyActionRaw = rawPolicyAction.w,
         boomAction = controller.LastBoomCommand,
         stickAction = controller.LastStickCommand,
         bucketAction = controller.LastBucketCommand,
@@ -238,11 +260,11 @@ namespace RLExcavator
     private string ResolveOutputDirectory()
     {
       if ( string.IsNullOrWhiteSpace( outputDirectoryName ) )
-        return Application.persistentDataPath;
+        return Path.GetFullPath( Path.Combine( Application.dataPath, ".." ) );
 
       return Path.IsPathRooted( outputDirectoryName )
         ? outputDirectoryName
-        : Path.Combine( Application.persistentDataPath, outputDirectoryName );
+        : Path.GetFullPath( Path.Combine( Application.dataPath, "..", outputDirectoryName ) );
     }
 
     private string BuildCsv( MachineProfile profile, bool success, string reason )
@@ -255,7 +277,7 @@ namespace RLExcavator
         builder.AppendLine( "# reason=" + EscapeComment( reason ) );
         builder.AppendLine( "# unity_fixed_delta_time_s=" + Time.fixedDeltaTime.ToString( "G9", CultureInfo.InvariantCulture ) );
         builder.AppendLine( "# units: boom/stick/bucket velocity=m/s, swing velocity=rad/s, prismatic position=m, swing position=rad" );
-        builder.AppendLine( "# command convention: *_action_cmd in [-1,1], *_v_ref is controller target speed after sim-side acceleration limiting" );
+        builder.AppendLine( "# command convention: *_policy_action_raw is the model output before deadzone; *_action_cmd is the effective command after deadzone; *_v_ref is controller target speed after sim-side acceleration limiting" );
 
         if ( profile != null ) {
           builder.AppendLine( "# profile_machine_id=" + profile.MachineId );
@@ -275,7 +297,8 @@ namespace RLExcavator
         + "boom_q_m,stick_q_m,bucket_q_m,swing_q_rad,"
         + "boom_q_norm,stick_q_norm,bucket_q_norm,swing_q_norm,"
         + "bucket_tip_world_x,bucket_tip_world_y,bucket_tip_world_z,"
-        + "bucket_tip_local_x,bucket_tip_local_y,bucket_tip_local_z" );
+        + "bucket_tip_local_x,bucket_tip_local_y,bucket_tip_local_z,"
+        + "boom_policy_action_raw,stick_policy_action_raw,bucket_policy_action_raw,swing_policy_action_raw" );
 
       for ( int i = 0; i < m_samples.Count; i++ )
         AppendSample( builder, m_samples[ i ] );
@@ -290,8 +313,9 @@ namespace RLExcavator
         + "_max_abs_speed=" + actuator.MaxAbsSpeed.ToString( "G9", CultureInfo.InvariantCulture )
         + ",max_speed_positive=" + actuator.MaxSpeedPositive.ToString( "G9", CultureInfo.InvariantCulture )
         + ",max_speed_negative=" + actuator.MaxSpeedNegative.ToString( "G9", CultureInfo.InvariantCulture )
+        + ",command_deadzone_positive_normalized=" + actuator.CommandDeadzonePositiveNormalized.ToString( "G9", CultureInfo.InvariantCulture )
+        + ",command_deadzone_negative_normalized=" + actuator.CommandDeadzoneNegativeNormalized.ToString( "G9", CultureInfo.InvariantCulture )
         + ",sign=" + actuator.Sign.ToString( CultureInfo.InvariantCulture )
-        + ",deploy_sign=" + actuator.DeploySign.ToString( CultureInfo.InvariantCulture )
         + ",joint_type=" + actuator.JointType );
     }
 
@@ -323,7 +347,11 @@ namespace RLExcavator
       Append( builder, sample.bucketTipWorld.z );
       Append( builder, sample.bucketTipLocal.x );
       Append( builder, sample.bucketTipLocal.y );
-      AppendLast( builder, sample.bucketTipLocal.z );
+      Append( builder, sample.bucketTipLocal.z );
+      Append( builder, sample.boomPolicyActionRaw );
+      Append( builder, sample.stickPolicyActionRaw );
+      Append( builder, sample.bucketPolicyActionRaw );
+      AppendLast( builder, sample.swingPolicyActionRaw );
     }
 
     private static void Append( StringBuilder builder, int value )

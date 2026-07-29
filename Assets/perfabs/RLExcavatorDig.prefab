@@ -1280,15 +1280,19 @@ MonoBehaviour:
   boom:
   - {fileID: 5585429514769739941}
   - {fileID: 9004062400709328090}
-  stick: {fileID: 8718004808799303648}
-  stickActuators: []
-  bucket: {fileID: 6243544403580374960}
-  bucketActuators: []
+  stick:
+  - {fileID: 8718004808799303648}
+  bucket:
+  - {fileID: 6243544403580374960}
   swing: {fileID: 7496972182104556011}
-  boomMaxSpeed: 0.5
-  stickMaxSpeed: 0.5
-  bucketMaxSpeed: 0.6
-  swingMaxSpeed: 0.5
+  boomMaxSpeed: 0
+  stickMaxSpeed: 0
+  bucketMaxSpeed: 0
+  swingMaxSpeed: 0
+  loadMaxSpeedsFromMachineProfile: 1
+  logMachineProfileSpeedLoad: 1
+  loadRangesFromMachineProfile: 1
+  logMachineProfileRangeLoad: 1
   boomAcceleration: 0.7
   bucketAcceleration: 0.7
   commandInputEnabled: 1
@@ -1298,21 +1302,13 @@ MonoBehaviour:
   boomHomePose:
   - 0
   - 0
-  stickHomePose: 0
-  stickActuatorHomePose: []
-  bucketHomePose: 0
-  bucketActuatorHomePose: []
+  stickHomePose: []
+  bucketHomePose: []
   swingHomePose: 0
   homeSettleSteps: 60
   maxHomeSettleSteps: 300
   homePoseTolerance: 0.01
   warnOnHomeTimeout: 1
-  currentBoomPose: []
-  currentStickPose: 0
-  currentStickActuatorPose: []
-  currentBucketPose: 0
-  currentBucketActuatorPose: []
-  currentSwingPose: 0
 --- !u!114 &2180195628944254339
 MonoBehaviour:
   m_ObjectHideFlags: 0

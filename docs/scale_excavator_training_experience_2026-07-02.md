@@ -84,7 +84,6 @@ Exception is an ambiguous reference between AGXUnity.Exception and System.Except
 - 每个 actuator 的 `max_speed`
 - 每个 actuator 的 `range`
 - `sign`
-- `deploy_sign`
 - observation normalizers
 - bucket pitch task targets
 - reachable workspace 文件路径
@@ -267,7 +266,6 @@ swing = 0.6 rad/s
 - `max_speed`
 - `range`
 - `sign`
-- `deploy_sign`
 - `normalizers`
 - task pitch targets
 - workspace file

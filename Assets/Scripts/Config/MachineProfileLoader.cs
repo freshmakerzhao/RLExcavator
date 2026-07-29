@@ -117,12 +117,13 @@ namespace RLExcavator
         ExtractString( actuatorJson, "joint_type" ),
         ExtractFloat( actuatorJson, "max_speed_positive" ),
         ExtractFloat( actuatorJson, "max_speed_negative" ),
+        ExtractOptionalFloat( actuatorJson, "command_deadzone_positive_normalized", 0f ),
+        ExtractOptionalFloat( actuatorJson, "command_deadzone_negative_normalized", 0f ),
         hasFiniteRange,
         rangeMin,
         rangeMax,
         ExtractBool( actuatorJson, "range_enabled_required" ),
         ExtractInt( actuatorJson, "sign" ),
-        ExtractInt( actuatorJson, "deploy_sign" ),
         ExtractInt( actuatorJson, "deploy_pca_channel" ),
         ExtractString( actuatorJson, "deploy_drive" ) );
     }
@@ -223,6 +224,15 @@ namespace RLExcavator
     private static float ExtractFloat( string json, string key )
     {
       return ParseFloatToken( ExtractPrimitive( json, key ), key );
+    }
+
+    private static float ExtractOptionalFloat( string json, string key, float defaultValue )
+    {
+      string token = "\"" + key + "\"";
+      if ( json.IndexOf( token, StringComparison.Ordinal ) < 0 )
+        return defaultValue;
+
+      return ExtractFloat( json, key );
     }
 
     private static bool ExtractBool( string json, string key )
