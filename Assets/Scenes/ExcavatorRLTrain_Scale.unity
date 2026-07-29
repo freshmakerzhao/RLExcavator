@@ -323,6 +323,14 @@ PrefabInstance:
       propertyPath: failOnOutOfBounds
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      propertyPath: deadzoneEnergyUseEffective
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      propertyPath: randomizeCommandDeadzonesOnEpisodeBegin
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 4814347991221635674, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0
@@ -5883,6 +5891,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 1177695124}
     - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      propertyPath: deadzoneEnergyUseEffective
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: moveToDigReachableWorkspace
       value: 
       objectReference: {fileID: 1177695124}
@@ -5890,6 +5902,10 @@ PrefabInstance:
       propertyPath: carryMaterialReachableWorkspace
       value: 
       objectReference: {fileID: 1177695123}
+    - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      propertyPath: randomizeCommandDeadzonesOnEpisodeBegin
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 4814347991221635674, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0
@@ -5913,10 +5929,14 @@ PrefabInstance:
     - target: {fileID: 5818160797840576068, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_Model
       value: 
-      objectReference: {fileID: 5022602860645237092, guid: 192266bb8500f559cb1f03a8da12c706, type: 3}
+      objectReference: {fileID: 5022602860645237092, guid: f895f35ce8b4ce3ae83edef65d2a98a4, type: 3}
     - target: {fileID: 5818160797840576068, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_BehaviorType
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5818160797840576068, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      propertyPath: m_DeterministicInference
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 6431493750905359489, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_LocalPosition.x
@@ -6186,7 +6206,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 532378880}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c3dd611f8e8d5d4a0a784f1ead1b697d, type: 3}
   m_Name: 
@@ -6498,6 +6518,14 @@ PrefabInstance:
     - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: failOnOutOfBounds
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      propertyPath: deadzoneEnergyUseEffective
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      propertyPath: randomizeCommandDeadzonesOnEpisodeBegin
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4814347991221635674, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_LocalPosition.y
@@ -6840,6 +6868,14 @@ PrefabInstance:
     - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: failOnOutOfBounds
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      propertyPath: deadzoneEnergyUseEffective
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2635385145810101076, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
+      propertyPath: randomizeCommandDeadzonesOnEpisodeBegin
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4814347991221635674, guid: 692b7d55fcf2090b8bcc9847fb5e09bf, type: 3}
       propertyPath: m_LocalPosition.y

@@ -1088,6 +1088,12 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 1500
+  deadzoneBumpWeight: 0.03
+  deadzoneEscapeMargin: 0.1
+  deadzoneEnergyUseEffective: 0
+  randomizeCommandDeadzonesOnEpisodeBegin: 0
+  commandDeadzoneScaleMin: 0.8
+  commandDeadzoneScaleMax: 1.2
   controller: {fileID: 6292096688691951243}
   frameRegistry: {fileID: 4336152341639758177}
   bucketTip: {fileID: 1728976811894670765}

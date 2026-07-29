@@ -10247,6 +10247,12 @@ MonoBehaviour:
     maxStep: 0
   hasUpgradedFromAgentParameters: 1
   MaxStep: 0
+  deadzoneBumpWeight: 0.03
+  deadzoneEscapeMargin: 0.1
+  deadzoneEnergyUseEffective: 0
+  randomizeCommandDeadzonesOnEpisodeBegin: 0
+  commandDeadzoneScaleMin: 0.8
+  commandDeadzoneScaleMax: 1.2
   controller: {fileID: 842532617}
   frameRegistry: {fileID: 842532618}
   bucketTip: {fileID: 1160411442}
@@ -10974,7 +10980,7 @@ Transform:
   m_GameObject: {fileID: 1257312944}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0.7071068, z: 0, w: 0.7071068}
-  m_LocalPosition: {x: -5, y: 1.2, z: 5}
+  m_LocalPosition: {x: -5, y: 2.69, z: 5}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:

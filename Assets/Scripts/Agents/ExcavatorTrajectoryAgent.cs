@@ -45,6 +45,26 @@ namespace RLExcavator
 
     // Inspector 引用
 
+    [Header("Deadzone Reward Shaping (Plan A)")]
+    [Tooltip("A1 bump 惩罚权重（每轴峰值罚）。当前部署导向训练使用 0.03。")]
+    [Min(0f)]
+    [SerializeField] private float deadzoneBumpWeight = 0.03f;
+    [Tooltip("A1 逃逸余量 m：bump 视 |a|>=d*(1+m) 为已清出死区，使控制器边界 |a|=d 仍被惩罚（消除边界缝隙）并留标定余量。默认 0.1。")]
+    [Min(0f)]
+    [SerializeField] private float deadzoneEscapeMargin = 0.1f;
+    [Tooltip("A2 能耗是否按方向死区置零后的等效动作计。训练场景开启，通用 prefab 默认关闭。")]
+    [SerializeField] private bool deadzoneEnergyUseEffective = false;
+
+    [Header("Training Domain Randomization (A4)")]
+    [Tooltip("仅训练场景启用：每个 episode 独立扰动四轴方向性命令死区。推理场景必须关闭。")]
+    [SerializeField] private bool randomizeCommandDeadzonesOnEpisodeBegin = false;
+    [Tooltip("死区相对 machine profile 标定值的最小倍率。")]
+    [Min(0f)]
+    [SerializeField] private float commandDeadzoneScaleMin = 0.8f;
+    [Tooltip("死区相对 machine profile 标定值的最大倍率。")]
+    [Min(0f)]
+    [SerializeField] private float commandDeadzoneScaleMax = 1.2f;
+
     [Header("References")]
     [Tooltip("挖掘机关节控制器，负责把归一化动作转换为 AGX 关节目标速度")]
     public ExcavatorController controller;
@@ -318,7 +338,8 @@ namespace RLExcavator
     private float m_episodeWaypointBonusScaleSum = 0f;
     private int m_episodeWaypointBonusScaleSamples = 0;
     private Vector4 m_episodeDeadzoneNonzeroActionCounts = Vector4.zero;
-    private float m_episodeDeadzoneNonzeroPenaltySum = 0f;
+    private float m_episodeDeadzoneBumpPenaltySum = 0f;
+    private Vector4 m_episodeCommandDeadzoneScales = Vector4.one;
     private bool m_hasPreviousMotionState = false;
     private Vector3 m_stuckWindowStartTipBase = Vector3.zero;
     private int m_stuckWindowCount = 0;
@@ -362,29 +383,225 @@ namespace RLExcavator
     public int CurrentOutOfBoundsSteps => m_outOfBoundsSteps;
     public int CurrentStuckWindowSamples => m_stuckWindowCount;
     public Vector4 LastRawPolicyAction { get; private set; } = Vector4.zero;
+    public Vector4 CurrentEpisodeCommandDeadzoneScales => m_episodeCommandDeadzoneScales;
 
     /// <summary>
     /// 标记会被方向性死区吞掉的非零策略动作。零动作和越过死区的动作不标记。
     /// </summary>
     public static Vector4 DirectionalDeadzoneNonzeroMask( Vector4 rawAction, MachineProfile profile )
     {
+      return DirectionalDeadzoneNonzeroMaskWithScales( rawAction, profile, Vector4.one );
+    }
+
+    public static Vector4 DirectionalDeadzoneNonzeroMaskWithScales(
+      Vector4 rawAction,
+      MachineProfile profile,
+      Vector4 deadzoneScales )
+    {
       if ( profile == null )
         throw new System.ArgumentNullException( nameof( profile ) );
 
       return new Vector4(
-        IsNonzeroInsideDirectionalDeadzone( rawAction.x, profile.GetActuator( "boom" ) ) ? 1f : 0f,
-        IsNonzeroInsideDirectionalDeadzone( rawAction.y, profile.GetActuator( "stick" ) ) ? 1f : 0f,
-        IsNonzeroInsideDirectionalDeadzone( rawAction.z, profile.GetActuator( "bucket" ) ) ? 1f : 0f,
-        IsNonzeroInsideDirectionalDeadzone( rawAction.w, profile.GetActuator( "swing" ) ) ? 1f : 0f );
+        IsNonzeroInsideDirectionalDeadzone( rawAction.x, profile.GetActuator( "boom" ), deadzoneScales.x ) ? 1f : 0f,
+        IsNonzeroInsideDirectionalDeadzone( rawAction.y, profile.GetActuator( "stick" ), deadzoneScales.y ) ? 1f : 0f,
+        IsNonzeroInsideDirectionalDeadzone( rawAction.z, profile.GetActuator( "bucket" ), deadzoneScales.z ) ? 1f : 0f,
+        IsNonzeroInsideDirectionalDeadzone( rawAction.w, profile.GetActuator( "swing" ), deadzoneScales.w ) ? 1f : 0f );
     }
 
     /// <summary>
-    /// 返回当前原始策略动作的死区内非零惩罚，单位为每个受影响轴 -0.003。
+    /// 旧平坦死区惩罚，仅保留用于基线回归；当前训练奖励使用 DeadzoneBumpPenalty。
     /// </summary>
     public static float DeadzoneNonzeroActionPenalty( Vector4 rawAction, MachineProfile profile )
     {
       Vector4 mask = DirectionalDeadzoneNonzeroMask( rawAction, profile );
       return -kDeadzoneNonzeroActionPenaltyPerAxis * ( mask.x + mask.y + mask.z + mask.w );
+    }
+
+    /// <summary>
+    /// 将可复现的 [0,1] 样本映射为非负、有限的死区倍率。
+    /// 运行时传入 Unity Random.value，测试可直接覆盖边界和异常输入。
+    /// </summary>
+    public static float DeadzoneScaleFromUnitSample( float minimum, float maximum, float unitSample )
+    {
+      if ( float.IsNaN( minimum ) || float.IsInfinity( minimum ) || minimum < 0f
+        || float.IsNaN( maximum ) || float.IsInfinity( maximum ) || maximum < 0f )
+        return 1f;
+
+      float lower = Mathf.Min( minimum, maximum );
+      float upper = Mathf.Max( minimum, maximum );
+      float safeSample = float.IsNaN( unitSample ) || float.IsInfinity( unitSample )
+        ? 0.5f
+        : Mathf.Clamp01( unitSample );
+      return Mathf.Lerp( lower, upper, safeSample );
+    }
+
+    public static Vector4 DeadzoneScalesFromUnitSamples(
+      float minimum,
+      float maximum,
+      Vector4 unitSamples )
+    {
+      return new Vector4(
+        DeadzoneScaleFromUnitSample( minimum, maximum, unitSamples.x ),
+        DeadzoneScaleFromUnitSample( minimum, maximum, unitSamples.y ),
+        DeadzoneScaleFromUnitSample( minimum, maximum, unitSamples.z ),
+        DeadzoneScaleFromUnitSample( minimum, maximum, unitSamples.w ) );
+    }
+
+    /// <summary>
+    /// A1 平滑死区 bump 惩罚：逃逸阈值 D=d*(1+margin)，用 4t(1-t)(t=|a|/D)计分，
+    /// 峰值在 t=0.5，a=0 与 |a|>=D 处为 0。控制器边界 |a|=d 仍受惩罚。
+    /// </summary>
+    public static float DeadzoneBumpPenalty(
+      Vector4 rawAction,
+      MachineProfile profile,
+      float weight,
+      float escapeMargin )
+    {
+      return DeadzoneBumpPenaltyWithScales(
+        rawAction,
+        profile,
+        weight,
+        escapeMargin,
+        Vector4.one );
+    }
+
+    public static float DeadzoneBumpPenaltyWithScales(
+      Vector4 rawAction,
+      MachineProfile profile,
+      float weight,
+      float escapeMargin,
+      Vector4 deadzoneScales )
+    {
+      if ( profile == null )
+        throw new System.ArgumentNullException( nameof( profile ) );
+
+      float safeWeight = float.IsNaN( weight ) || float.IsInfinity( weight )
+        ? 0f
+        : Mathf.Max( weight, 0f );
+      float sum =
+        DirectionalDeadzoneBumpWithScale( rawAction.x, profile.GetActuator( "boom" ), escapeMargin, deadzoneScales.x )
+        + DirectionalDeadzoneBumpWithScale( rawAction.y, profile.GetActuator( "stick" ), escapeMargin, deadzoneScales.y )
+        + DirectionalDeadzoneBumpWithScale( rawAction.z, profile.GetActuator( "bucket" ), escapeMargin, deadzoneScales.z )
+        + DirectionalDeadzoneBumpWithScale( rawAction.w, profile.GetActuator( "swing" ), escapeMargin, deadzoneScales.w );
+      return -safeWeight * sum;
+    }
+
+    /// <summary>
+    /// 单轴死区 bump 值 4t(1-t)，范围 [0,1]。零动作、清出逃逸余量、无死区、NaN/Inf 均返回 0。
+    /// </summary>
+    public static float DirectionalDeadzoneBump(
+      float rawAction,
+      MachineActuatorProfile actuator,
+      float escapeMargin )
+    {
+      return DirectionalDeadzoneBumpWithScale( rawAction, actuator, escapeMargin, 1f );
+    }
+
+    public static float DirectionalDeadzoneBumpWithScale(
+      float rawAction,
+      MachineActuatorProfile actuator,
+      float escapeMargin,
+      float deadzoneScale )
+    {
+      if ( float.IsNaN( rawAction ) || float.IsInfinity( rawAction ) )
+        return 0f;
+
+      float command = Mathf.Clamp( rawAction, -1f, 1f );
+      if ( command == 0f )
+        return 0f;
+
+      float deadzone = command < 0f
+        ? actuator.CommandDeadzoneNegativeNormalized
+        : actuator.CommandDeadzonePositiveNormalized;
+      deadzone *= SafeDeadzoneScale( deadzoneScale );
+      if ( deadzone <= 0f )
+        return 0f;
+
+      float safeEscapeMargin = float.IsNaN( escapeMargin ) || float.IsInfinity( escapeMargin )
+        ? 0f
+        : Mathf.Max( escapeMargin, 0f );
+      float escapeThreshold = Mathf.Min( deadzone * ( 1f + safeEscapeMargin ), 1f );
+      float magnitude = Mathf.Abs( command );
+      if ( magnitude >= escapeThreshold )
+        return 0f;
+
+      float t = magnitude / escapeThreshold;
+      return 4f * t * ( 1f - t );
+    }
+
+    /// <summary>
+    /// A2 返回经方向死区置零后的等效动作（与控制器一致），用于按实际执行计能耗。
+    /// </summary>
+    public static Vector4 DirectionalDeadzoneEffectiveAction( Vector4 rawAction, MachineProfile profile )
+    {
+      return DirectionalDeadzoneEffectiveActionWithScales( rawAction, profile, Vector4.one );
+    }
+
+    public static Vector4 DirectionalDeadzoneEffectiveActionWithScales(
+      Vector4 rawAction,
+      MachineProfile profile,
+      Vector4 deadzoneScales )
+    {
+      if ( profile == null )
+        throw new System.ArgumentNullException( nameof( profile ) );
+
+      return new Vector4(
+        DeadzoneEffectiveAxis( rawAction.x, profile.GetActuator( "boom" ), deadzoneScales.x ),
+        DeadzoneEffectiveAxis( rawAction.y, profile.GetActuator( "stick" ), deadzoneScales.y ),
+        DeadzoneEffectiveAxis( rawAction.z, profile.GetActuator( "bucket" ), deadzoneScales.z ),
+        DeadzoneEffectiveAxis( rawAction.w, profile.GetActuator( "swing" ), deadzoneScales.w ) );
+    }
+
+    /// <summary>
+    /// A2 关闭时使用 raw 动作计能耗；开启时改用经方向死区置零的等效动作。
+    /// </summary>
+    public static Vector4 DeadzoneEnergyAction(
+      Vector4 rawAction,
+      MachineProfile profile,
+      bool useEffectiveAction )
+    {
+      return DeadzoneEnergyActionWithScales(
+        rawAction,
+        profile,
+        useEffectiveAction,
+        Vector4.one );
+    }
+
+    public static Vector4 DeadzoneEnergyActionWithScales(
+      Vector4 rawAction,
+      MachineProfile profile,
+      bool useEffectiveAction,
+      Vector4 deadzoneScales )
+    {
+      return useEffectiveAction
+        ? DirectionalDeadzoneEffectiveActionWithScales( rawAction, profile, deadzoneScales )
+        : rawAction;
+    }
+
+    private static float DeadzoneEffectiveAxis(
+      float rawAction,
+      MachineActuatorProfile actuator,
+      float deadzoneScale )
+    {
+      if ( float.IsNaN( rawAction ) || float.IsInfinity( rawAction ) )
+        return 0f;
+
+      float command = Mathf.Clamp( rawAction, -1f, 1f );
+      if ( command == 0f )
+        return 0f;
+
+      float deadzone = command < 0f
+        ? actuator.CommandDeadzoneNegativeNormalized
+        : actuator.CommandDeadzonePositiveNormalized;
+      deadzone *= SafeDeadzoneScale( deadzoneScale );
+      return Mathf.Abs( command ) <= deadzone ? 0f : command;
+    }
+
+    private static float SafeDeadzoneScale( float scale )
+    {
+      return float.IsNaN( scale ) || float.IsInfinity( scale )
+        ? 1f
+        : Mathf.Max( scale, 0f );
     }
 
     public override void Initialize()
@@ -439,7 +656,16 @@ namespace RLExcavator
       m_episodeWaypointBonusScaleSum = 0f;
       m_episodeWaypointBonusScaleSamples = 0;
       m_episodeDeadzoneNonzeroActionCounts = Vector4.zero;
-      m_episodeDeadzoneNonzeroPenaltySum = 0f;
+      m_episodeDeadzoneBumpPenaltySum = 0f;
+
+      m_episodeCommandDeadzoneScales = randomizeCommandDeadzonesOnEpisodeBegin
+        ? DeadzoneScalesFromUnitSamples(
+          commandDeadzoneScaleMin,
+          commandDeadzoneScaleMax,
+          new Vector4( Random.value, Random.value, Random.value, Random.value ) )
+        : Vector4.one;
+      if ( controller != null && m_machineProfile != null )
+        controller.ApplyMachineProfileCommandDeadzoneScales( m_machineProfile, m_episodeCommandDeadzoneScales );
 
       if ( randomizeTaskModeOnEpisodeBegin )
         taskMode = Random.value < 0.5f ? TrajectoryTaskMode.MoveToDig : TrajectoryTaskMode.CarryMaterial;
@@ -536,7 +762,15 @@ namespace RLExcavator
       m_previousDistance = distance;
       float distanceScale = Mathf.Max( distanceNormalizer, 0.01f );
       float normalizedDistance = distance / distanceScale;
-      float actionMeanSquare = action.sqrMagnitude / 4f;
+      // A2 开启时按本 episode 随机死区置零后的等效动作计能耗。
+      Vector4 energyAction = m_machineProfile != null
+        ? DeadzoneEnergyActionWithScales(
+          action,
+          m_machineProfile,
+          deadzoneEnergyUseEffective,
+          m_episodeCommandDeadzoneScales )
+        : action;
+      float actionMeanSquare = energyAction.sqrMagnitude / 4f;
       float actionMeanAbs = ( Mathf.Abs( boom ) + Mathf.Abs( stick ) + Mathf.Abs( bucket ) + Mathf.Abs( swing ) ) / 4f;
       float actionDeltaMeanSquare = ( action - m_previousAction ).sqrMagnitude / 4f;
       float tubeCrossTrackRatio = RawTubeCrossTrackRatio();
@@ -589,13 +823,22 @@ namespace RLExcavator
       float smoothPenalty = -kSmoothRewardWeight * actionDeltaMeanSquare;
       float energyPenalty = -kEnergyRewardWeight * actionMeanSquare;
       Vector4 deadzoneNonzeroMask = m_machineProfile != null
-        ? DirectionalDeadzoneNonzeroMask( action, m_machineProfile )
+        ? DirectionalDeadzoneNonzeroMaskWithScales(
+          action,
+          m_machineProfile,
+          m_episodeCommandDeadzoneScales )
         : Vector4.zero;
+      // A1 用 bump 惩罚取代平坦惩罚；死区内非零 mask 仍单独用于 KPI 指标(下方统计)。
       float deadzonePenalty = m_machineProfile != null
-        ? DeadzoneNonzeroActionPenalty( action, m_machineProfile )
+        ? DeadzoneBumpPenaltyWithScales(
+          action,
+          m_machineProfile,
+          deadzoneBumpWeight,
+          deadzoneEscapeMargin,
+          m_episodeCommandDeadzoneScales )
         : 0f;
       m_episodeDeadzoneNonzeroActionCounts += deadzoneNonzeroMask;
-      m_episodeDeadzoneNonzeroPenaltySum += deadzonePenalty;
+      m_episodeDeadzoneBumpPenaltySum += deadzonePenalty;
 
       AddReward( progressReward );
       AddReward( trackingPenalty );
@@ -746,11 +989,15 @@ namespace RLExcavator
       stats.Add( "Trajectory/BucketPitchProgress", m_episodeBucketPitchProgressSum, StatAggregationMethod.Average );
       stats.Add( "Trajectory/WaypointBonusScale", meanWaypointBonusScale, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneNonzeroAxesPerStep", deadzoneNonzeroRate.x + deadzoneNonzeroRate.y + deadzoneNonzeroRate.z + deadzoneNonzeroRate.w, StatAggregationMethod.Average );
-      stats.Add( "Trajectory/DeadzonePenaltyPerStep", m_episodeDeadzoneNonzeroPenaltySum / sampleCount, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneBumpPenaltyPerStep", m_episodeDeadzoneBumpPenaltySum / sampleCount, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneNonzeroRateBoom", deadzoneNonzeroRate.x, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneNonzeroRateStick", deadzoneNonzeroRate.y, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneNonzeroRateBucket", deadzoneNonzeroRate.z, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneNonzeroRateSwing", deadzoneNonzeroRate.w, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneScaleBoom", m_episodeCommandDeadzoneScales.x, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneScaleStick", m_episodeCommandDeadzoneScales.y, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneScaleBucket", m_episodeCommandDeadzoneScales.z, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/DeadzoneScaleSwing", m_episodeCommandDeadzoneScales.w, StatAggregationMethod.Average );
 
       string taskPrefix = taskMode == TrajectoryTaskMode.CarryMaterial ? "Trajectory/CarryMaterial" : "Trajectory/MoveToDig";
       stats.Add( $"{taskPrefix}/SuccessRate", success, StatAggregationMethod.Average );
@@ -1149,7 +1396,10 @@ namespace RLExcavator
       m_debugRewardPrintCount++;
     }
 
-    private static bool IsNonzeroInsideDirectionalDeadzone( float rawAction, MachineActuatorProfile actuator )
+    private static bool IsNonzeroInsideDirectionalDeadzone(
+      float rawAction,
+      MachineActuatorProfile actuator,
+      float deadzoneScale )
     {
       if ( float.IsNaN( rawAction ) || float.IsInfinity( rawAction ) )
         return false;
@@ -1161,6 +1411,7 @@ namespace RLExcavator
       float deadzone = command < 0f
         ? actuator.CommandDeadzoneNegativeNormalized
         : actuator.CommandDeadzonePositiveNormalized;
+      deadzone *= SafeDeadzoneScale( deadzoneScale );
       return Mathf.Abs( command ) <= deadzone;
     }
 

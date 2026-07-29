@@ -199,23 +199,36 @@ namespace RLExcavator
 
     public void ApplyMachineProfileCommandDeadzones( MachineProfile profile )
     {
+      ApplyMachineProfileCommandDeadzoneScales( profile, Vector4.one );
+    }
+
+    /// <summary>
+    /// 以 machine profile 为中心值应用每轴死区倍率。仅供训练域随机化使用；
+    /// 倍率为 1 时与真实机标定完全一致。
+    /// </summary>
+    public void ApplyMachineProfileCommandDeadzoneScales( MachineProfile profile, Vector4 scales )
+    {
       if ( profile == null )
         throw new System.ArgumentNullException( nameof( profile ) );
 
       ApplyMachineProfileCommandDeadzone(
         profile.GetActuator( "boom" ),
+        scales.x,
         out m_boomCommandDeadzonePositiveNormalized,
         out m_boomCommandDeadzoneNegativeNormalized );
       ApplyMachineProfileCommandDeadzone(
         profile.GetActuator( "stick" ),
+        scales.y,
         out m_stickCommandDeadzonePositiveNormalized,
         out m_stickCommandDeadzoneNegativeNormalized );
       ApplyMachineProfileCommandDeadzone(
         profile.GetActuator( "bucket" ),
+        scales.z,
         out m_bucketCommandDeadzonePositiveNormalized,
         out m_bucketCommandDeadzoneNegativeNormalized );
       ApplyMachineProfileCommandDeadzone(
         profile.GetActuator( "swing" ),
+        scales.w,
         out m_swingCommandDeadzonePositiveNormalized,
         out m_swingCommandDeadzoneNegativeNormalized );
     }
@@ -240,11 +253,15 @@ namespace RLExcavator
 
     private static void ApplyMachineProfileCommandDeadzone(
       MachineActuatorProfile actuator,
+      float scale,
       out float positiveNormalized,
       out float negativeNormalized )
     {
-      positiveNormalized = actuator.CommandDeadzonePositiveNormalized;
-      negativeNormalized = actuator.CommandDeadzoneNegativeNormalized;
+      float safeScale = float.IsNaN( scale ) || float.IsInfinity( scale )
+        ? 1f
+        : Mathf.Max( scale, 0f );
+      positiveNormalized = Mathf.Clamp01( actuator.CommandDeadzonePositiveNormalized * safeScale );
+      negativeNormalized = Mathf.Clamp01( actuator.CommandDeadzoneNegativeNormalized * safeScale );
     }
 
     private static string FormatSignedSpeed( float positive, float negative )
