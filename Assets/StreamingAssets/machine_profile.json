@@ -1,0 +1,87 @@
+{
+  "schema_version": "0.3.0",
+  "machine_id": "scale_excavator_v1",
+  "machine_type": "scale_excavator",
+  "reachable_workspace_file": "reachable_workspaces/scale_excavator_workspace.json",
+  "action_order": [
+    "boom",
+    "stick",
+    "bucket",
+    "swing"
+  ],
+  "actuators": {
+    "boom": {
+      "action_index": 0,
+      "joint_type": "prismatic",
+      "max_speed_positive": 0.0351,
+      "max_speed_negative": 0.0185,
+      "command_deadzone_positive_normalized": 0.05698005698,
+      "command_deadzone_negative_normalized": 0.108108108108,
+      "range": [-0.095, 0.080],
+      "range_enabled_required": true,
+      "sign": 1,
+      "deploy_pca_channel": 2,
+      "deploy_drive": "servo"
+    },
+    "stick": {
+      "action_index": 1,
+      "joint_type": "prismatic",
+      "max_speed_positive": 0.0444,
+      "max_speed_negative": 0.0357,
+      "command_deadzone_positive_normalized": 0.045045045045,
+      "command_deadzone_negative_normalized": 0.089635854342,
+      "range": [-0.060, 0.090],
+      "range_enabled_required": true,
+      "sign": 1,
+      "deploy_pca_channel": 3,
+      "deploy_drive": "servo"
+    },
+    "bucket": {
+      "action_index": 2,
+      "joint_type": "prismatic",
+      "max_speed_positive": 0.0342,
+      "max_speed_negative": 0.0419,
+      "command_deadzone_positive_normalized": 0.058479532164,
+      "command_deadzone_negative_normalized": 0.047732696897,
+      "range": [-0.085, 0.045],
+      "range_enabled_required": true,
+      "sign": 1,
+      "deploy_pca_channel": 1,
+      "deploy_drive": "servo"
+    },
+    "swing": {
+      "action_index": 3,
+      "joint_type": "revolute_continuous",
+      "max_speed_positive": 0.6,
+      "max_speed_negative": 0.6,
+      "command_deadzone_positive_normalized": 0.090175344686,
+      "command_deadzone_negative_normalized": 0.119264165553,
+      "range": [null, null],
+      "range_enabled_required": false,
+      "sign": 1,
+      "deploy_pca_channel": 4,
+      "deploy_drive": "motor"
+    }
+  },
+  "observation_schema": {
+    "id": "scale_excavator_v2_38d",
+    "total_dim": 38,
+    "action_dim": 4,
+    "waypoint_lookahead": 3,
+    "num_task_modes": 2,
+    "normalizers": {
+      "position_normalizer": 1.13,
+      "tip_velocity_scale": 0.05,
+      "distance_normalizer": 1.13,
+      "tube_radius": 0.04,
+      "target_threshold": 0.03,
+      "pitch_norm_deg": 180.0
+    }
+  },
+  "task_profile": {
+    "bucket_pitch_targets_deg": {
+      "MoveToDig": 70.0,
+      "CarryMaterial": 180.0
+    }
+  }
+}
