@@ -199,7 +199,7 @@ namespace RLExcavator.Tests
         string[] records = File.ReadAllLines( fixture.AuditPath );
         Assert.That( records, Has.Length.EqualTo( 2 ) );
         Assert.That( records[ 1 ], Does.Contain( "\"record_type\":\"terminal\"" ) );
-        Assert.That( records[ 1 ], Does.Contain( "\"status\":\"complete\"" ) );
+        Assert.That( records[ 1 ], Does.Contain( "\"status\":\"terminal\"" ) );
         Assert.That( records[ 1 ], Does.Contain( "\"result\":\"" + result + "\"" ) );
         Assert.That( records[ 1 ], Does.Contain( "\"consumed_sample_count\":1" ) );
         Assert.That( records[ 1 ], Does.Contain( "\"suite_sample_count\":2" ) );

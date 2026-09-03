@@ -400,7 +400,7 @@ namespace RLExcavator
           schema_version = kSchemaVersion,
           record_type = "terminal",
           mode = kMode,
-          status = string.IsNullOrEmpty( errorCode ) ? "complete" : "error",
+          status = string.IsNullOrEmpty( errorCode ) ? "terminal" : "error",
           result = result,
           trajectory_controller_backend = kBackend,
           trajectory_suite_sha256 = suiteSha,
