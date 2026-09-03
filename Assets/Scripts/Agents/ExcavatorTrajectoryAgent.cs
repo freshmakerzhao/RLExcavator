@@ -347,6 +347,7 @@ namespace RLExcavator
     private float m_previousMotionTime = 0f;
     private int m_completedPathSerial = 0;
     private int m_policyActionSequence = 0;
+    private bool m_policyDecisionPending = false;
     private MachineProfile m_machineProfile = null;
 
     // UI / 调试只读属性
@@ -691,6 +692,9 @@ namespace RLExcavator
     /// </summary>
     public override void CollectObservations( VectorSensor sensor )
     {
+      // DecisionRequester may re-apply the stored action between decisions.  Only the
+      // action following a fresh observation request is a new policy decision.
+      m_policyDecisionPending = true;
       Vector3 tipBase = CurrentTipBasePosition();
       UpdateMotionEstimates( tipBase );
 
@@ -749,7 +753,10 @@ namespace RLExcavator
       if ( controller != null )
         controller.SetNormalizedSpeeds( boom, stick, bucket, swing );
 
-      PublishPolicyAction( action );
+      if ( m_policyDecisionPending ) {
+        m_policyDecisionPending = false;
+        PublishPolicyAction( action );
+      }
 
       if ( bucketTip == null || trajectory == null ) {
         if ( debugEpisodeEvents && !m_missingReferenceWarned ) {

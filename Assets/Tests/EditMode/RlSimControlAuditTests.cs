@@ -19,7 +19,7 @@ namespace RLExcavator.Tests
     private static string s_finishedResult;
 
     [Test]
-    public void TrajectoryAgentPublishesClampedCommandAtPolicyDecisionBoundary()
+    public void TrajectoryAgentPublishesOnlyFreshPolicyDecisions()
     {
       Type agentType = FindType( "RLExcavator.ExcavatorTrajectoryAgent" );
       var gameObject = new GameObject( "rl-sim-audit-policy-decision" );
@@ -33,6 +33,10 @@ namespace RLExcavator.Tests
 
         InvokePolicyAction( agentType, agent, 1.2f, -1.3f, 0.25f, -0.5f );
         Assert.That( s_lastAction, Is.EqualTo( new Vector4( 1f, -1f, 0.25f, -0.5f ) ) );
+        InvokeRepeatedPolicyAction( agentType, agent, 0.9f, 0.8f, 0.7f, 0.6f );
+
+        Assert.That( s_decisionCount, Is.EqualTo( 1 ) );
+
         InvokePolicyAction( agentType, agent, 0.1f, 0.2f, 0.3f, 0.4f );
 
         Assert.That( s_decisionCount, Is.EqualTo( 2 ) );
@@ -385,6 +389,16 @@ namespace RLExcavator.Tests
     }
 
     private static void InvokePolicyAction( Type agentType, object agent, params float[] values )
+    {
+      FieldInfo decisionPending = agentType.GetField(
+        "m_policyDecisionPending",
+        BindingFlags.Instance | BindingFlags.NonPublic );
+      Assert.That( decisionPending, Is.Not.Null );
+      decisionPending.SetValue( agent, true );
+      InvokeRepeatedPolicyAction( agentType, agent, values );
+    }
+
+    private static void InvokeRepeatedPolicyAction( Type agentType, object agent, params float[] values )
     {
       object actions = CreateContinuousActionBuffer( values );
       try {
