@@ -346,6 +346,7 @@ namespace RLExcavator
     private float m_stuckWindowMaxActionMagnitude = 0f;
     private float m_previousMotionTime = 0f;
     private int m_completedPathSerial = 0;
+    private int m_policyActionSequence = 0;
     private MachineProfile m_machineProfile = null;
 
     // UI / 调试只读属性
@@ -384,6 +385,7 @@ namespace RLExcavator
     public int CurrentStuckWindowSamples => m_stuckWindowCount;
     public Vector4 LastRawPolicyAction { get; private set; } = Vector4.zero;
     public Vector4 CurrentEpisodeCommandDeadzoneScales => m_episodeCommandDeadzoneScales;
+    public event System.Action<Vector4, int, double> PolicyActionReceived;
 
     /// <summary>
     /// 标记会被方向性死区吞掉的非零策略动作。零动作和越过死区的动作不标记。
@@ -747,6 +749,8 @@ namespace RLExcavator
       if ( controller != null )
         controller.SetNormalizedSpeeds( boom, stick, bucket, swing );
 
+      PublishPolicyAction( action );
+
       if ( bucketTip == null || trajectory == null ) {
         if ( debugEpisodeEvents && !m_missingReferenceWarned ) {
           Debug.LogWarning( "[ExcavatorTrajectoryAgent] Missing bucketTip or trajectory reference. Ending episode." );
@@ -902,6 +906,28 @@ namespace RLExcavator
 
       m_previousAction = action;
       m_previousBucketPitchErrorAbsDeg = bucketPitchErrorAbsDeg;
+    }
+
+    private void PublishPolicyAction( Vector4 rawAction )
+    {
+      Vector4 commanded = controller == null
+        ? new Vector4(
+          Mathf.Clamp( rawAction.x, -1f, 1f ),
+          Mathf.Clamp( rawAction.y, -1f, 1f ),
+          Mathf.Clamp( rawAction.z, -1f, 1f ),
+          Mathf.Clamp( rawAction.w, -1f, 1f ) )
+        : new Vector4(
+          controller.LastBoomCommand,
+          controller.LastStickCommand,
+          controller.LastBucketCommand,
+          controller.LastSwingCommand );
+      int sequence = m_policyActionSequence++;
+      try {
+        PolicyActionReceived?.Invoke( commanded, sequence, Time.realtimeSinceStartupAsDouble );
+      }
+      catch ( System.Exception exception ) {
+        Debug.LogWarning( "[ExcavatorTrajectoryAgent] Policy action observer failed: " + exception.Message, this );
+      }
     }
 
     // Heuristic Only 下使用与 DigAgent 相同的键盘映射。

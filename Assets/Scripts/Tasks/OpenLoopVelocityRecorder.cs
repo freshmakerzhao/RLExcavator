@@ -13,6 +13,9 @@ namespace RLExcavator
   /// </summary>
   public class OpenLoopVelocityRecorder : MonoBehaviour
   {
+    private const string kAuditPathEnvironmentVariable = "RL_EXCAVATOR_SIM_CONTROL_AUDIT_JSONL";
+    private const string kSuitePathEnvironmentVariable = "RL_EXCAVATOR_TRAJECTORY_SUITE_JSON";
+
     [Header("References")]
     public ExcavationCycleTask cycleTask;
     public ExcavatorController controller;
@@ -32,6 +35,16 @@ namespace RLExcavator
     [Tooltip("每次开始记录时清空上一轮样本。")]
     public bool clearSamplesOnStart = true;
 
+    [Header("Strict RL sim control audit")]
+    [Tooltip("开启后，在现有 CSV 之外追加记录策略决策边界 JSONL，用于 RL sim-real 对照实验。")]
+    public bool enableStrictRlSimControlAudit = false;
+
+    [Tooltip("冻结 trajectory suite JSON；也可由环境变量 RL_EXCAVATOR_TRAJECTORY_SUITE_JSON 指定。")]
+    public string trajectorySuiteJsonPath = "";
+
+    [Tooltip("严格控制 audit JSONL；也可由环境变量 RL_EXCAVATOR_SIM_CONTROL_AUDIT_JSONL 指定。")]
+    public string controlAuditJsonlPath = "";
+
     [Header("Runtime")]
     [SerializeField]
     private bool m_isRecording = false;
@@ -42,6 +55,11 @@ namespace RLExcavator
     private readonly List<Sample> m_samples = new List<Sample>( 4096 );
     private double m_recordStartTime = 0.0;
     private int m_sampleIndex = 0;
+    private ExcavatorTrajectoryAgent m_policyActionSource;
+    private ExcavationCycleTask m_cycleTaskSource;
+    private bool m_trackingEventsSubscribed = false;
+    private bool m_cycleEventsSubscribed = false;
+    private StrictRlSimControlAudit m_strictRlSimControlAudit;
 
     public bool IsRecording => m_isRecording;
     public string LastExportPath => m_lastExportPath;
@@ -80,18 +98,29 @@ namespace RLExcavator
 
     private void Awake()
     {
+      ResolveStrictRlSimControlAuditConfiguration();
       ResolveReferences();
+      RefreshPolicyActionSubscription();
+      RefreshCycleTaskSubscription();
     }
 
     private void OnEnable()
     {
       ResolveReferences();
-      Subscribe();
+      RefreshPolicyActionSubscription();
+      RefreshCycleTaskSubscription();
     }
 
     private void OnDisable()
     {
-      Unsubscribe();
+      m_strictRlSimControlAudit?.Flush();
+      DetachPolicyActionSubscription();
+      DetachCycleTaskSubscription();
+    }
+
+    private void LateUpdate()
+    {
+      m_strictRlSimControlAudit?.Flush();
     }
 
     private void FixedUpdate()
@@ -100,6 +129,8 @@ namespace RLExcavator
         return;
 
       ResolveReferences();
+      RefreshPolicyActionSubscription();
+      RefreshCycleTaskSubscription();
       if ( controller == null ) {
         m_isRecording = false;
         Debug.LogWarning( "[OpenLoopVelocityRecorder] Recording stopped because the controller reference is missing.", this );
@@ -113,6 +144,8 @@ namespace RLExcavator
     public void StartRecording()
     {
       ResolveReferences();
+      RefreshPolicyActionSubscription();
+      RefreshCycleTaskSubscription();
 
       if ( controller == null ) {
         Debug.LogWarning( "[OpenLoopVelocityRecorder] Missing controller reference.", this );
@@ -168,24 +201,66 @@ namespace RLExcavator
         frameRegistry = controller.GetComponent<ExcavatorFrameRegistry>();
     }
 
-    private void Subscribe()
+    private void RefreshPolicyActionSubscription()
     {
-      if ( !recordOnCycleTask || cycleTask == null )
+      ExcavatorTrajectoryAgent requestedSource = m_strictRlSimControlAudit != null ? agent : null;
+      if ( m_policyActionSource == requestedSource )
         return;
 
-      cycleTask.CycleStarted -= OnCycleStarted;
-      cycleTask.CycleFinished -= OnCycleFinished;
-      cycleTask.CycleStarted += OnCycleStarted;
-      cycleTask.CycleFinished += OnCycleFinished;
+      DetachPolicyActionSubscription();
+      m_policyActionSource = requestedSource;
+      if ( m_policyActionSource != null )
+        m_policyActionSource.PolicyActionReceived += OnPolicyActionReceived;
     }
 
-    private void Unsubscribe()
+    private void DetachPolicyActionSubscription()
     {
-      if ( cycleTask == null )
+      if ( m_policyActionSource == null )
         return;
 
-      cycleTask.CycleStarted -= OnCycleStarted;
-      cycleTask.CycleFinished -= OnCycleFinished;
+      m_policyActionSource.PolicyActionReceived -= OnPolicyActionReceived;
+      m_policyActionSource = null;
+    }
+
+    private void RefreshCycleTaskSubscription()
+    {
+      bool requestTrackingEvents = m_strictRlSimControlAudit != null;
+      bool requestCycleEvents = recordOnCycleTask;
+      ExcavationCycleTask requestedSource = requestTrackingEvents || requestCycleEvents ? cycleTask : null;
+      if ( m_cycleTaskSource == requestedSource
+        && m_trackingEventsSubscribed == requestTrackingEvents
+        && m_cycleEventsSubscribed == requestCycleEvents )
+        return;
+
+      DetachCycleTaskSubscription();
+      m_cycleTaskSource = requestedSource;
+      if ( m_cycleTaskSource == null )
+        return;
+
+      if ( requestTrackingEvents ) {
+        m_cycleTaskSource.TrackingSegmentStarted += OnTrackingSegmentStarted;
+        m_cycleTaskSource.TrackingSegmentFinished += OnTrackingSegmentFinished;
+        m_trackingEventsSubscribed = true;
+      }
+      if ( requestCycleEvents ) {
+        m_cycleTaskSource.CycleStarted += OnCycleStarted;
+        m_cycleTaskSource.CycleFinished += OnCycleFinished;
+        m_cycleEventsSubscribed = true;
+      }
+    }
+
+    private void DetachCycleTaskSubscription()
+    {
+      if ( m_cycleTaskSource == null )
+        return;
+
+      m_cycleTaskSource.TrackingSegmentStarted -= OnTrackingSegmentStarted;
+      m_cycleTaskSource.TrackingSegmentFinished -= OnTrackingSegmentFinished;
+      m_cycleTaskSource.CycleStarted -= OnCycleStarted;
+      m_cycleTaskSource.CycleFinished -= OnCycleFinished;
+      m_cycleTaskSource = null;
+      m_trackingEventsSubscribed = false;
+      m_cycleEventsSubscribed = false;
     }
 
     private void OnCycleStarted()
@@ -196,6 +271,104 @@ namespace RLExcavator
     private void OnCycleFinished( bool success, string reason )
     {
       StopAndExport( success, reason );
+    }
+
+    private void OnTrackingSegmentStarted( string traceRunId )
+    {
+      m_strictRlSimControlAudit?.StartTrackingSegment(
+        traceRunId,
+        Time.realtimeSinceStartupAsDouble );
+    }
+
+    private void OnTrackingSegmentFinished( string traceRunId, string result )
+    {
+      m_strictRlSimControlAudit?.FinishTrackingSegment(
+        traceRunId,
+        result,
+        Time.realtimeSinceStartupAsDouble );
+    }
+
+    private void OnPolicyActionReceived( Vector4 action, int sequence, double monotonicSeconds )
+    {
+      if ( m_strictRlSimControlAudit == null || !m_strictRlSimControlAudit.IsEnabled )
+        return;
+      TryCaptureTrackingState( out StrictRlSimTrackingState tracking );
+      m_strictRlSimControlAudit.RecordPolicySample( action, sequence, monotonicSeconds, tracking );
+    }
+
+    private void ResolveStrictRlSimControlAuditConfiguration()
+    {
+      ResolveRequestedAuditPaths( out string auditPath, out string suitePath );
+
+      bool requested = enableStrictRlSimControlAudit
+        || !string.IsNullOrWhiteSpace( auditPath )
+        || !string.IsNullOrWhiteSpace( suitePath );
+      if ( !requested ) {
+        m_strictRlSimControlAudit = null;
+        return;
+      }
+
+      string resolvedPath = ResolveStrictRlSimControlAuditPath( auditPath );
+      string resolvedSuitePath = ResolveStrictRlSimControlAuditPath( suitePath );
+      StrictRlSimControlAudit.TryCreate(
+        resolvedPath,
+        resolvedSuitePath,
+        message => Debug.LogWarning( "[OpenLoopVelocityRecorder] " + message, this ),
+        out m_strictRlSimControlAudit );
+    }
+
+    private void ResolveRequestedAuditPaths( out string auditPath, out string suitePath )
+    {
+      auditPath = Environment.GetEnvironmentVariable( kAuditPathEnvironmentVariable );
+      suitePath = Environment.GetEnvironmentVariable( kSuitePathEnvironmentVariable );
+      if ( string.IsNullOrWhiteSpace( auditPath ) )
+        auditPath = controlAuditJsonlPath;
+      if ( string.IsNullOrWhiteSpace( suitePath ) )
+        suitePath = trajectorySuiteJsonPath;
+
+      string[] args = Environment.GetCommandLineArgs();
+      for ( int index = 0; index < args.Length - 1; index++ ) {
+        if ( args[ index ] == "--rl-sim-control-audit-path" )
+          auditPath = args[ index + 1 ];
+        else if ( args[ index ] == "--rl-sim-trajectory-suite" )
+          suitePath = args[ index + 1 ];
+      }
+    }
+
+    private static string ResolveStrictRlSimControlAuditPath( string configuredPath )
+    {
+      if ( string.IsNullOrWhiteSpace( configuredPath ) )
+        return "";
+
+      return Path.IsPathRooted( configuredPath )
+        ? configuredPath
+        : Path.GetFullPath( Path.Combine( Application.dataPath, "..", configuredPath ) );
+    }
+
+    private bool TryCaptureTrackingState( out StrictRlSimTrackingState tracking )
+    {
+      ResolveReferences();
+      Transform frame = frameRegistry != null ? frameRegistry.MachineRoot : null;
+      if ( agent == null || agent.bucketTip == null || agent.trajectory == null || frame == null ) {
+        tracking = default;
+        return false;
+      }
+
+      Vector3 tipRos = UnityMachineLocalToRos( frame.InverseTransformPoint( agent.bucketTip.position ) );
+      Vector3 waypointRos = UnityMachineLocalToRos(
+        frame.InverseTransformPoint( agent.trajectory.CurrentTargetPosition ) );
+      tracking = new StrictRlSimTrackingState(
+        tipRos,
+        waypointRos,
+        agent.CurrentTargetIndex,
+        Vector3.Distance( tipRos, waypointRos ),
+        agent.CurrentPathProgress );
+      return tracking.IsValid;
+    }
+
+    private static Vector3 UnityMachineLocalToRos( Vector3 unityLocal )
+    {
+      return new Vector3( unityLocal.z, -unityLocal.x, unityLocal.y );
     }
 
     private void RecordSample()
@@ -410,5 +583,6 @@ namespace RLExcavator
         return null;
       }
     }
+
   }
 }
