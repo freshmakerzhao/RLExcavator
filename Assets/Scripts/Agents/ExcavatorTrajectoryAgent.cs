@@ -65,6 +65,28 @@ namespace RLExcavator
     [Min(0f)]
     [SerializeField] private float commandDeadzoneScaleMax = 1.2f;
 
+    [Header("Carry terminal swing stabilization")]
+    [Tooltip("只对 CarryMaterial 最终 waypoint 启用回转制动奖励与稳定到达门。默认关闭，候选训练配置显式开启。")]
+    [SerializeField] private bool terminalSwingStabilizationEnabled = false;
+    [Tooltip("最终 waypoint 的真实位置阈值；启用后不叠加仅供显示的目标球半径。")]
+    [Min(0f)]
+    [SerializeField] private float terminalSwingReachThresholdM = 0.25f;
+    [Tooltip("进入该距离后开始惩罚未制动的回转速度与同向回转命令。")]
+    [Min(0f)]
+    [SerializeField] private float terminalSwingApproachDistanceM = 0.50f;
+    [Tooltip("终点附近归一化回转速度平方惩罚权重。")]
+    [Min(0f)]
+    [SerializeField] private float terminalSwingVelocityWeight = 0.20f;
+    [Tooltip("已有回转速度方向上继续加速的额外惩罚权重。")]
+    [Min(0f)]
+    [SerializeField] private float terminalSwingDriveWeight = 0.10f;
+    [Tooltip("最终到达允许的最大归一化回转速度。")]
+    [Min(0f)]
+    [SerializeField] private float terminalSwingMaxAbsVelocityNormalized = 0.15f;
+    [Tooltip("位置和回转速度连续满足多少个决策步才完成 CarryMaterial。")]
+    [Min(1)]
+    [SerializeField] private int terminalSwingSettledDecisionSteps = 3;
+
     [Header("References")]
     [Tooltip("挖掘机关节控制器，负责把归一化动作转换为 AGX 关节目标速度")]
     public ExcavatorController controller;
@@ -339,6 +361,9 @@ namespace RLExcavator
     private int m_episodeWaypointBonusScaleSamples = 0;
     private Vector4 m_episodeDeadzoneNonzeroActionCounts = Vector4.zero;
     private float m_episodeDeadzoneBumpPenaltySum = 0f;
+    private float m_episodeTerminalSwingPenaltySum = 0f;
+    private int m_terminalSwingStableCount = 0;
+    private int m_episodeTerminalSwingWaitSteps = 0;
     private Vector4 m_episodeCommandDeadzoneScales = Vector4.one;
     private bool m_hasPreviousMotionState = false;
     private Vector3 m_stuckWindowStartTipBase = Vector3.zero;
@@ -660,6 +685,11 @@ namespace RLExcavator
       m_episodeWaypointBonusScaleSamples = 0;
       m_episodeDeadzoneNonzeroActionCounts = Vector4.zero;
       m_episodeDeadzoneBumpPenaltySum = 0f;
+      m_episodeTerminalSwingPenaltySum = 0f;
+      m_terminalSwingStableCount = 0;
+      m_episodeTerminalSwingWaitSteps = 0;
+
+      LoadTerminalSwingStabilizationParameters();
 
       m_episodeCommandDeadzoneScales = randomizeCommandDeadzonesOnEpisodeBegin
         ? DeadzoneScalesFromUnitSamples(
@@ -744,6 +774,7 @@ namespace RLExcavator
       float swing = a.Length > 3 ? a[ 3 ] : 0f;
       Vector4 action = new Vector4( boom, stick, bucket, swing );
       LastRawPolicyAction = action;
+      bool isNewPolicyDecision = m_policyDecisionPending;
 
       if ( debugActions && m_debugActionPrintCount < debugActionPrints ) {
         Debug.Log( $"[ExcavatorTrajectoryAgent] action boom={boom:F3}, stick={stick:F3}, bucket={bucket:F3}, swing={swing:F3}" );
@@ -753,7 +784,7 @@ namespace RLExcavator
       if ( controller != null )
         controller.SetNormalizedSpeeds( boom, stick, bucket, swing );
 
-      if ( m_policyDecisionPending ) {
+      if ( isNewPolicyDecision ) {
         m_policyDecisionPending = false;
         PublishPolicyAction( action );
       }
@@ -795,10 +826,34 @@ namespace RLExcavator
       m_episodeActionMagnitudeSum += Mathf.Abs( boom ) + Mathf.Abs( stick ) + Mathf.Abs( bucket ) + Mathf.Abs( swing );
       m_episodeBucketPitchErrorSum += bucketPitchError;
 
-      if ( distance <= CurrentReachThreshold() && !m_episodeCompletedPath ) {
+      bool terminalSwingGateActive = terminalSwingStabilizationEnabled
+        && taskMode == TrajectoryTaskMode.CarryMaterial
+        && IsFinalWaypoint();
+      float reachThreshold = terminalSwingGateActive
+        ? Mathf.Max( terminalSwingReachThresholdM, 0f )
+        : CurrentReachThreshold();
+      bool positionReached = distance <= reachThreshold;
+      bool terminalSwingSettled = !terminalSwingGateActive
+        || TrajectoryTerminalStabilization.IsSettled(
+          distance,
+          reachThreshold,
+          m_jointVelocity.w,
+          terminalSwingMaxAbsVelocityNormalized );
+      m_terminalSwingStableCount = terminalSwingGateActive && isNewPolicyDecision
+        ? TrajectoryTerminalStabilization.NextStableCount(
+          m_terminalSwingStableCount,
+          terminalSwingSettled )
+        : terminalSwingGateActive ? m_terminalSwingStableCount : 0;
+      bool waypointReady = positionReached && ( !terminalSwingGateActive
+        || m_terminalSwingStableCount >= Mathf.Max( terminalSwingSettledDecisionSteps, 1 ) );
+      if ( terminalSwingGateActive && isNewPolicyDecision && positionReached && !waypointReady )
+        m_episodeTerminalSwingWaitSteps++;
+
+      if ( waypointReady && !m_episodeCompletedPath ) {
         bool completed = trajectory == null || trajectory.AdvanceTarget();
         m_episodeReachedTargets++;
         m_stepsOnCurrentWaypoint = 0;
+        m_terminalSwingStableCount = 0;
         AddReward( kWaypointReward );
 
         if ( completed ) {
@@ -848,8 +903,18 @@ namespace RLExcavator
           deadzoneEscapeMargin,
           m_episodeCommandDeadzoneScales )
         : 0f;
+      float terminalSwingPenalty = terminalSwingGateActive
+        ? TrajectoryTerminalStabilization.CalculatePenalty(
+          distance,
+          terminalSwingApproachDistanceM,
+          m_jointVelocity.w,
+          swing,
+          terminalSwingVelocityWeight,
+          terminalSwingDriveWeight )
+        : 0f;
       m_episodeDeadzoneNonzeroActionCounts += deadzoneNonzeroMask;
       m_episodeDeadzoneBumpPenaltySum += deadzonePenalty;
+      m_episodeTerminalSwingPenaltySum += terminalSwingPenalty;
 
       AddReward( progressReward );
       AddReward( trackingPenalty );
@@ -858,6 +923,7 @@ namespace RLExcavator
       AddReward( smoothPenalty );
       AddReward( energyPenalty );
       AddReward( deadzonePenalty );
+      AddReward( terminalSwingPenalty );
       AddReward( -kTimePenalty );
 
       DebugRewardTerms(
@@ -1031,6 +1097,8 @@ namespace RLExcavator
       stats.Add( "Trajectory/DeadzoneScaleStick", m_episodeCommandDeadzoneScales.y, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneScaleBucket", m_episodeCommandDeadzoneScales.z, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneScaleSwing", m_episodeCommandDeadzoneScales.w, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/TerminalSwingPenaltyPerStep", m_episodeTerminalSwingPenaltySum / sampleCount, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/TerminalSwingWaitSteps", m_episodeTerminalSwingWaitSteps, StatAggregationMethod.Average );
 
       string taskPrefix = taskMode == TrajectoryTaskMode.CarryMaterial ? "Trajectory/CarryMaterial" : "Trajectory/MoveToDig";
       stats.Add( $"{taskPrefix}/SuccessRate", success, StatAggregationMethod.Average );
@@ -1068,6 +1136,32 @@ namespace RLExcavator
 
       var visual = target.GetComponent<TargetPointVisual>();
       return visual != null ? threshold + Mathf.Max( visual.radius, 0f ) : threshold;
+    }
+
+    private void LoadTerminalSwingStabilizationParameters()
+    {
+      var parameters = Academy.Instance.EnvironmentParameters;
+      terminalSwingStabilizationEnabled = parameters.GetWithDefault(
+        "terminal_swing_stabilization_enabled",
+        terminalSwingStabilizationEnabled ? 1f : 0f ) >= 0.5f;
+      terminalSwingReachThresholdM = parameters.GetWithDefault(
+        "terminal_swing_reach_threshold_m",
+        terminalSwingReachThresholdM );
+      terminalSwingApproachDistanceM = parameters.GetWithDefault(
+        "terminal_swing_approach_distance_m",
+        terminalSwingApproachDistanceM );
+      terminalSwingVelocityWeight = parameters.GetWithDefault(
+        "terminal_swing_velocity_weight",
+        terminalSwingVelocityWeight );
+      terminalSwingDriveWeight = parameters.GetWithDefault(
+        "terminal_swing_drive_weight",
+        terminalSwingDriveWeight );
+      terminalSwingMaxAbsVelocityNormalized = parameters.GetWithDefault(
+        "terminal_swing_max_abs_velocity_normalized",
+        terminalSwingMaxAbsVelocityNormalized );
+      terminalSwingSettledDecisionSteps = Mathf.RoundToInt( parameters.GetWithDefault(
+        "terminal_swing_settled_decision_steps",
+        terminalSwingSettledDecisionSteps ) );
     }
 
     private float WaypointBonusAttitudeScale( float bucketPitchErrorAbsDeg )
