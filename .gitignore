@@ -56,3 +56,12 @@ Assets/models/*.obj
 Assets/models/*.obj.meta
 
 open_loop_velocity_exports
+
+# Local wheel-loader exploration, including its dependent scene and metadata.
+# Preserve together on disk; not part of the excavation checkpoint.
+/Assets/AGXUnity_WheelLoaderTerrain/
+/Assets/AGXUnity_WheelLoaderTerrain.meta
+/Assets/imported/
+/Assets/imported.meta
+/Assets/Scenes/Loader.unity
+/Assets/Scenes/Loader.unity.meta

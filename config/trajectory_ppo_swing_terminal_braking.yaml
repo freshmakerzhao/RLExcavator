@@ -1,0 +1,74 @@
+# PPO continuation candidate for CarryMaterial swing braking.
+#
+# Confirmed baseline weakness (2026-09-04): the validated simulation sweep reaches
+# every target, but its final five CarryMaterial swing actions remain about 0.7-1.0.
+# The training prefab also combines targetThreshold=0.25 m with a 0.18 m visual
+# radius, so legacy training may declare success at about 0.43 m. This candidate
+# keeps the 38D observation and 4D action contract unchanged, but requires the
+# final CarryMaterial waypoint to be within 0.25 m and nearly stopped for three
+# consecutive policy decisions.
+#
+# Run a fresh optimizer schedule initialized from the deployed baseline:
+#   python tools/mlagents_train_no_onnx.py \
+#     config/trajectory_ppo_swing_terminal_braking.yaml \
+#     --run-id=scale_v3_swing_terminal_braking_01 \
+#     --initialize-from=scale_v3_deadzone_bump_a1a2_dr01
+#
+# The first 500k-step checkpoint is a candidate gate, not an automatic deployment.
+# Compare it against the frozen baseline on the same deterministic catalog sweep.
+behaviors:
+  ExcavatorTrajectory:
+    trainer_type: ppo
+    hyperparameters:
+      batch_size: 1024
+      buffer_size: 10240
+      learning_rate: 1.0e-4
+      beta: 2.0e-3
+      epsilon: 0.2
+      lambd: 0.95
+      num_epoch: 3
+      learning_rate_schedule: linear
+      beta_schedule: linear
+    network_settings:
+      normalize: true
+      hidden_units: 256
+      num_layers: 2
+    reward_signals:
+      extrinsic:
+        gamma: 0.99
+        strength: 1.0
+    keep_checkpoints: 8
+    checkpoint_interval: 250000
+    max_steps: 2000000
+    time_horizon: 128
+    summary_freq: 5000
+
+environment_parameters:
+  terminal_swing_stabilization_enabled:
+    sampler_type: constant
+    sampler_parameters:
+      value: 1.0
+  terminal_swing_reach_threshold_m:
+    sampler_type: constant
+    sampler_parameters:
+      value: 0.25
+  terminal_swing_approach_distance_m:
+    sampler_type: constant
+    sampler_parameters:
+      value: 0.50
+  terminal_swing_velocity_weight:
+    sampler_type: constant
+    sampler_parameters:
+      value: 0.20
+  terminal_swing_drive_weight:
+    sampler_type: constant
+    sampler_parameters:
+      value: 0.10
+  terminal_swing_max_abs_velocity_normalized:
+    sampler_type: constant
+    sampler_parameters:
+      value: 0.15
+  terminal_swing_settled_decision_steps:
+    sampler_type: constant
+    sampler_parameters:
+      value: 3

@@ -164,11 +164,14 @@ namespace RLExcavator
     public event System.Action CycleStarted;
     public event System.Action<bool, string> CycleFinished;
     public event System.Action FixedActionCompleted;
+    public event System.Action<string> TrackingSegmentStarted;
+    public event System.Action<string, string> TrackingSegmentFinished;
 
     private Coroutine m_cycleRoutine;
     private Coroutine m_fixedActionRoutine;
     private bool m_previousResetPoseOnEpisodeBegin = true;
     private bool m_hasResetPoseOverride = false;
+    private string m_trackingTraceRunId = "";
 
     [ContextMenu("执行完整挖掘任务")]
     public void ExecuteDigTransportDump()
@@ -207,6 +210,9 @@ namespace RLExcavator
           controller.SetCommandInputEnabled( false );
           controller.StopAll();
         }
+      }
+      else {
+        EndTrackingSegment( "interrupted" );
       }
 
       RestoreRuntimeOverrides();
@@ -262,7 +268,7 @@ namespace RLExcavator
         FixedActionCompleted?.Invoke();
     }
 
-    public void StopTrackingControls()
+    public void StopTrackingControls( string result = "interrupted" )
     {
       if ( controller != null )
         controller.SetCommandInputEnabled( false );
@@ -272,6 +278,8 @@ namespace RLExcavator
 
       if ( disableAgentWhenStopped )
         SetAgentEnabled( false );
+
+      EndTrackingSegment( result );
     }
 
     private IEnumerator RunCycle()
@@ -303,8 +311,9 @@ namespace RLExcavator
       if ( !IsCycleRunning )
         yield break;
 
-      StopTrackingControls();
-      if ( !HasTrackedPathCompletedSince( moveToDigCompletionSerial ) ) {
+      bool moveToDigCompleted = HasTrackedPathCompletedSince( moveToDigCompletionSerial );
+      StopTrackingControls( moveToDigCompleted ? "completed" : "timeout" );
+      if ( !moveToDigCompleted ) {
         FinishTask( false, "赴挖掘点追踪超时" );
         yield break;
       }
@@ -330,8 +339,9 @@ namespace RLExcavator
       if ( !IsCycleRunning )
         yield break;
 
-      StopTrackingControls();
-      if ( !HasTrackedPathCompletedSince( carryMaterialCompletionSerial ) ) {
+      bool carryMaterialCompleted = HasTrackedPathCompletedSince( carryMaterialCompletionSerial );
+      StopTrackingControls( carryMaterialCompleted ? "completed" : "timeout" );
+      if ( !carryMaterialCompleted ) {
         FinishTask( false, "倾倒点追踪超时" );
         yield break;
       }
@@ -435,8 +445,26 @@ namespace RLExcavator
 
       SetAgentEnabled( true );
       controller.SetCommandInputEnabled( true );
+      BeginTrackingSegment();
       SetDecisionRequesterEnabled( true );
       return true;
+    }
+
+    private void BeginTrackingSegment()
+    {
+      EndTrackingSegment( "interrupted" );
+      m_trackingTraceRunId = System.Guid.NewGuid().ToString( "N" );
+      TrackingSegmentStarted?.Invoke( m_trackingTraceRunId );
+    }
+
+    private void EndTrackingSegment( string result )
+    {
+      if ( string.IsNullOrEmpty( m_trackingTraceRunId ) )
+        return;
+
+      string traceRunId = m_trackingTraceRunId;
+      m_trackingTraceRunId = "";
+      TrackingSegmentFinished?.Invoke( traceRunId, result );
     }
 
     private IEnumerator WaitForTrackedPathComplete( string phaseLabel, int completionSerialBeforeSegment )
