@@ -382,6 +382,8 @@ namespace RLExcavator
 
     /// <summary>当前累积奖励（ML-Agents 内部维护）</summary>
     public float CurrentScore => GetCumulativeReward();
+    public float EpisodeRewardDeadzoneScale { get; private set; } = 1f;
+    public float EpisodeRewardPitchScale { get; private set; } = 1f;
 
     /// <summary>当前铲斗尖到目标的距离</summary>
     public float CurrentDistanceToTarget => CurrentDistanceToTargetInternal();
@@ -689,6 +691,9 @@ namespace RLExcavator
       m_terminalSwingStableCount = 0;
       m_episodeTerminalSwingWaitSteps = 0;
 
+      // Reward-only ablations are fixed for the episode; task and observation contracts stay unchanged.
+      EpisodeRewardDeadzoneScale = ReadRewardScale( "reward_deadzone_scale" );
+      EpisodeRewardPitchScale = ReadRewardScale( "reward_pitch_scale" );
       LoadTerminalSwingStabilizationParameters();
 
       m_episodeCommandDeadzoneScales = randomizeCommandDeadzonesOnEpisodeBegin
@@ -885,7 +890,7 @@ namespace RLExcavator
       float progressReward = kProgressRewardWeight * progressDelta;
       float trackingPenalty = -kTrackingRewardWeight * normalizedDistance;
       float tubePenalty = -kTubeRewardWeight * tubeViolation;
-      float pitchPenalty = -kPitchRewardWeight * bucketPitchError;
+      float pitchPenalty = -kPitchRewardWeight * bucketPitchError * EpisodeRewardPitchScale;
       float smoothPenalty = -kSmoothRewardWeight * actionDeltaMeanSquare;
       float energyPenalty = -kEnergyRewardWeight * actionMeanSquare;
       Vector4 deadzoneNonzeroMask = m_machineProfile != null
@@ -896,7 +901,7 @@ namespace RLExcavator
         : Vector4.zero;
       // A1 用 bump 惩罚取代平坦惩罚；死区内非零 mask 仍单独用于 KPI 指标(下方统计)。
       float deadzonePenalty = m_machineProfile != null
-        ? DeadzoneBumpPenaltyWithScales(
+        ? EpisodeRewardDeadzoneScale * DeadzoneBumpPenaltyWithScales(
           action,
           m_machineProfile,
           deadzoneBumpWeight,
@@ -1087,6 +1092,8 @@ namespace RLExcavator
       stats.Add( "Trajectory/BucketPitchErrorDeg", meanBucketPitchErrorDeg, StatAggregationMethod.Average );
       stats.Add( "Trajectory/BucketPitchProgress", m_episodeBucketPitchProgressSum, StatAggregationMethod.Average );
       stats.Add( "Trajectory/WaypointBonusScale", meanWaypointBonusScale, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/RewardDeadzoneScale", EpisodeRewardDeadzoneScale, StatAggregationMethod.Average );
+      stats.Add( "Trajectory/RewardPitchScale", EpisodeRewardPitchScale, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneNonzeroAxesPerStep", deadzoneNonzeroRate.x + deadzoneNonzeroRate.y + deadzoneNonzeroRate.z + deadzoneNonzeroRate.w, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneBumpPenaltyPerStep", m_episodeDeadzoneBumpPenaltySum / sampleCount, StatAggregationMethod.Average );
       stats.Add( "Trajectory/DeadzoneNonzeroRateBoom", deadzoneNonzeroRate.x, StatAggregationMethod.Average );
@@ -1164,14 +1171,12 @@ namespace RLExcavator
         terminalSwingSettledDecisionSteps ) );
     }
 
-    private float WaypointBonusAttitudeScale( float bucketPitchErrorAbsDeg )
+    private static float ReadRewardScale( string name )
     {
-      if ( !scaleWaypointBonusByBucketAttitude )
-        return 1f;
-
-      float tolerance = Mathf.Max( waypointBonusPitchToleranceDeg, 1f );
-      float normalizedError = Mathf.Clamp01( bucketPitchErrorAbsDeg / tolerance );
-      return Mathf.Lerp( 1f, Mathf.Clamp01( minWaypointBonusScaleWhenPitchBad ), normalizedError );
+      float value = Academy.Instance.EnvironmentParameters.GetWithDefault( name, 1f );
+      if ( float.IsNaN( value ) || float.IsInfinity( value ) || value < 0f || value > 1f )
+        throw new System.ArgumentOutOfRangeException( name, value, "Reward scale must be finite and in [0, 1]." );
+      return value;
     }
 
     private void AddLookaheadWaypointObservations( VectorSensor sensor, Vector3 tipBase )
