@@ -7,6 +7,9 @@ namespace RLExcavator
   /// <summary>AGX actuator driver for the external runtime scene.</summary>
   public sealed class ExcavatorRuntimeActuators : MonoBehaviour
   {
+    // Matches the neutral stick interval in F407 manual_action.h.
+    private const float ManualDeadzone = 0.15f;
+
     public Constraint[] boom;
     public Constraint[] stick;
     public Constraint[] bucket;
@@ -88,6 +91,23 @@ namespace RLExcavator
       Drive( bucket, m_bucketSpeed );
       Drive( swing, swingSpeed );
       return true;
+    }
+
+    public bool TrySetManualAction( float boomAction, float stickAction, float bucketAction, float swingAction )
+    {
+      if ( !m_ready || !ValidAction( boomAction ) || !ValidAction( stickAction ) ||
+           !ValidAction( bucketAction ) || !ValidAction( swingAction ) ) {
+        StopAll();
+        return false;
+      }
+
+      // The real manual command drives valves/ESCs. Until hydraulic response is
+      // calibrated, use a deadzone and the shared speed limits as a sim proxy.
+      return TrySetPhysicalSpeeds(
+        ManualSpeed( boomAction, m_limits[0] ),
+        ManualSpeed( stickAction, m_limits[1] ),
+        ManualSpeed( bucketAction, m_limits[2] ),
+        ManualSpeed( swingAction, m_limits[3] ) );
     }
 
     public void StopAll()
@@ -194,6 +214,19 @@ namespace RLExcavator
     {
       return !float.IsNaN( speed ) && !float.IsInfinity( speed ) &&
         speed <= limit.MaxSpeedPositive && speed >= -limit.MaxSpeedNegative;
+    }
+
+    private static bool ValidAction( float value )
+    {
+      return !float.IsNaN( value ) && !float.IsInfinity( value ) && value >= -1f && value <= 1f;
+    }
+
+    private static float ManualSpeed( float action, MachineActuatorProfile limit )
+    {
+      float magnitude = Mathf.Abs( action );
+      if ( magnitude <= ManualDeadzone ) return 0f;
+      float fraction = (magnitude - ManualDeadzone) / (1f - ManualDeadzone);
+      return action > 0f ? fraction * limit.MaxSpeedPositive : -fraction * limit.MaxSpeedNegative;
     }
 
     private static void ApplyRange( Constraint[] constraints, MachineActuatorProfile actuator )

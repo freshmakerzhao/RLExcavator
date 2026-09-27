@@ -3,6 +3,7 @@
 Run ``python3 tools/sim_bridge_client.py --demo`` after pressing Play in Unity
 to see the upper carriage rotate. Use ``--axis boom|stick|bucket`` to test
 each cylinder visually. ``--smoke`` keeps the small single-axis check.
+Use ``--manual-axis boom|stick|bucket|swing`` to test normalized stick input.
 Without an option, enter one JSON request per line; each line receives one reply.
 """
 
@@ -103,7 +104,7 @@ def demo(reader, writer):
     print(f"PASS: 上车回转 {angle_deg:.1f}°（120 个物理步）；保持 Play 可查看最终姿态。")
 
 
-def axis_demo(reader, writer, axis, speed, steps):
+def axis_demo(reader, writer, axis, value, steps, manual=False):
     reset = exchange(reader, writer, {"kind": "reset"}, verbose=False)
     if not reset.get("accepted") or not reset.get("state_valid"):
         raise RuntimeError("reset failed: " + str(reset))
@@ -114,14 +115,14 @@ def axis_demo(reader, writer, axis, speed, steps):
 
     axes = ["boom", "stick", "bucket", "swing"]
     values = [0.0] * 4
-    values[axes.index(axis)] = speed
+    values[axes.index(axis)] = value
     issued_at = before["sim_time_s"]
     step_duration = issued_at - reset["sim_time_s"]
     command = exchange(
         reader,
         writer,
         {
-            "kind": "velocity_reference",
+            "kind": "manual_action" if manual else "velocity_reference",
             "epoch": epoch,
             "sequence": 1,
             "issued_sim_time_s": issued_at,
@@ -134,18 +135,18 @@ def axis_demo(reader, writer, axis, speed, steps):
     if not command.get("accepted"):
         raise RuntimeError(f"{axis} command rejected: {command}")
 
-    print(f"{axis} 速度 {speed:+.3f} m/s 已接收；请切到 Unity Game 窗口，3 秒后开始运动。", flush=True)
+    command_label = f"杆量 {value:+.2f}" if manual else f"速度 {value:+.3f} m/s"
+    print(f"{axis} {command_label} 已接收；请切到 Unity Game 窗口，3 秒后开始运动。", flush=True)
     time.sleep(3)
     after = exchange(reader, writer, {"kind": "step", "epoch": epoch, "steps": steps}, verbose=False)
     if not after.get("state_valid"):
         raise RuntimeError("final state invalid: " + str(after))
-    delta = (
-        after["actuator_state"][axis]["position_m"]
-        - before["actuator_state"][axis]["position_m"]
-    )
-    if delta * speed <= 0:
-        raise RuntimeError(f"{axis} did not move as commanded: {delta:.6f} m")
-    print(f"PASS: {axis} 油缸位移 {delta:+.4f} m（{steps} 个物理步）；保持 Play 可查看最终姿态。")
+    position = "position_rad" if axis == "swing" else "position_m"
+    unit = "rad" if axis == "swing" else "m"
+    delta = after["actuator_state"][axis][position] - before["actuator_state"][axis][position]
+    if delta * value <= 0:
+        raise RuntimeError(f"{axis} did not move as commanded: {delta:.6f} {unit}")
+    print(f"PASS: {axis} 位移 {delta:+.4f} {unit}（{steps} 个物理步）；保持 Play 可查看最终姿态。")
 
 
 def connect_when_ready(port):
@@ -166,11 +167,17 @@ def main():
     mode.add_argument("--smoke", action="store_true")
     mode.add_argument("--demo", action="store_true")
     mode.add_argument("--axis", choices=("boom", "stick", "bucket"))
+    mode.add_argument("--manual-axis", choices=("boom", "stick", "bucket", "swing"))
     parser.add_argument("--speed", type=float, default=0.01, help="--axis 的目标油缸速度，m/s")
+    parser.add_argument("--value", type=float, default=0.75, help="--manual-axis 的归一化杆量，[-1, 1]")
     parser.add_argument("--steps", type=int, default=80, help="--axis 的物理步数")
     args = parser.parse_args()
     if args.axis and (not math.isfinite(args.speed) or args.speed == 0 or not 1 <= args.steps <= 1000):
         parser.error("--axis 要求非零有限速度，步数为 1 到 1000")
+    if args.manual_axis and (
+        not math.isfinite(args.value) or not 0.15 < abs(args.value) <= 1 or not 1 <= args.steps <= 1000
+    ):
+        parser.error("--manual-axis 要求杆量绝对值大于 0.15 且不超过 1，步数为 1 到 1000")
     with connect_when_ready(args.port) as connection:
         connection.settimeout(90)
         with connection.makefile("r", encoding="utf-8") as reader, connection.makefile(
@@ -182,6 +189,8 @@ def main():
                 demo(reader, writer)
             elif args.axis:
                 axis_demo(reader, writer, args.axis, args.speed, args.steps)
+            elif args.manual_axis:
+                axis_demo(reader, writer, args.manual_axis, args.value, args.steps, manual=True)
             else:
                 for line in sys.stdin:
                     if not line.strip():

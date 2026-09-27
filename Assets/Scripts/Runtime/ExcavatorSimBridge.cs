@@ -104,6 +104,7 @@ namespace RLExcavator
     private double m_expiry;
     private readonly float[] m_target = new float[4];
     private bool m_hasTarget;
+    private bool m_manualTarget;
 
     private void Start()
     {
@@ -181,8 +182,7 @@ namespace RLExcavator
         return;
       if ( m_hasTarget && m_simTime + m_simulation.TimeStep > m_expiry )
         ClearTarget();
-      if ( m_hasTarget && !m_actuators.TrySetPhysicalSpeeds(
-            m_target[0], m_target[1], m_target[2], m_target[3] ) )
+      if ( m_hasTarget && !ApplyTarget( m_manualTarget, m_target ) )
         ClearTarget();
       if ( !TryDoStep() ) {
         ClearTarget();
@@ -223,19 +223,24 @@ namespace RLExcavator
         return;
       }
 
-      if ( request.kind == "velocity_reference" ) {
-        string reason = ValidateVelocity( request );
+      if ( request.kind == "velocity_reference" || request.kind == "manual_action" ) {
+        bool manual = request.kind == "manual_action";
+        string reason = ValidateCommand( request );
         if ( reason != null ) { Reject( pending, request, reason ); return; }
-        if ( !m_actuators.TrySetPhysicalSpeeds(
-              request.values[0], request.values[1], request.values[2], request.values[3] ) ) {
+        if ( manual && Array.Exists( request.values, value => value < -1f || value > 1f ) ) {
+          Reject( pending, request, "manual_action_out_of_range" );
+          return;
+        }
+        if ( !ApplyTarget( manual, request.values ) ) {
           Reject( pending, request, "controller_rejected" );
           return;
         }
         Array.Copy( request.values, m_target, 4 );
+        m_manualTarget = manual;
         m_expiry = request.expires_sim_time_s;
         m_lastSequence = request.sequence;
         m_hasTarget = true;
-        Complete( pending, new Reply { kind = "velocity_result", epoch = m_epoch,
+        Complete( pending, new Reply { kind = manual ? "manual_result" : "velocity_result", epoch = m_epoch,
           sequence = request.sequence, accepted = true, reason = "accepted" } );
         return;
       }
@@ -253,7 +258,14 @@ namespace RLExcavator
       Reject( pending, request, "unsupported_kind" );
     }
 
-    private string ValidateVelocity( Request request )
+    private bool ApplyTarget( bool manual, float[] values )
+    {
+      return manual
+        ? m_actuators.TrySetManualAction( values[0], values[1], values[2], values[3] )
+        : m_actuators.TrySetPhysicalSpeeds( values[0], values[1], values[2], values[3] );
+    }
+
+    private string ValidateCommand( Request request )
     {
       if ( m_epoch == 0 || request.epoch != m_epoch ) return "wrong_epoch";
       if ( request.sequence <= m_lastSequence ) return "out_of_order";
@@ -348,6 +360,7 @@ namespace RLExcavator
     private void ClearTarget()
     {
       m_hasTarget = false;
+      m_manualTarget = false;
       Array.Clear( m_target, 0, m_target.Length );
       if ( m_actuators != null ) m_actuators.StopAll();
     }
