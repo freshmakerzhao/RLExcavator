@@ -1,5 +1,6 @@
 {
   "dependencies": {
+    "com.algoryx.agxunity.machines.bedtruck": "1.1.1",
     "com.algoryx.agxunity.machines.cat365": "1.1.1",
     "com.algoryx.agxunity.machines.dl300": "1.1.1",
     "com.coplaydev.unity-mcp": "https://github.com/CoplayDev/unity-mcp.git?path=/MCPForUnity#main",

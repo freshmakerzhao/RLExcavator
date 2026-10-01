@@ -30,6 +30,9 @@ __pycache__/
 
 # Crash reports
 sysinfo.txt
+mono_crash.*
+/Captures/
+/ProjectSettings/Packages/com.algoryx.agxunity/EditorData.json
 
 # OS files
 .DS_Store
@@ -65,3 +68,8 @@ open_loop_velocity_exports
 /Assets/imported.meta
 /Assets/Scenes/Loader.unity
 /Assets/Scenes/Loader.unity.meta
+
+# Only runtime-dependent BedTruck assets are versioned. Keep the imported
+# official demonstration scene, road and terrain examples locally.
+/Assets/AGXUnity_BedTruck/
+/Assets/AGXUnity_BedTruck.meta

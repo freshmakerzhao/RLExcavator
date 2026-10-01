@@ -187,6 +187,7 @@ MonoBehaviour:
   logMachineProfileSpeedLoad: 0
   loadRangesFromMachineProfile: 1
   logMachineProfileRangeLoad: 0
+  logMachineProfileCommandDeadzoneLoad: 1
   boomAcceleration: 0.7
   bucketAcceleration: 0.7
   commandInputEnabled: 1
@@ -563,6 +564,38 @@ PrefabInstance:
       value: -0.065
       objectReference: {fileID: 0}
     - target: {fileID: 2541352883727063442, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.w
+      value: -0.7050997
+      objectReference: {fileID: 0}
+    - target: {fileID: 2541352883727063442, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.x
+      value: -0.053239293
+      objectReference: {fileID: 0}
+    - target: {fileID: 2541352883727063442, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.y
+      value: 0.7050997
+      objectReference: {fileID: 0}
+    - target: {fileID: 2541352883727063442, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.z
+      value: 0.053239167
+      objectReference: {fileID: 0}
+    - target: {fileID: 2541352883727063442, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.w
+      value: -0.7050997
+      objectReference: {fileID: 0}
+    - target: {fileID: 2541352883727063442, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.x
+      value: -0.05323965
+      objectReference: {fileID: 0}
+    - target: {fileID: 2541352883727063442, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.y
+      value: 0.7050997
+      objectReference: {fileID: 0}
+    - target: {fileID: 2541352883727063442, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.z
+      value: 0.05323955
+      objectReference: {fileID: 0}
+    - target: {fileID: 2541352883727063442, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893065].m_frictionCoefficient
       value: 0.42
       objectReference: {fileID: 0}
@@ -685,6 +718,38 @@ PrefabInstance:
     - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893029].m_range.Min
       value: -0.095
+      objectReference: {fileID: 0}
+    - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.w
+      value: 0.70071715
+      objectReference: {fileID: 0}
+    - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.x
+      value: -0.094844595
+      objectReference: {fileID: 0}
+    - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.y
+      value: -0.70071715
+      objectReference: {fileID: 0}
+    - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.z
+      value: 0.09484462
+      objectReference: {fileID: 0}
+    - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.w
+      value: -0.094842955
+      objectReference: {fileID: 0}
+    - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.x
+      value: -0.7007174
+      objectReference: {fileID: 0}
+    - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.y
+      value: 0.09484302
+      objectReference: {fileID: 0}
+    - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.z
+      value: 0.7007174
       objectReference: {fileID: 0}
     - target: {fileID: 2732416913296486989, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893033].m_frictionCoefficient
@@ -823,6 +888,38 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 3697532507677077313, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.w
+      value: 0.54360783
+      objectReference: {fileID: 0}
+    - target: {fileID: 3697532507677077313, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.x
+      value: -0.45220634
+      objectReference: {fileID: 0}
+    - target: {fileID: 3697532507677077313, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.y
+      value: -0.5436078
+      objectReference: {fileID: 0}
+    - target: {fileID: 3697532507677077313, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.z
+      value: 0.4522064
+      objectReference: {fileID: 0}
+    - target: {fileID: 3697532507677077313, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.w
+      value: 0.543608
+      objectReference: {fileID: 0}
+    - target: {fileID: 3697532507677077313, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.x
+      value: -0.45220608
+      objectReference: {fileID: 0}
+    - target: {fileID: 3697532507677077313, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.y
+      value: -0.543608
+      objectReference: {fileID: 0}
+    - target: {fileID: 3697532507677077313, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.z
+      value: 0.45220613
+      objectReference: {fileID: 0}
+    - target: {fileID: 3697532507677077313, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893049].m_frictionCoefficient
       value: 0.42
       objectReference: {fileID: 0}
@@ -917,6 +1014,38 @@ PrefabInstance:
     - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893021].m_range.Min
       value: -0.095
+      objectReference: {fileID: 0}
+    - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.w
+      value: 0.70071715
+      objectReference: {fileID: 0}
+    - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.x
+      value: -0.094844595
+      objectReference: {fileID: 0}
+    - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.y
+      value: -0.70071715
+      objectReference: {fileID: 0}
+    - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.z
+      value: 0.09484462
+      objectReference: {fileID: 0}
+    - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.w
+      value: 0.7007174
+      objectReference: {fileID: 0}
+    - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.x
+      value: -0.09484298
+      objectReference: {fileID: 0}
+    - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.y
+      value: -0.7007174
+      objectReference: {fileID: 0}
+    - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.z
+      value: 0.09484301
       objectReference: {fileID: 0}
     - target: {fileID: 4007905565109877533, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893025].m_frictionCoefficient
@@ -1017,6 +1146,38 @@ PrefabInstance:
     - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893038].m_lockAtZeroSpeed
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.w
+      value: 0.54360783
+      objectReference: {fileID: 0}
+    - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.x
+      value: -0.45220634
+      objectReference: {fileID: 0}
+    - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.y
+      value: -0.5436078
+      objectReference: {fileID: 0}
+    - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.z
+      value: 0.4522064
+      objectReference: {fileID: 0}
+    - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.w
+      value: -0.45220608
+      objectReference: {fileID: 0}
+    - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.x
+      value: -0.543608
+      objectReference: {fileID: 0}
+    - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.y
+      value: 0.45220613
+      objectReference: {fileID: 0}
+    - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.z
+      value: 0.543608
       objectReference: {fileID: 0}
     - target: {fileID: 4200226471339065709, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893041].m_frictionCoefficient
@@ -1241,6 +1402,38 @@ PrefabInstance:
     - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893053].m_range.Min
       value: -0.065
+      objectReference: {fileID: 0}
+    - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.w
+      value: -0.7050997
+      objectReference: {fileID: 0}
+    - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.x
+      value: -0.053239293
+      objectReference: {fileID: 0}
+    - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.y
+      value: 0.7050997
+      objectReference: {fileID: 0}
+    - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.z
+      value: 0.053239167
+      objectReference: {fileID: 0}
+    - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.w
+      value: -0.7050997
+      objectReference: {fileID: 0}
+    - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.x
+      value: -0.05323965
+      objectReference: {fileID: 0}
+    - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.y
+      value: 0.7050997
+      objectReference: {fileID: 0}
+    - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.z
+      value: 0.05323955
       objectReference: {fileID: 0}
     - target: {fileID: 5818898870328223420, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972893057].m_frictionCoefficient
@@ -1745,6 +1938,38 @@ PrefabInstance:
     - target: {fileID: 9132414779853414030, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: managedReferences[8826086031972892965].m_enable
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132414779853414030, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.w
+      value: 0.72527623
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132414779853414030, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.x
+      value: 0.000000024506342
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132414779853414030, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.y
+      value: 0.000000037674784
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132414779853414030, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_connectedFrame.m_localRotation.z
+      value: 0.6884581
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132414779853414030, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.w
+      value: -0.07191528
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132414779853414030, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.x
+      value: -0.7034309
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132414779853414030, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.y
+      value: -0.072438546
+      objectReference: {fileID: 0}
+    - target: {fileID: 9132414779853414030, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
+      propertyPath: m_attachmentPairComponent.m_referenceFrame.m_localRotation.z
+      value: -0.70339596
       objectReference: {fileID: 0}
     - target: {fileID: 9203932973317046036, guid: 45e75ca247287b6768979db3e38c6988, type: 3}
       propertyPath: m_LocalPosition.x

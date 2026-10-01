@@ -723,7 +723,7 @@ namespace RLExcavator
     }
 
     /// <summary>
-    /// 38 维观测，顺序锁定为 master plan §2.2 的 scale_excavator_v2_38d。
+    /// 38 维观测顺序不变；新训练场景的油缸正向为伸长，旧 checkpoint 不兼容。
     /// </summary>
     public override void CollectObservations( VectorSensor sensor )
     {

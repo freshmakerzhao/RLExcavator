@@ -223,6 +223,9 @@ namespace RLExcavator
 
     private static float ManualSpeed( float action, MachineActuatorProfile limit )
     {
+      // F407: positive boom/stick stick action extends, positive bucket retracts.
+      // The scene's prismatic axes themselves point toward physical extension.
+      if ( limit.Name == "bucket" ) action = -action;
       float magnitude = Mathf.Abs( action );
       if ( magnitude <= ManualDeadzone ) return 0f;
       float fraction = (magnitude - ManualDeadzone) / (1f - ManualDeadzone);

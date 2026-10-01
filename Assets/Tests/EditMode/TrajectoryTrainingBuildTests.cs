@@ -3,6 +3,7 @@ using System.IO;
 using System.Reflection;
 using NUnit.Framework;
 using UnityEditor;
+using UnityEngine;
 
 namespace RLExcavator.Tests
 {
@@ -26,6 +27,22 @@ namespace RLExcavator.Tests
       Assert.That(
         type.GetMethod( "BuildLinux64", BindingFlags.Static | BindingFlags.Public ),
         Is.Not.Null );
+    }
+
+    [Test]
+    public void TrainingAgentUsesProfileReachThresholdWithoutVisualRadius()
+    {
+      GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
+        "Assets/perfabs/ScaleTrajectoryEnvironment.prefab" );
+      Assert.That( prefab, Is.Not.Null );
+      MonoBehaviour agent = Array.Find(
+        prefab.GetComponentsInChildren<MonoBehaviour>( true ),
+        component => component.GetType().FullName == "RLExcavator.ExcavatorTrajectoryAgent" );
+      Assert.That( agent, Is.Not.Null );
+      FieldInfo useVisualRadius = agent.GetType().GetField(
+        "includeTargetVisualRadiusInThreshold", BindingFlags.Instance | BindingFlags.Public );
+      Assert.That( useVisualRadius, Is.Not.Null );
+      Assert.That( useVisualRadius.GetValue( agent ), Is.False );
     }
 
     [Test]

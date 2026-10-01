@@ -1094,6 +1094,13 @@ MonoBehaviour:
   randomizeCommandDeadzonesOnEpisodeBegin: 0
   commandDeadzoneScaleMin: 0.8
   commandDeadzoneScaleMax: 1.2
+  terminalSwingStabilizationEnabled: 0
+  terminalSwingReachThresholdM: 0.25
+  terminalSwingApproachDistanceM: 0.5
+  terminalSwingVelocityWeight: 0.2
+  terminalSwingDriveWeight: 0.1
+  terminalSwingMaxAbsVelocityNormalized: 0.15
+  terminalSwingSettledDecisionSteps: 3
   controller: {fileID: 6292096688691951243}
   frameRegistry: {fileID: 4336152341639758177}
   bucketTip: {fileID: 1728976811894670765}
@@ -1106,7 +1113,7 @@ MonoBehaviour:
   moveToDigReachableWorkspace: {fileID: 7770348305050722185}
   carryMaterialReachableWorkspace: {fileID: 8922187226899671838}
   targetThreshold: 0.03
-  includeTargetVisualRadiusInThreshold: 1
+  includeTargetVisualRadiusInThreshold: 0
   endEpisodeOnTargetReached: 1
   distanceNormalizer: 0.5
   positionNormalizer: 0.5

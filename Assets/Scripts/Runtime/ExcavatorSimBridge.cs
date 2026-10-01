@@ -40,6 +40,25 @@ namespace RLExcavator
       public bool state_valid;
       public ActuatorState actuator_state;
       public BucketTipPose bucket_tip_pose;
+      public CameraImage front_rgb;
+      public RawJointAngles raw_joint_angles_rad;
+    }
+
+    [Serializable]
+    private sealed class RawJointAngles
+    {
+      public float boom;
+      public float arm;
+      public float bucket;
+    }
+
+    [Serializable]
+    private sealed class CameraImage
+    {
+      public string encoding = "png";
+      public int width = ExcavatorCameraCapture.Width;
+      public int height = ExcavatorCameraCapture.Height;
+      public string data_base64;
     }
 
     [Serializable]
@@ -83,6 +102,16 @@ namespace RLExcavator
     public Transform bucketTip;
     [Tooltip("Swinging upper body frame used to measure bucket pitch.")]
     public Transform bucketPitchFrame;
+    [Tooltip("Independent front RGB sensor; not the operator's overview camera.")]
+    public Camera frontCamera;
+    [Tooltip("Soil restored after the machine returns home; optional in soil-free scenes.")]
+    public ExcavatorRuntimeSoil soil;
+    [Tooltip("Raw boom hinge angle for calibration; not an ACT sensor angle.")]
+    public Constraint boomJoint;
+    [Tooltip("Raw arm hinge angle for calibration; not an ACT sensor angle.")]
+    public Constraint armJoint;
+    [Tooltip("Raw bucket hinge angle for calibration; not an ACT sensor angle.")]
+    public Constraint bucketJoint;
 
     private readonly Queue<Pending> m_inbox = new Queue<Pending>();
     private readonly object m_inboxLock = new object();
@@ -97,6 +126,7 @@ namespace RLExcavator
     private Pending m_active;
     private int m_stepsRemaining;
     private bool m_resetting;
+    private bool m_soilResetStarted;
     private int m_epoch;
     private int m_lastSequence;
     private int m_stateSequence;
@@ -141,19 +171,35 @@ namespace RLExcavator
         m_seenDisconnectGeneration = generation;
         ClearTarget();
       }
-      if ( m_active != null )
-        return;
-
-      Pending next = null;
-      lock ( m_inboxLock ) {
-        if ( m_inbox.Count > 0 )
-          next = m_inbox.Dequeue();
+      if ( m_active == null ) {
+        Pending next = null;
+        lock ( m_inboxLock ) {
+          if ( m_inbox.Count > 0 )
+            next = m_inbox.Dequeue();
+        }
+        if ( next != null )
+          Handle( next );
       }
-      if ( next != null )
-        Handle( next );
+
+      // Explicit step requests already specify simulation time. Do not also wait
+      // for Unity's wall-clock FixedUpdate cadence. Yield between physics steps
+      // after 50 ms so a long request still lets the editor and rendering run.
+      long deadline = System.Diagnostics.Stopwatch.GetTimestamp() + System.Diagnostics.Stopwatch.Frequency / 20;
+      while ( m_active != null && !m_resetting ) {
+        AdvancePhysics();
+        if ( System.Diagnostics.Stopwatch.GetTimestamp() >= deadline )
+          break;
+      }
     }
 
     private void FixedUpdate()
+    {
+      // Homing counts WaitForFixedUpdate yields; keep its existing cadence.
+      if ( m_resetting )
+        AdvancePhysics();
+    }
+
+    private void AdvancePhysics()
     {
       if ( m_simulation == null || m_active == null )
         return;
@@ -167,6 +213,19 @@ namespace RLExcavator
               accepted = false, reason = "physics_not_stepping" } );
           }
           return;
+        }
+        if ( soil != null ) {
+          if ( !m_soilResetStarted ) {
+            m_soilResetStarted = true;
+            soil.BeginReset();
+          }
+          if ( soil.IsResetting ) return;
+          if ( soil.ResetError != null ) {
+            m_resetting = false;
+            Complete( new Reply { kind = "reset_result", epoch = m_epoch,
+              accepted = false, reason = "soil_reset_failed: " + soil.ResetError } );
+            return;
+          }
         }
         m_resetting = false;
         m_actuators.StopAll();
@@ -214,6 +273,7 @@ namespace RLExcavator
         m_simTime = 0;
         m_active = pending;
         m_resetting = true;
+        m_soilResetStarted = false;
         try { m_actuators.BeginHomePoseReset(); }
         catch ( System.Exception error ) {
           m_resetting = false;
@@ -242,6 +302,22 @@ namespace RLExcavator
         m_hasTarget = true;
         Complete( pending, new Reply { kind = manual ? "manual_result" : "velocity_result", epoch = m_epoch,
           sequence = request.sequence, accepted = true, reason = "accepted" } );
+        return;
+      }
+
+      if ( request.kind == "observe" ) {
+        if ( request.epoch != m_epoch || m_epoch == 0 ) { Reject( pending, request, "wrong_epoch" ); return; }
+        try {
+          Reply observation = ReadState();
+          if ( !observation.state_valid ) throw new InvalidOperationException( observation.reason );
+          observation.front_rgb = new CameraImage {
+            data_base64 = Convert.ToBase64String( ExcavatorCameraCapture.CapturePng( frontCamera ) )
+          };
+          observation.kind = "observation";
+          observation.reason = "observed";
+          Complete( pending, observation );
+        }
+        catch ( System.Exception error ) { Reject( pending, request, "observation_failed: " + error.Message ); }
         return;
       }
 
@@ -275,9 +351,10 @@ namespace RLExcavator
       if ( request.values == null || request.values.Length != 4 ) return "wrong_value_count";
       foreach ( float value in request.values )
         if ( float.IsNaN( value ) || float.IsInfinity( value ) ) return "non_finite_value";
+      // JSON double round trips can round an echoed clock slightly upward (1 ns tolerance).
       if ( double.IsNaN( request.issued_sim_time_s ) || double.IsNaN( request.expires_sim_time_s ) ||
            double.IsInfinity( request.issued_sim_time_s ) || double.IsInfinity( request.expires_sim_time_s ) ||
-           request.issued_sim_time_s > m_simTime || request.expires_sim_time_s <= m_simTime ||
+           request.issued_sim_time_s > m_simTime + 1e-9 || request.expires_sim_time_s <= m_simTime ||
            request.expires_sim_time_s <= request.issued_sim_time_s ) return "expired_or_future_command";
       return null;
     }
@@ -286,7 +363,8 @@ namespace RLExcavator
     {
       var result = new Reply { kind = "state", epoch = m_epoch, accepted = true,
         reason = "stepped", state_sequence = m_stateSequence, sim_time_s = m_simTime,
-        state_valid = HasActuators() && HasTipPose() };
+        state_valid = HasActuators() && HasTipPose() &&
+          boomJoint != null && armJoint != null && bucketJoint != null };
       if ( !result.state_valid ) return result;
       try {
         result.actuator_state = new ActuatorState {
@@ -296,6 +374,11 @@ namespace RLExcavator
           swing = ReadAxis( m_actuators.swing, true )
         };
         result.bucket_tip_pose = ReadBucketTipPose();
+        result.raw_joint_angles_rad = new RawJointAngles {
+          boom = ReadAxis( boomJoint, true ).position_rad,
+          arm = ReadAxis( armJoint, true ).position_rad,
+          bucket = ReadAxis( bucketJoint, true ).position_rad
+        };
       }
       catch ( System.Exception error ) {
         result.state_valid = false;

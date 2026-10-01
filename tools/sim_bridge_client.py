@@ -144,7 +144,8 @@ def axis_demo(reader, writer, axis, value, steps, manual=False):
     position = "position_rad" if axis == "swing" else "position_m"
     unit = "rad" if axis == "swing" else "m"
     delta = after["actuator_state"][axis][position] - before["actuator_state"][axis][position]
-    if delta * value <= 0:
+    direction = -1 if manual and axis == "bucket" else 1
+    if delta * value * direction <= 0:
         raise RuntimeError(f"{axis} did not move as commanded: {delta:.6f} {unit}")
     print(f"PASS: {axis} 位移 {delta:+.4f} {unit}（{steps} 个物理步）；保持 Play 可查看最终姿态。")
 

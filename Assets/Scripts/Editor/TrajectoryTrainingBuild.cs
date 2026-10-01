@@ -13,15 +13,30 @@ namespace RLExcavator.Editor
   public static class TrajectoryTrainingBuild
   {
     private const string DefaultOutputPath =
-      "Builds/ExcavatorTrajectoryTraining/ExcavatorTrajectoryTraining.x86_64";
+      "Builds/ExcavatorTrajectoryLimitsV2/ExcavatorTrajectoryLimitsV2.x86_64";
+    private const string TrackingBaseOutputPath =
+      "Builds/ExcavatorTrackingBase/ExcavatorTrackingBase.x86_64";
 
     public static string ScenePath => "Assets/Scenes/ExcavatorRLTrain_Scale.unity";
+    public static string TrackingBaseScenePath =>
+      "Assets/Scenes/ExcavatorRLTrain_TrackingBase.unity";
 
     public static void BuildLinux64()
     {
-      string outputPath = GetArgValue( "-outputPath", DefaultOutputPath );
-      if ( AssetDatabase.LoadAssetAtPath<SceneAsset>( ScenePath ) == null )
-        throw new BuildFailedException( $"Missing trajectory training scene: {ScenePath}" );
+      BuildLinux64FromScene( ScenePath, GetArgValue( "-outputPath", DefaultOutputPath ) );
+    }
+
+    public static void BuildLinux64TrackingBase()
+    {
+      BuildLinux64FromScene(
+        TrackingBaseScenePath,
+        GetArgValue( "-outputPath", TrackingBaseOutputPath ) );
+    }
+
+    private static void BuildLinux64FromScene( string scenePath, string outputPath )
+    {
+      if ( AssetDatabase.LoadAssetAtPath<SceneAsset>( scenePath ) == null )
+        throw new BuildFailedException( $"Missing trajectory training scene: {scenePath}" );
 
       string outputDirectory = Path.GetDirectoryName( outputPath );
       if ( !string.IsNullOrEmpty( outputDirectory ) )
@@ -32,7 +47,7 @@ namespace RLExcavator.Editor
         ScriptingImplementation.Mono2x );
 
       var options = new BuildPlayerOptions {
-        scenes = new[] { ScenePath },
+        scenes = new[] { scenePath },
         locationPathName = outputPath,
         target = BuildTarget.StandaloneLinux64,
         options = BuildOptions.None

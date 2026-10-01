@@ -1,5 +1,14 @@
 {
   "dependencies": {
+    "com.algoryx.agxunity.machines.bedtruck": {
+      "version": "1.1.1",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.inputsystem": "1.4.2"
+      },
+      "url": "https://registry.npmjs.org"
+    },
     "com.algoryx.agxunity.machines.cat365": {
       "version": "1.1.1",
       "depth": 0,

@@ -23,9 +23,9 @@ namespace RLExcavator.Tests
     {
       MachineProfile profile = MachineProfileLoader.LoadFromPath( SharedProfilePath() );
 
-      AssertActuator( profile.GetActuator( "boom" ), 0, "prismatic", 0.0351f, 0.0185f, true, -0.095f, 0.080f );
-      AssertActuator( profile.GetActuator( "stick" ), 1, "prismatic", 0.0444f, 0.0357f, true, -0.060f, 0.090f );
-      AssertActuator( profile.GetActuator( "bucket" ), 2, "prismatic", 0.0342f, 0.0419f, true, -0.085f, 0.045f );
+      AssertActuator( profile.GetActuator( "boom" ), 0, "prismatic", 0.0351f, 0.0185f, true, -0.080f, 0.095f );
+      AssertActuator( profile.GetActuator( "stick" ), 1, "prismatic", 0.0444f, 0.0357f, true, -0.090f, 0.060f );
+      AssertActuator( profile.GetActuator( "bucket" ), 2, "prismatic", 0.0342f, 0.0419f, true, -0.045f, 0.085f );
 
       MachineActuatorProfile swing = profile.GetActuator( "swing" );
       Assert.That( swing.ActionIndex, Is.EqualTo( 3 ) );

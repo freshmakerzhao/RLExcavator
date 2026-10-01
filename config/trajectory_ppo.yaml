@@ -5,9 +5,12 @@
 # Use the wrapper for training so checkpoint saves do not try to export ONNX.
 #
 # The behavior name must match the Behavior Parameters component in Unity.
-# The current scale-excavator observation contract is
-# scale_excavator_v2_38d (38 observations, 4 continuous actions). Do not resume
-# older 31/37-dim trajectory checkpoints with this config.
+# The observation shape remains 38 values and four continuous actions. Since
+# 2026-09-28, the training scene uses cylinder extension-positive AGX axes;
+# earlier 38-dim checkpoints have different action/observation semantics.
+# Checkpoints from before that axis reversal are incompatible. After changing
+# the actuator ranges and 3 cm reach criterion, initialize a new run from a
+# checkpoint trained with the corrected axis direction; do not resume the old run.
 behaviors:
   ExcavatorTrajectory:
     trainer_type: ppo
@@ -28,7 +31,8 @@ behaviors:
       extrinsic:
         gamma: 0.99
         strength: 1.0
-    keep_checkpoints: 5
-    max_steps: 4000000
+    checkpoint_interval: 250000
+    keep_checkpoints: 10
+    max_steps: 20000000
     time_horizon: 128
-    summary_freq: 5000
+    summary_freq: 10000

@@ -13,7 +13,7 @@ using UnityEngine;
 
 namespace RLExcavator.Editor
 {
-  /// <summary>Isolated replay build; never saves modifications into the demonstration scene.</summary>
+  /// <summary>Historical replay helper. Requires restoring the archived demonstration scene.</summary>
   public static class E4HistoricalReplayBuild
   {
     private const string SourceScene = "Assets/Scenes/ICRA2027_RLTrackingExperiments.unity";
@@ -36,6 +36,8 @@ namespace RLExcavator.Editor
 
     public static void BuildLinux64()
     {
+      if (AssetDatabase.LoadAssetAtPath<SceneAsset>(SourceScene) == null)
+        throw new BuildFailedException("Historical E4 scene was retired; restore it from the historical revision before replay: " + SourceScene);
       string modelPath = E4HistoricalReplayRunner.Argument("-e4ModelPath");
       string output = E4HistoricalReplayRunner.Argument("-outputPath");
       string profilePath = E4HistoricalReplayRunner.Argument("-e4ProfilePath");

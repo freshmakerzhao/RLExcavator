@@ -1,0 +1,537 @@
+{
+  "baseline_id": "rl_follow_v1",
+  "frozen_on": "2026-10-01",
+  "scope": "Excavator tip tracking and stopping in simulation; not digging, material retention, dumping or hardware deployment.",
+  "onnx": {
+    "file": "ScaleFollow3cm_20260929.onnx",
+    "sha256": "8590762a1994213214e8a8a229b6feba4f72bc1cb3a7592d35f232dda7f8bce2",
+    "input": "obs_0[batch,38]",
+    "output": "deterministic_continuous_actions[batch,4]",
+    "action_order": [
+      "boom",
+      "stick",
+      "bucket",
+      "swing"
+    ],
+    "action_semantics": "Normalized velocity reference in [-1,1]; skill converts to m/s for cylinders and rad/s for swing."
+  },
+  "training": {
+    "run_id": "traj_full_follow_3cm_20260929",
+    "checkpoint_step": 20000037,
+    "checkpoint_file": "results/traj_full_follow_3cm_20260929/ExcavatorTrajectory/ExcavatorTrajectory-20000037.pt",
+    "checkpoint_sha256": "8c145923a4287435b22e0ef91ad6a3b25694650b048cbd12a8a628bac393fb03",
+    "seed": 20260929,
+    "config_file": "config/trajectory_ppo.yaml",
+    "config_sha256": "ec0f5f2ea2cc56111374d42aee83a2e99671686b2f5e48297cec95885e4d0e31",
+    "scene": "Assets/Scenes/ExcavatorRLTrain_Scale.unity",
+    "machine_prefab_sha256": "6b2390edf38993b16b606de0989e3512b817913d143ab1a8736a444fcffe6d95",
+    "environment_prefab_sha256": "1c7697f211cb892904b40e0b1b6ce9d41ebc1feb8f4bd14d76f1f7db5c57deda"
+  },
+  "machine_profile_snapshot": {
+    "purpose": "Frozen experimental provenance only. Runtime continues to read ../shared/machine_profile.json. Never use this artifact as a second active configuration.",
+    "source_file": "shared/machine_profile.json",
+    "source_sha256": "0e079a9502be741621bf98c58b474995ce9c50f75c697ace16ac243c3bccc825",
+    "content": {
+      "schema_version": "0.3.0",
+      "machine_id": "scale_excavator_v1",
+      "machine_type": "excavator",
+      "reachable_workspace_file": "reachable_workspaces/scale_excavator_workspace.json",
+      "_doc": "Single source of truth read by BOTH Unity sim and deploy_scale_model. Edit here only. Authoritative interface design is LOCKED in docs/rl_excavator_master_execution_plan_2026-06-25.md (sections 2-4). Cylinder positive/negative max speeds are calibrated from real-machine CSV velocity columns scaled by 0.1, then converted from mm/s to m/s.",
+      "conventions": {
+        "action_range": [
+          -1.0,
+          1.0
+        ],
+        "cylinder_velocity_unit": "m/s",
+        "cylinder_range_unit": "m",
+        "swing_velocity_unit": "rad/s",
+        "base_frame": "chassis fixed frame; does NOT rotate with swing. Tip pose = Rot(swing) * armFK.",
+        "ff_axis_meaning": "normalized joystick axis in [-1,1]; deploy maps to servo angle = axis*45 + 90 (deg)",
+        "_sign_convention": "Each actuator has sign (sim-side semantic, defines what +action means; LOCK before training, changing it requires retrain). PC and Orin preserve Policy Action signs. Real-machine wiring, actuator direction, and encoder direction are adapted only by the STM32 low-level implementation."
+      },
+      "action_order": [
+        "boom",
+        "stick",
+        "bucket",
+        "swing"
+      ],
+      "_action_order_note": "Authoritative order for the 4-dim policy/ONNX action vector. Deploy MUST read this, not hardcode its own order (fixes R1).",
+      "actuators": {
+        "boom": {
+          "action_index": 0,
+          "command_deadzone_positive_normalized": 0.05698005698,
+          "command_deadzone_negative_normalized": 0.108108108108,
+          "joint_type": "prismatic",
+          "max_speed_positive": 0.0351,
+          "max_speed_negative": 0.0185,
+          "range": [
+            -0.08,
+            0.095
+          ],
+          "deploy_position_observation": {
+            "source": "stm32_absolute_cable_encoder",
+            "range": [
+              0.07,
+              0.19
+            ],
+            "status": "firmware_safety_bounds"
+          },
+          "range_enabled_required": true,
+          "sign": 1,
+          "deploy_observation_sign": -1,
+          "deploy_pca_channel": 1,
+          "deploy_drive": "servo_valve",
+          "ff_table": {
+            "v_ref_mps": [
+              0.0,
+              0.01,
+              0.03
+            ],
+            "axis": [
+              0.0,
+              0.15,
+              1.0
+            ]
+          },
+          "calibrated": "positive_negative_speed_from_csv",
+          "_note": "Measured from 真机数据/boom_speed.csv using v_boom/10: original action y2 +1.0 -> 18.5 mm/s, -1.0 -> 35.1 mm/s; positive/negative speed limits swapped after real-machine control direction check. ff_table remains provisional until v_ref->axis fitting."
+        },
+        "stick": {
+          "action_index": 1,
+          "command_deadzone_positive_normalized": 0.045045045045,
+          "command_deadzone_negative_normalized": 0.089635854342,
+          "joint_type": "prismatic",
+          "max_speed_positive": 0.0444,
+          "max_speed_negative": 0.0357,
+          "range": [
+            -0.09,
+            0.06
+          ],
+          "deploy_position_observation": {
+            "source": "stm32_absolute_cable_encoder",
+            "range": [
+              0.06,
+              0.21
+            ],
+            "status": "firmware_safety_bounds"
+          },
+          "range_enabled_required": true,
+          "sign": 1,
+          "deploy_observation_sign": -1,
+          "deploy_pca_channel": 2,
+          "deploy_drive": "servo_valve",
+          "ff_table": {
+            "v_ref_mps": [
+              0.0,
+              0.01,
+              0.03
+            ],
+            "axis": [
+              0.0,
+              0.15,
+              1.0
+            ]
+          },
+          "calibrated": "positive_negative_speed_from_csv",
+          "_note": "Measured from 真机数据/bucketandstick.csv using v_stick/10: original action y1 +1.0 -> 35.7 mm/s, -1.0 -> 44.4 mm/s; positive/negative speed limits swapped after real-machine control direction check. ff_table remains provisional until v_ref->axis fitting."
+        },
+        "bucket": {
+          "action_index": 2,
+          "command_deadzone_positive_normalized": 0.058479532164,
+          "command_deadzone_negative_normalized": 0.047732696897,
+          "joint_type": "prismatic",
+          "max_speed_positive": 0.0342,
+          "max_speed_negative": 0.0419,
+          "range": [
+            -0.045,
+            0.085
+          ],
+          "deploy_position_observation": {
+            "source": "stm32_absolute_cable_encoder",
+            "range": [
+              0.06,
+              0.17
+            ],
+            "status": "firmware_safety_bounds"
+          },
+          "range_enabled_required": true,
+          "sign": 1,
+          "deploy_observation_sign": -1,
+          "deploy_pca_channel": 0,
+          "deploy_drive": "servo_valve",
+          "ff_table": {
+            "v_ref_mps": [
+              0.0,
+              0.01,
+              0.03
+            ],
+            "axis": [
+              0.0,
+              0.15,
+              1.0
+            ]
+          },
+          "calibrated": "positive_negative_speed_from_csv",
+          "_note": "Measured from 真机数据/bucketandstick.csv using v_bucket/10: original action x2 +1.0 -> -41.9 mm/s cylinder direction, x2 -1.0 -> +34.2 mm/s; positive/negative speed limits swapped after real-machine control direction check. ff_table remains provisional."
+        },
+        "swing": {
+          "action_index": 3,
+          "command_deadzone_positive_normalized": 0.090175344686,
+          "command_deadzone_negative_normalized": 0.119264165553,
+          "joint_type": "revolute_continuous",
+          "max_speed_positive": 0.6,
+          "max_speed_negative": 0.6,
+          "range": [
+            null,
+            null
+          ],
+          "range_enabled_required": false,
+          "sign": 1,
+          "deploy_observation_sign": -1,
+          "deploy_pca_channel": 3,
+          "deploy_drive": "motor_esc",
+          "ff_table": null,
+          "calibrated": false,
+          "_note": "ROTATIONAL, ESC motor speed (NOT servo-valve). max_speed_positive/max_speed_negative 0.6 rad/s are simulation speed-scale experiments pending calibration. Observation uses sin/cos of swing angle; REQUIRES a swing angle + angular-velocity sensor on the real machine (see master plan risk R10)."
+        }
+      },
+      "observation_schema": {
+        "id": "scale_excavator_v2_38d",
+        "total_dim": 38,
+        "action_dim": 4,
+        "waypoint_lookahead": 3,
+        "num_task_modes": 2,
+        "tool_attitude": {
+          "enabled": true,
+          "type": "bucket_pitch"
+        },
+        "_layout_doc": "Authoritative per-index layout is the table in master plan section 2.2. Unity CollectObservations and the deploy obs builder MUST both implement that exact 38-index order. config/trajectory_ppo.yaml obs size MUST be 38.",
+        "normalizers": {
+          "position_normalizer": 1.13,
+          "tip_velocity_scale": 0.05,
+          "distance_normalizer": 1.13,
+          "tube_radius": 0.04,
+          "target_threshold": 0.03,
+          "pitch_norm_deg": 180.0,
+          "_note": "Cat365 originals were position 10 / distance 8 / tube 1.0 / threshold 0.25. Values here are PROVISIONAL scale guesses; set position_normalizer/distance_normalizer to measured max tip reach (m) after reachable-workspace recalibration (task P1-T4)."
+        }
+      },
+      "task_profile": {
+        "bucket_pitch_targets_deg": {
+          "MoveToDig": 70.0,
+          "CarryMaterial": 180.0
+        },
+        "_note": "Task-level bucket pitch targets used by Unity training/telemetry and deploy observation builders. Edit here only; do not hardcode in C#/Python."
+      },
+      "deploy": {
+        "udp_ip": "192.168.2.62",
+        "udp_port": 8888,
+        "rate_hz": 10,
+        "software_deadzone": 0.15,
+        "servo_center_deg": 90,
+        "servo_span_deg": 45,
+        "pump_pca_channel": 4,
+        "_deadzone_note": "0.15 is the CURRENT software threshold in excavator.py should_apply_axis; may NOT equal the physical valve deadband. Policy path bypasses it. Re-measure physical deadband during calibration.",
+        "safety": {
+          "command_clamp": [
+            -1.0,
+            1.0
+          ],
+          "comms_timeout_to_zero_s": 0.5,
+          "_note": "Mandatory before real-machine runs. See task P2-T6."
+        }
+      }
+    }
+  },
+  "acceptance": {
+    "report": "EvaluationReport/2026-10-01_rl_follow_acceptance.md",
+    "evaluation": {
+      "seeds": [
+        20261001,
+        20261002
+      ],
+      "decision_ticks": [
+        10000,
+        6000
+      ],
+      "deterministic": true,
+      "learning": false,
+      "mode": "no-graphics",
+      "time_scale": 20
+    },
+    "metrics": {
+      "Trajectory/SuccessRate": {
+        "samples": 1047,
+        "mean": 1.0
+      },
+      "Trajectory/MoveToDig/SuccessRate": {
+        "samples": 472,
+        "mean": 1.0
+      },
+      "Trajectory/CarryMaterial/SuccessRate": {
+        "samples": 575,
+        "mean": 1.0
+      },
+      "Trajectory/FinalDistance": {
+        "samples": 1047,
+        "mean": 0.02727763239675003
+      },
+      "Trajectory/WaypointTimeoutRate": {
+        "samples": 1047,
+        "mean": 0.0
+      },
+      "Trajectory/OutOfBoundsRate": {
+        "samples": 1047,
+        "mean": 0.0
+      },
+      "Trajectory/StuckRate": {
+        "samples": 1047,
+        "mean": 0.0
+      }
+    },
+    "onnx_parity_samples": 2558,
+    "onnx_max_absolute_action_error": 9.5367431640625e-07,
+    "runtime_cases": [
+      {
+        "case": "runtime_agent2_CarryMaterial",
+        "result": "COMPLETED",
+        "waypoints_total": 5,
+        "final_error_m": 0.025025887275147873,
+        "tolerance_m": 0.03
+      },
+      {
+        "case": "runtime_agent3_MoveToDig",
+        "result": "COMPLETED",
+        "waypoints_total": 5,
+        "final_error_m": 0.013723763542746431,
+        "tolerance_m": 0.03
+      }
+    ],
+    "default_follow_result": "COMPLETED",
+    "default_follow_error_m": 0.022324074780684697,
+    "stop_hold_drift_m": 5.857232508470852e-05,
+    "limitation": "Completed episodes from the same training waypoint sampler with two new seeds; unfinished episodes are excluded. Not a guarantee for arbitrary paths."
+  },
+  "reachable_workspace_snapshot": {
+    "source_file": "shared/reachable_workspaces/scale_excavator_workspace.json",
+    "source_sha256": "8c66422ecd3eb1527993e17088d7dc27c98917b67ecb76c6a9082415aedb799a",
+    "content": {
+      "schema_version": "0.1.0",
+      "machine_id": "scale_excavator_v1",
+      "coordinate_frame": "machine_root",
+      "workspaces": [
+        {
+          "mode": "MoveToDig",
+          "volume_anchor_points": [
+            {
+              "x": -0.8520952463150024,
+              "y": 0.13125395774841309,
+              "z": -0.07676708698272705
+            },
+            {
+              "x": -0.8752309083938599,
+              "y": -0.710448145866394,
+              "z": -0.06677258014678955
+            },
+            {
+              "x": -0.5035167336463928,
+              "y": -0.061623334884643555,
+              "z": -0.06677490472793579
+            },
+            {
+              "x": -0.7812038660049438,
+              "y": -0.5715140104293823,
+              "z": -0.07071316242218018
+            },
+            {
+              "x": -0.6214638948440552,
+              "y": 0.12958872318267822,
+              "z": 0.5234231352806091
+            },
+            {
+              "x": -0.6157289743423462,
+              "y": -0.7106817960739136,
+              "z": 0.5610656142234802
+            },
+            {
+              "x": -0.411658376455307,
+              "y": -0.06222105026245117,
+              "z": 0.22771352529525757
+            },
+            {
+              "x": -0.549017071723938,
+              "y": -0.5713506937026978,
+              "z": 0.49367374181747437
+            },
+            {
+              "x": 0.0031665568239986897,
+              "y": 0.1279761791229248,
+              "z": 0.791972279548645
+            },
+            {
+              "x": -0.002038598293438554,
+              "y": -0.7109000086784363,
+              "z": 0.8131476640701294
+            },
+            {
+              "x": 0.0013303161831572652,
+              "y": -0.06327760219573975,
+              "z": 0.43925291299819946
+            },
+            {
+              "x": -0.002026140922680497,
+              "y": -0.5714074373245239,
+              "z": 0.7172561287879944
+            },
+            {
+              "x": 0.6048393249511719,
+              "y": 0.12167716026306152,
+              "z": 0.5340191125869751
+            },
+            {
+              "x": 0.6213550567626953,
+              "y": -0.7110177874565125,
+              "z": 0.5502873659133911
+            },
+            {
+              "x": 0.34686708450317383,
+              "y": -0.06398725509643555,
+              "z": 0.29451853036880493
+            },
+            {
+              "x": 0.5488700866699219,
+              "y": -0.571306586265564,
+              "z": 0.48611128330230713
+            },
+            {
+              "x": 0.8475009202957153,
+              "y": 0.12366783618927002,
+              "z": -0.03211772441864014
+            },
+            {
+              "x": 0.8675991296768188,
+              "y": -0.7109904289245605,
+              "z": -0.0314105749130249
+            },
+            {
+              "x": 0.4919152855873108,
+              "y": -0.06461441516876221,
+              "z": -0.06035798788070679
+            },
+            {
+              "x": 0.7699581384658813,
+              "y": -0.5708486437797546,
+              "z": -0.029545187950134277
+            }
+          ]
+        },
+        {
+          "mode": "CarryMaterial",
+          "volume_anchor_points": [
+            {
+              "x": -0.5343719124794006,
+              "y": 0.07183754444122314,
+              "z": -0.054351866245269775
+            },
+            {
+              "x": -0.7226062417030334,
+              "y": -0.5895370841026306,
+              "z": -0.0568423867225647
+            },
+            {
+              "x": -0.34778836369514465,
+              "y": 0.12180221080780029,
+              "z": -0.06996205449104309
+            },
+            {
+              "x": -0.4841375946998596,
+              "y": -0.471213698387146,
+              "z": -0.06649166345596313
+            },
+            {
+              "x": -0.38404950499534607,
+              "y": 0.06929159164428711,
+              "z": 0.29620641469955444
+            },
+            {
+              "x": -0.5297595262527466,
+              "y": -0.589763879776001,
+              "z": 0.4313349723815918
+            },
+            {
+              "x": -0.2600598931312561,
+              "y": 0.12195158004760742,
+              "z": 0.17098233103752136
+            },
+            {
+              "x": -0.3445606827735901,
+              "y": -0.46925997734069824,
+              "z": 0.2792644202709198
+            },
+            {
+              "x": -0.0016532542649656534,
+              "y": 0.07047724723815918,
+              "z": 0.4720502495765686
+            },
+            {
+              "x": -0.03643185272812843,
+              "y": -0.5896663069725037,
+              "z": 0.6611137986183167
+            },
+            {
+              "x": -0.0027175249997526407,
+              "y": 0.12224936485290527,
+              "z": 0.28682997822761536
+            },
+            {
+              "x": -0.004547656048089266,
+              "y": -0.4671657085418701,
+              "z": 0.4222713112831116
+            },
+            {
+              "x": 0.3670382499694824,
+              "y": 0.06976461410522461,
+              "z": 0.3193979859352112
+            },
+            {
+              "x": 0.46970510482788086,
+              "y": -0.5897830128669739,
+              "z": 0.4864546060562134
+            },
+            {
+              "x": 0.2263965606689453,
+              "y": 0.12251555919647217,
+              "z": 0.20064646005630493
+            },
+            {
+              "x": 0.3295478820800781,
+              "y": -0.46521663665771484,
+              "z": 0.2892795205116272
+            },
+            {
+              "x": 0.5245199799537659,
+              "y": 0.06949937343597412,
+              "z": -0.0227774977684021
+            },
+            {
+              "x": 0.7161794304847717,
+              "y": -0.5896549224853516,
+              "z": -0.0014709830284118652
+            },
+            {
+              "x": 0.34950926899909973,
+              "y": 0.12628328800201416,
+              "z": -0.04688259959220886
+            },
+            {
+              "x": 0.4130573868751526,
+              "y": -0.38854682445526123,
+              "z": -0.03919118642807007
+            }
+          ]
+        }
+      ]
+    },
+    "purpose": "Frozen provenance only; runtime uses the authoritative shared workspace file."
+  }
+}

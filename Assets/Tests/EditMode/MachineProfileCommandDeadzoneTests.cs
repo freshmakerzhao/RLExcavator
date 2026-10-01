@@ -366,7 +366,7 @@ namespace RLExcavator.Tests
     }
 
     [Test]
-    public void TrainingSceneEnablesA2AndDeadzoneRandomizationOnlyForTrainingAgents()
+    public void TrainingSceneEnablesA2AndDeadzoneRandomizationForAllAgents()
     {
       var scene = EditorSceneManager.OpenScene(
         "Assets/Scenes/ExcavatorRLTrain_Scale.unity",
@@ -377,7 +377,6 @@ namespace RLExcavator.Tests
         Type behaviorType = FindType( "Unity.MLAgents.Policies.BehaviorParameters" );
         int agentCount = 0;
         int trainingAgentCount = 0;
-        int inferenceAgentCount = 0;
 
         foreach ( GameObject root in scene.GetRootGameObjects() ) {
           Component[] agents = root.GetComponentsInChildren( agentType, true );
@@ -390,48 +389,26 @@ namespace RLExcavator.Tests
 
             var serializedBehavior = new SerializedObject( behavior );
             int behaviorMode = serializedBehavior.FindProperty( "m_BehaviorType" ).intValue;
-            bool isTrainingAgent = behaviorMode == 0;
-
-            if ( isTrainingAgent ) {
-              trainingAgentCount++;
-              Assert.That(
-                serializedAgent.FindProperty( "deadzoneEnergyUseEffective" ).boolValue,
-                Is.True,
-                "PPO training agents must enable A2 effective-action energy." );
-              Assert.That(
-                serializedAgent.FindProperty( "randomizeCommandDeadzonesOnEpisodeBegin" ).boolValue,
-                Is.True,
-                "PPO training agents must enable deadzone domain randomization." );
-              Assert.That(
-                serializedBehavior.FindProperty( "m_Model" ).objectReferenceValue,
-                Is.Null,
-                "PPO training agents must not pin an inference ONNX model." );
-            }
-            else {
-              inferenceAgentCount++;
-              Assert.That(
-                behaviorMode,
-                Is.EqualTo( 2 ),
-                "Non-training trajectory agents in this scene must be Inference Only." );
-              Assert.That(
-                serializedAgent.FindProperty( "deadzoneEnergyUseEffective" ).boolValue,
-                Is.False,
-                "Inference validation must use deterministic raw-action accounting." );
-              Assert.That(
-                serializedAgent.FindProperty( "randomizeCommandDeadzonesOnEpisodeBegin" ).boolValue,
-                Is.False,
-                "Inference validation must not randomize calibrated command deadzones." );
-              Assert.That(
-                serializedBehavior.FindProperty( "m_Model" ).objectReferenceValue,
-                Is.Not.Null,
-                "Inference validation must pin the candidate ONNX model." );
-            }
+            Assert.That( behaviorMode, Is.EqualTo( 0 ), "Every trajectory agent in this scene must train with PPO." );
+            trainingAgentCount++;
+            Assert.That(
+              serializedAgent.FindProperty( "deadzoneEnergyUseEffective" ).boolValue,
+              Is.True,
+              "PPO training agents must enable A2 effective-action energy." );
+            Assert.That(
+              serializedAgent.FindProperty( "randomizeCommandDeadzonesOnEpisodeBegin" ).boolValue,
+              Is.True,
+              "PPO training agents must enable deadzone domain randomization." );
+            Assert.That(
+              serializedBehavior.FindProperty( "m_Model" ).objectReferenceValue,
+              Is.Null,
+              "PPO training agents must not pin an inference ONNX model." );
           }
         }
 
         Assert.That( agentCount, Is.GreaterThan( 0 ), "Training scene must contain at least one trajectory agent." );
         Assert.That( trainingAgentCount, Is.GreaterThan( 0 ), "Training scene must contain PPO training agents." );
-        Assert.That( inferenceAgentCount, Is.GreaterThan( 0 ), "Training scene must retain its deterministic inference validator." );
+        Assert.That( trainingAgentCount, Is.EqualTo( agentCount ), "All trajectory agents must use the new training setup." );
       }
       finally {
         EditorSceneManager.CloseScene( scene, true );

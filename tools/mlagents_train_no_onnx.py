@@ -14,6 +14,7 @@ to be loaded by Unity inference.
 from __future__ import annotations
 
 import logging
+import signal
 import sys
 
 
@@ -52,6 +53,9 @@ def main() -> None:
         )
         raise SystemExit(2)
 
+    # Background shell jobs can inherit SIGINT=ignored; let ML-Agents save a
+    # checkpoint when the training process is interrupted.
+    signal.signal(signal.SIGINT, signal.default_int_handler)
     disable_onnx_export()
 
     from mlagents.trainers.learn import main as mlagents_main
