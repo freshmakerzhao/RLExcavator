@@ -28,4 +28,4 @@ python -m earthmoving_autonomy follow
 
 ## 仓库内容
 
-Unity 保存运行场景、训练场景、模型及必要资产；主项目保存技能、观测构造、推理和设备通信。训练结果目录、构建产物、AGX 本机许可证、截图缓存与编辑器状态不进入 Git。官方卡车的实际依赖由 `Packages/manifest.json` 与 lock 固定到 bedtruck 1.1.1；完整示例导入仍保留在本机。
+Unity 保存运行场景、训练场景、模型及必要资产；主项目保存技能、观测构造、推理和设备通信。训练结果目录、构建产物、AGX 本机许可证、截图缓存与编辑器状态不进入 Git。官方卡车的实际依赖由 `Packages/manifest.json` 与 lock 固定到 bedtruck 1.1.1；活动场景只依赖实际使用的模型、材质与物理资产。基线元数据保留冻结时的历史路径与哈希；目录变更见 [仓库说明](../README.md)。

@@ -4,7 +4,7 @@
 Default: print a dry-run plan without creating output or launching Unity.
 Example from RLExcavator (use a NEW output path):
   python tools/run_checkpoint_screen.py --python /path/to/ml_agents/bin/python \
-    --checkpoint results/scale_v3_swing_terminal_braking_01 \
+    --checkpoint results/traj_full_follow_3cm_20260929 \
     --output /path/to/new-screen --seeds 20260904 20260905 --wall-seconds 120
 Append --execute to run. Training parameters remain in --config's authoritative
 YAML. This is a random training-environment screening window, not a frozen
@@ -35,9 +35,9 @@ def parse_args(argv=None):
     parser.add_argument('--project', type=Path, default=Path(__file__).resolve().parents[1])
     parser.add_argument('--python', type=Path, default=Path(sys.executable))
     parser.add_argument('--config', type=Path,
-                        default=Path('config/trajectory_ppo_swing_terminal_braking.yaml'))
+                        default=Path('config/trajectory_ppo.yaml'))
     parser.add_argument('--player', type=Path, default=Path(
-        'Builds/ExcavatorTrajectoryTraining/ExcavatorTrajectoryTraining.x86_64'))
+        'Builds/ExcavatorTrajectoryLimitsV2/ExcavatorTrajectoryLimitsV2.x86_64'))
     parser.add_argument('--checkpoint', type=Path, required=True,
                         help='Existing ML-Agents run directory containing ExcavatorTrajectory/checkpoint.pt')
     parser.add_argument('--output', type=Path, required=True, help='New output directory; never overwritten')

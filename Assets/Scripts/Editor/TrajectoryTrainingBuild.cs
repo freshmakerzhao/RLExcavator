@@ -17,9 +17,9 @@ namespace RLExcavator.Editor
     private const string TrackingBaseOutputPath =
       "Builds/ExcavatorTrackingBase/ExcavatorTrackingBase.x86_64";
 
-    public static string ScenePath => "Assets/Scenes/ExcavatorRLTrain_Scale.unity";
+    public static string ScenePath => "Assets/Scenes/Training/ExcavatorRLTrain_Scale.unity";
     public static string TrackingBaseScenePath =>
-      "Assets/Scenes/ExcavatorRLTrain_TrackingBase.unity";
+      "Assets/Scenes/Training/ExcavatorRLTrain_TrackingBase.unity";
 
     public static void BuildLinux64()
     {

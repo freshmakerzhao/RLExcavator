@@ -23,11 +23,11 @@ python tools/mlagents_train_no_onnx.py config/trajectory_ppo.yaml \
   --seed=20260929 --time-scale=20 --num-envs=2 --no-graphics
 ```
 
-修正后的播放器由 `RLExcavator.Editor.TrajectoryTrainingBuild.BuildLinux64()` 从 `Assets/Scenes/ExcavatorRLTrain_Scale.unity` 构建；默认输出路径已改为上面的 `ExcavatorTrajectoryLimitsV2`。使用 `--env` 后无需在编辑器按 Play。四个环境均为 `Default`，不加载旧推理模型。场景仍用五路点 `FullTraining` 课程和原奖励；训练 prefab 不再把可视化目标球半径加进到点容差，按 `shared/machine_profile.json` 的 0.03 m 判断。三缸物理方向修正在 `ExcavatorScaleDown.prefab`，活动限位由同一个 shared profile 在启动时写入 AGX 约束。
+修正后的播放器由 `RLExcavator.Editor.TrajectoryTrainingBuild.BuildLinux64()` 从 `Assets/Scenes/Training/ExcavatorRLTrain_Scale.unity` 构建；默认输出路径已改为上面的 `ExcavatorTrajectoryLimitsV2`。使用 `--env` 后无需在编辑器按 Play。四个环境均为 `Default`，不加载旧推理模型。场景仍用五路点 `FullTraining` 课程和原奖励；训练 prefab 不再把可视化目标球半径加进到点容差，按 `shared/machine_profile.json` 的 0.03 m 判断。三缸物理方向修正在 `ExcavatorScaleDown.prefab`，活动限位由同一个 shared profile 在启动时写入 AGX 约束。
 
 `traj_full_follow_positive_20260929` 在旧限位和约 0.0678 m 的有效到点容差下训练，已于 4,517,139 步暂停并保留。其权重可以作为修正阶段的初始化，但不能以 `--resume` 继续旧 run，因为新阶段改变了物理限位、观测归一化和到点判据。2026-09-29 的 10 万步短探针显示，用旧权重初始化的策略可在新标准下继续提高成绩；详见工作区 `EvaluationReport/2026-09-29_rl_limits_repair_and_training_decision.md`。旧方向语义的模型仍不可使用。
 
-训练场景关闭了仅用于示教诊断的 `OpenLoopVelocityRecorder`，避免长训逐物理步积累样本。当前运行使用两个并行 Unity 播放器，每个播放器包含四个训练环境；`--time-scale=20` 只改变仿真时间推进速度。两项都不改变 PPO 的观测、动作和网络结构。长训每 25 万步保存一次 checkpoint。
+训练场景已移除旧的逐物理步示教记录器、重复键盘测试器和 HUD；保留 Agent 自带的 Heuristic 键盘输入。当前运行使用两个并行 Unity 播放器，每个播放器包含四个训练环境；`--time-scale=20` 只改变仿真时间推进速度。两项都不改变 PPO 的观测、动作和网络结构。长训每 25 万步保存一次 checkpoint。
 
 ## 分段训练
 
@@ -96,3 +96,7 @@ pip install -r requirements-export.txt
 
 不要在这个环境中安装 `onnxscript`。`onnxscript` 需要更新的 `protobuf`，会与
 `mlagents-envs 1.2.0.dev0` 的 `protobuf<3.21` 要求冲突。
+
+## 目录整理后的来源记录
+
+2026-10-05 将两个训练场景移至 `Assets/Scenes/Training`，训练脚本归入 `Assets/Scripts/Training`，预制体目录改为 `Assets/Prefabs`，模型源文件归入 `Assets/Models`。资源 GUID 保持不变。基线 `.baseline.json` 中的旧场景路径和 prefab 哈希仍表示冻结当日的历史来源，不改写它们来冒充新目录的哈希。当前训练场景、物理参数、采样和奖励的清理回归见 [清理记录](../../EvaluationReport/2026-10-05_unity_cleanup.md)。

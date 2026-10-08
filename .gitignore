@@ -55,8 +55,8 @@ Assets/ML-Agents.meta
 
 # Large local CAD/model imports. Use Git LFS or a shared artifact store if these
 # assets need to be versioned.
-Assets/models/*.obj
-Assets/models/*.obj.meta
+Assets/Models/*.obj
+Assets/Models/*.obj.meta
 
 open_loop_velocity_exports
 

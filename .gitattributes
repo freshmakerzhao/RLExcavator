@@ -16,5 +16,5 @@
 *.rar filter=lfs diff=lfs merge=lfs -text
 *.mp4 filter=lfs diff=lfs merge=lfs -text
 *.mov filter=lfs diff=lfs merge=lfs -text
-Assets/models/*.agx filter=lfs diff=lfs merge=lfs -text
-Assets/models/**/*_Mesh.asset filter=lfs diff=lfs merge=lfs -text
+Assets/Models/*.agx filter=lfs diff=lfs merge=lfs -text
+Assets/Models/**/*_Mesh.asset filter=lfs diff=lfs merge=lfs -text

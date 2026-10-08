@@ -336,7 +336,7 @@ namespace RLExcavator.Tests
     public void ScaleEnvironmentPrefabKeepsInferenceSafeDeadzoneDefaults()
     {
       GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-        "Assets/perfabs/ScaleTrajectoryEnvironment.prefab" );
+        "Assets/Prefabs/ScaleTrajectoryEnvironment.prefab" );
       Assert.That( prefab, Is.Not.Null, "The scale trajectory training prefab must exist." );
 
       Type agentType = FindType( "RLExcavator.ExcavatorTrajectoryAgent" );
@@ -369,7 +369,7 @@ namespace RLExcavator.Tests
     public void TrainingSceneEnablesA2AndDeadzoneRandomizationForAllAgents()
     {
       var scene = EditorSceneManager.OpenScene(
-        "Assets/Scenes/ExcavatorRLTrain_Scale.unity",
+        "Assets/Scenes/Training/ExcavatorRLTrain_Scale.unity",
         OpenSceneMode.Additive );
 
       try {

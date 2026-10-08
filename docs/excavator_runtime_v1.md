@@ -4,13 +4,15 @@
 
 场地位于 `Environment/RealSite`，从 `real2sim-scene-20260807` 的 `Real2Sim_dig` 迁入平台、土箱、土表和材质，资产独立存放于 `Assets/Environment/Real2Sim`。平台高 .533 m，挖机整体相应抬高；路点仍相对 MachineRoot。平台与箱壁有 AGX 碰撞体，MovableTerrain与粒子渲染已启用。ReferenceCamera保留原场景固定参考机位，默认禁用；FrontCamera负责仿真 ACT 的采集与推理图像，不要求复用真机检查点。
 
-`Environment/RealSite/DumpTruck` 是固定卸土目标，来自官方 `com.algoryx.agxunity.machines.bedtruck@1.1.1`，所需模型与材质直接引用固定版本的官方 Unity Package；`Assets/AGXUnity_BedTruck` 中导入的道路、地形和驾驶示例仅保留在本机，不纳入当前提交。当前场景独立复制其外观和 9 个箱形碰撞体，不挂载官方驾驶、轮胎、翻斗控制器或车斗 MovableTerrain；原 prefab 不作修改。模型尺寸统一乘以 0.15，整车约长 1.17 m、宽 0.44 m、高 0.45 m，车斗内底约高 0.21 m。`Visual` 放外观，`Collision` 放静态 AGX 碰撞体，`DumpTarget` 是车斗上方的参考点（Unity 世界坐标约 `[0.70, 0.525, -0.12]`），尚未接入任务配置。比例和摆放依据现场照片估计，未作实物标定。调整位置时移动整个 DumpTruck；不要直接缩放根节点，AGX Box 尺寸需随模型显式调整。2026-09-28 按用户提供的现实场地俯视示意图，将卡车整体移到挖机的 Unity +X 一侧：面向沙土池时位于挖机右侧，车斗朝向土池、车头朝外（-Z）。车体与工作台侧边约间隔 0.23 m，车尾与土池外壁约间隔 0.10 m；仅按相对关系摆放，未作尺寸标定。
+`Environment/RealSite/DumpTruck` 是固定卸土目标，来自官方 `com.algoryx.agxunity.machines.bedtruck@1.1.1`，所需模型与材质直接引用固定版本的官方 Unity Package；运行场景不依赖导入的道路、地形和驾驶示例。当前场景独立复制其外观和 9 个箱形碰撞体，不挂载官方驾驶、轮胎、翻斗控制器或车斗 MovableTerrain；原 prefab 不作修改。模型尺寸统一乘以 0.15，整车约长 1.17 m、宽 0.44 m、高 0.45 m，车斗内底约高 0.21 m。`Visual` 放外观，`Collision` 放静态 AGX 碰撞体，`DumpTarget` 是车斗上方的参考点（2026-10-04 实测 Unity 世界坐标约 `[0.9095, 0.52495, -0.1205]`），尚未接入任务配置。比例和摆放依据现场照片估计，未作实物标定。调整位置时移动整个 DumpTruck；不要直接缩放根节点，AGX Box 尺寸需随模型显式调整。2026-09-28 按用户提供的现实场地俯视示意图，将卡车整体移到挖机的 Unity +X 一侧：面向沙土池时位于挖机右侧，车斗朝向土池、车头朝外（-Z）。车体与工作台侧边约间隔 0.23 m，车尾与土池外壁约间隔 0.10 m；仅按相对关系摆放，未作尺寸标定。
+
+2026-10-04 的固定点准备使用实际 Unity Transform，按 `MachineRoot.InverseTransformPoint` 后的 `[z, -x, y]` 转为本体 ROS 坐标，不新增常驻读点接口。当前 `DumpTarget` 在一次空载 Follow 检查中未达到 3 cm 容差；沿水平面向本体靠近 6 cm 的车斗上方候选点通过了到挖点、搬运、返回三段连续检查。原 `DumpTarget` 对象保持不变，候选坐标随后已用于主项目默认沙土上方到卡车上方的 Follow 配置；固定挖掘/倾倒后的姿态交接、完整机构避障和实际接土仍需联调。数值、复现入口与日志见工作区 [2026-10-04 坐标与路线检查](../../EvaluationReport/2026-10-04_sim_cycle_coordinates.md)。
 
 ![现实场地相对布局俯视图](images/2026-09-28-real-site-layout-top.png)
 
 `ExcavatorRuntimeSoil.cs` 负责土体生命周期：Play时隐藏原SoilTerrain作为模板，创建独立网格的运行实例。`reset` 先等待挖机回位，再销毁旧土体、等待一帧并创建新土体，清除形变、压实状态与散粒；完成后桥接才回复成功。沿用旧ResetTerrain的复位顺序，但不依赖旧Agent、UI或控制器，也不修改AGX代码。土体参数尚未按实物标定，当前验证的是运动和土体交互，不代表真实挖掘力或装载效率。
 
-为保持遥操作流畅，本场景的 `SoilTerrain` 使用独立的 `Assets/Environment/RuntimeSoilSurface.asset`，当前分辨率为 67×33 格、单元边长约 3.47 cm（此前为 52×26 格、约 4.47 cm）。土箱摆放和尺寸不变，土体模板目标尺寸仍为 2.325×1.125 m；AGX 使用正方形网格，运行时第二边长度会按整格取整。原 `Assets/Environment/Real2Sim/SoilSurface.asset` 未改动。要调整性能，在 Unity 中选择 `SoilTerrain`，修改 `Movable Terrain` 的 `Resolution`：数值越小，颗粒越粗、物理计算通常越少，但挖土细节也会减少。不要直接改共享的 AGX 资产。
+为保持遥操作流畅，本场景的 `SoilTerrain` 使用独立的 `Assets/Environment/RuntimeSoilSurface.asset`，当前分辨率为 67×33 格、单元边长约 3.47 cm（此前为 52×26 格、约 4.47 cm）。土箱摆放和尺寸不变，土体模板目标尺寸仍为 2.325×1.125 m；AGX 使用正方形网格，运行时第二边长度会按整格取整。已清理未使用的旧 `Real2Sim/SoilSurface.asset`，当前地形只引用 `RuntimeSoilSurface.asset`。要调整性能，在 Unity 中选择 `SoilTerrain`，修改 `Movable Terrain` 的 `Resolution`：数值越小，颗粒越粗、物理计算通常越少，但挖土细节也会减少。不要直接改共享的 AGX 资产。
 
 细化后的性能设置只作用于本场景：`Simulation` 使用独立的 `Assets/Environment/RuntimeSolverSettings.asset`，普通 Resting Iterations 从 50 调整为 16，土粒 PPGS Resting Iterations 保持 18。`Body_Bucket/NONE_Trimesh (16)` 使用 AGX 预计算的简化三角碰撞网格（34,190 → 13,814 个三角形），数据随场景保存；视觉模型、铲斗固定质量和惯量不变。保留 Trimesh 凹形结构，不改为会填满斗腔的凸包。该设置用于流程验证，未标定真实土体受力；不要直接修改原模型或共享求解器资产。
 
@@ -47,3 +49,7 @@ python3 RLExcavator/tools/sim_bridge_client.py --manual-axis swing --value -0.75
 2026-09-28 方向核对：直接调整本场景三轴左右共六根 Prismatic 约束的轴向，以及铲斗关节角所用 Hinge 的轴向；没有修改旧 prefab。三轴正、负 `velocity_reference` 和正、负 `manual_action` 共 12 组、回转 4 组实测均满足上述方向关系。Unity 约束两端的实际距离也随三轴正速度增加。四轴 EditMode 测试通过。旧 RL ONNX 是按调整前坐标训练的，重训和重新验收前不能用它证明 Follow 有效。
 
 2026-09-26 最终验收：场景重载后，四轴分别位移 `+0.0150 m`、`+0.0160 m`、`+0.0160 m`、`+0.4800 rad`（各 80 个物理步）；连续复位的铲斗尖端坐标最大差小于 `0.00001 m`。错误轴序被拒绝，速度目标归零。场景副本中的上车装配已绕回转轴校正约 `8.65°`，复位时回转读数接近零。仿真脚本与 AGX 无报错；本机 Unity Editor 曾另报 `UnityEditor.Connect` 的 `services-gateway` 配置异常，与仿真调用栈无关。测试后点击 **Stop** 返回编辑状态。
+
+## 2026-10-05 目录整理
+
+运行脚本统一放在 `Assets/Scripts/Runtime`，包括设备驱动、土体复位、协议桥、相机采集、机器坐标系和自由镜头。移除了 Target 为空的旧 LinkCamera 和无实际 lightmap 的旧示例 LightingData 引用。场景所需物理材料、天空和颗粒网格集中在 `Assets/Environment`，保留资源 GUID。AGX 插件主体仍为 `Assets/AGXUnity`；未调整执行器方向、速度、物理步长、土体分辨率或协议字段。

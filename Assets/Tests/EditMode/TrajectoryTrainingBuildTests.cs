@@ -21,7 +21,7 @@ namespace RLExcavator.Tests
       Assert.That( scenePath, Is.Not.Null );
       Assert.That(
         scenePath.GetValue( null ),
-        Is.EqualTo( "Assets/Scenes/ExcavatorRLTrain_Scale.unity" ) );
+        Is.EqualTo( "Assets/Scenes/Training/ExcavatorRLTrain_Scale.unity" ) );
       Assert.That( AssetDatabase.LoadAssetAtPath<SceneAsset>(
         (string)scenePath.GetValue( null ) ), Is.Not.Null );
       Assert.That(
@@ -33,7 +33,7 @@ namespace RLExcavator.Tests
     public void TrainingAgentUsesProfileReachThresholdWithoutVisualRadius()
     {
       GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(
-        "Assets/perfabs/ScaleTrajectoryEnvironment.prefab" );
+        "Assets/Prefabs/ScaleTrajectoryEnvironment.prefab" );
       Assert.That( prefab, Is.Not.Null );
       MonoBehaviour agent = Array.Find(
         prefab.GetComponentsInChildren<MonoBehaviour>( true ),
