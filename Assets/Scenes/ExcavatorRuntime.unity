@@ -93,7 +93,7 @@ LightmapSettings:
     m_ExportTrainingData: 0
     m_TrainingDataDestination: TrainingData
     m_LightProbeSampleCountMultiplier: 4
-  m_LightingDataAsset: {fileID: 112000000, guid: 06440dbb9e8fb2d4b8f8c14959bd92e2, type: 2}
+  m_LightingDataAsset: {fileID: 0}
   m_LightingSettings: {fileID: 1906844474}
 --- !u!196 &4
 NavMeshSettings:
@@ -1600,7 +1600,6 @@ GameObject:
   - component: {fileID: 483917375}
   - component: {fileID: 483917374}
   - component: {fileID: 483917373}
-  - component: {fileID: 483917376}
   - component: {fileID: 483917378}
   - component: {fileID: 483917377}
   m_Layer: 0
@@ -1684,23 +1683,6 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 30, y: 60, z: 0}
---- !u!114 &483917376
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 483917372}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 2c594bc96cd514e4db1ee4ebb52cbcab, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  Enabled: 1
-  Forward: {x: -1.06, y: -0.31, z: -0.53}
-  Distance: 0.5
-  RelativePosition: {x: 1.37, y: 3.57, z: 1.76}
-  m_follow_object: {fileID: 0}
 --- !u!114 &483917377
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1758,7 +1740,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.RuntimeSceneCameraController
   freeModeEnabled: 1
-  pauseFixedCameraScripts: 1
   moveSpeed: 4
   fastMoveMultiplier: 3
   lookSensitivity: 0.12
@@ -24077,7 +24058,7 @@ Transform:
   m_GameObject: {fileID: 214108122053407900}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 0, y: 1.5, z: 0}
+  m_LocalPosition: {x: 0, y: 1.5, z: 0.1}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
@@ -77909,6 +77890,7 @@ GameObject:
   - component: {fileID: 6431493751946477328}
   - component: {fileID: 8395339076322462010}
   - component: {fileID: 8395339076322462011}
+  - component: {fileID: 8395339076322462012}
   m_Layer: 0
   m_Name: ExcavatorPhysics
   m_TagString: Untagged
@@ -77935,6 +77917,7 @@ MonoBehaviour:
   bucketPitchFrame: {fileID: 8623625721939913636}
   frontCamera: {fileID: 1602964800}
   soil: {fileID: 8395339076322462011}
+  wallContacts: {fileID: 8395339076322462012}
   boomJoint: {fileID: 3380699927350285789}
   armJoint: {fileID: 3074389789232640508}
   bucketJoint: {fileID: 4884669882550065233}
@@ -77951,6 +77934,25 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorRuntimeSoil
   terrainTemplate: {fileID: 20376261}
+--- !u!114 &8395339076322462012
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8395339076322462008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 80ac54833bae87e40bdd9afffd54ddb0, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorWallContacts
+  machineRoot: {fileID: 6190503459716199441}
+  machineGeometryRoot: {fileID: 4814347992395135435}
+  walls:
+  - {fileID: 800229730}
+  - {fileID: 765813985}
+  - {fileID: 611084043}
+  - {fileID: 984243407}
 --- !u!4 &8397706607923066950
 Transform:
   m_ObjectHideFlags: 0

@@ -42,6 +42,7 @@ namespace RLExcavator
       public BucketTipPose bucket_tip_pose;
       public CameraImage front_rgb;
       public RawJointAngles raw_joint_angles_rad;
+      public ExcavatorWallContacts.State wall_contact;
     }
 
     [Serializable]
@@ -106,6 +107,8 @@ namespace RLExcavator
     public Camera frontCamera;
     [Tooltip("Soil restored after the machine returns home; optional in soil-free scenes.")]
     public ExcavatorRuntimeSoil soil;
+    [Tooltip("Read-only contact telemetry for the excavator and four soil-container walls.")]
+    public ExcavatorWallContacts wallContacts;
     [Tooltip("Raw boom hinge angle for calibration; not an ACT sensor angle.")]
     public Constraint boomJoint;
     [Tooltip("Raw arm hinge angle for calibration; not an ACT sensor angle.")]
@@ -233,6 +236,10 @@ namespace RLExcavator
         result.kind = "reset_result";
         result.reason = result.state_valid ? "reset" : result.reason;
         result.accepted = result.state_valid;
+        if ( result.accepted && wallContacts != null ) {
+          wallContacts.BeginEpisode();
+          result.wall_contact = wallContacts.ReadState();
+        }
         Complete( result );
         return;
       }
@@ -265,6 +272,7 @@ namespace RLExcavator
       if ( request == null ) { Reject( pending, null, "invalid_json" ); return; }
 
       if ( request.kind == "reset" ) {
+        if ( wallContacts != null ) wallContacts.BeginReset();
         ClearTarget();
         m_actuators.StopAll();
         m_epoch++;
@@ -363,6 +371,7 @@ namespace RLExcavator
     {
       var result = new Reply { kind = "state", epoch = m_epoch, accepted = true,
         reason = "stepped", state_sequence = m_stateSequence, sim_time_s = m_simTime,
+        wall_contact = wallContacts != null ? wallContacts.ReadState() : new ExcavatorWallContacts.State(),
         state_valid = HasActuators() && HasTipPose() &&
           boomJoint != null && armJoint != null && bucketJoint != null };
       if ( !result.state_valid ) return result;
@@ -390,7 +399,9 @@ namespace RLExcavator
     private bool TryDoStep()
     {
       double before = m_simulation.Native.getTimeStamp();
-      m_simulation.DoStep();
+      if ( wallContacts != null ) wallContacts.BeginStep();
+      try { m_simulation.DoStep(); }
+      finally { if ( wallContacts != null ) wallContacts.EndStep(); }
       return m_simulation.Native.getTimeStamp() > before;
     }
 

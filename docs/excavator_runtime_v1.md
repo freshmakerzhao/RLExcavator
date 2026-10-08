@@ -4,6 +4,8 @@
 
 场地位于 `Environment/RealSite`，从 `real2sim-scene-20260807` 的 `Real2Sim_dig` 迁入平台、土箱、土表和材质，资产独立存放于 `Assets/Environment/Real2Sim`。平台高 .533 m，挖机整体相应抬高；路点仍相对 MachineRoot。平台与箱壁有 AGX 碰撞体，MovableTerrain与粒子渲染已启用。ReferenceCamera保留原场景固定参考机位，默认禁用；FrontCamera负责仿真 ACT 的采集与推理图像，不要求复用真机检查点。
 
+2026-10-06 固定循环布局：`Environment/ExcavatorPhysics/Machine` 沿 Unity 世界 `+Z` 前移 0.10 m，局部位置为 `[0,1.5,0.10]`，`MachineRoot` 世界位置为 `[0,1.033,0.10]`。整机及其坐标框一起平移，履带仍在原平台范围内；平台、料池、卡车和 prefab 不移动。主项目已同步更新相对卸点和运输/返回弧中点。收斗终态距近侧壁的模型包围盒间隙约从 1 cm 增至 11 cm；三铲固定循环实测零池壁接触，详情见[前移布局验收](../../EvaluationReport/2026-10-06_fixed_layout.md)。以后再移位置应在编辑态操作整机后重新进入 Play，避免 reset 恢复旧缓存位置。
+
 `Environment/RealSite/DumpTruck` 是固定卸土目标，来自官方 `com.algoryx.agxunity.machines.bedtruck@1.1.1`，所需模型与材质直接引用固定版本的官方 Unity Package；运行场景不依赖导入的道路、地形和驾驶示例。当前场景独立复制其外观和 9 个箱形碰撞体，不挂载官方驾驶、轮胎、翻斗控制器或车斗 MovableTerrain；原 prefab 不作修改。模型尺寸统一乘以 0.15，整车约长 1.17 m、宽 0.44 m、高 0.45 m，车斗内底约高 0.21 m。`Visual` 放外观，`Collision` 放静态 AGX 碰撞体，`DumpTarget` 是车斗上方的参考点（2026-10-04 实测 Unity 世界坐标约 `[0.9095, 0.52495, -0.1205]`），尚未接入任务配置。比例和摆放依据现场照片估计，未作实物标定。调整位置时移动整个 DumpTruck；不要直接缩放根节点，AGX Box 尺寸需随模型显式调整。2026-09-28 按用户提供的现实场地俯视示意图，将卡车整体移到挖机的 Unity +X 一侧：面向沙土池时位于挖机右侧，车斗朝向土池、车头朝外（-Z）。车体与工作台侧边约间隔 0.23 m，车尾与土池外壁约间隔 0.10 m；仅按相对关系摆放，未作尺寸标定。
 
 2026-10-04 的固定点准备使用实际 Unity Transform，按 `MachineRoot.InverseTransformPoint` 后的 `[z, -x, y]` 转为本体 ROS 坐标，不新增常驻读点接口。当前 `DumpTarget` 在一次空载 Follow 检查中未达到 3 cm 容差；沿水平面向本体靠近 6 cm 的车斗上方候选点通过了到挖点、搬运、返回三段连续检查。原 `DumpTarget` 对象保持不变，候选坐标随后已用于主项目默认沙土上方到卡车上方的 Follow 配置；固定挖掘/倾倒后的姿态交接、完整机构避障和实际接土仍需联调。数值、复现入口与日志见工作区 [2026-10-04 坐标与路线检查](../../EvaluationReport/2026-10-04_sim_cycle_coordinates.md)。
