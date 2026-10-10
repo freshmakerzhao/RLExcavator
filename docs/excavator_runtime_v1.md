@@ -28,7 +28,7 @@ echo '{"kind":"reset"}' | python3 RLExcavator/tools/sim_bridge_client.py
 
 2026-09-27土体验证（当时为 155×75 格细网格）：旧reset保留5厘米测试凹陷，新reset恢复到零高度；连续挖掘生成约2200个土粒，提斗和开斗可观察土粒运动。复位后散粒为零、仅一个活动土体，模板Mesh未被改写。Follow两路点回归和控制细节见工作区 `EvaluationReport/2026-09-27_soil_interaction_reset.md`。2026-09-28 的粗网格性能对照见 `EvaluationReport/2026-09-28_soil_performance.md`。
 
-运行时需要与 `RLExcavator/` 同级的 `shared/machine_profile.json`。用 Unity 打开本场景并按 **Play**，然后在工作区根目录运行以下命令；客户端只使用 Python 标准库，无需激活 Conda 环境：
+运行时需要与 `RLExcavator/` 同级的 `shared/machine_profile.jsonc`。用 Unity 打开本场景并按 **Play**，然后在工作区根目录运行以下命令；客户端只使用 Python 标准库，无需激活 Conda 环境：
 
 另有只读 `observe` 请求：携带当前 `epoch`，返回 `kind=observation`、当前原始状态和 `front_rgb={encoding:"png",width:640,height:480,data_base64:…}`。不推进物理步，图像与状态共享返回的仿真时间和步号。`FrontCamera` 随上车运动，按需通过 URP 渲染；主视图相机不变。EA 的 `observe` 命令负责复位后保存快照。主项目从同一原始状态构造仿真 ACT 11 维观测；仿真示教与推理共享该定义。
 
@@ -44,7 +44,7 @@ python3 RLExcavator/tools/sim_bridge_client.py --manual-axis swing --value -0.75
 
 `--smoke` 验证复位、命令和步进；`--demo` 在三秒后驱动上车回转，便于切到 Unity Game 窗口观察；`--axis` 分别驱动单个油缸。所有示例每次先复位。手工收发 JSON 时，不带参数运行客户端并向标准输入逐行写请求。服务仅监听 `127.0.0.1:18790`，一行请求对应一行响应。轴序固定 `[boom, stick, bucket, swing]`，前三轴速度单位为 m/s，回转速度单位为 rad/s；命令带当前 `epoch`、递增 `sequence` 和仿真时钟有效期。
 
-`manual_action` 与速度命令使用相同的元数据，但 `values` 是四轴 `[-1, 1]` 归一化杆量；接收回执是 `manual_result`。仿真采用与 F407 相同的 `±0.15` 中位死区，死区以外线性映射到 `shared/machine_profile.json` 的正反向速度上限，再由现有 AGX 执行器驱动。这只是尚未标定液压阀/负载响应时的运动代理，**不代表**真机杆量对应的精确速度。两种命令共享一个目标，新的命令替换旧目标；无效、过期或断连时清零。`--manual-axis` 可直观看到各轴运动，`--value` 可选杆量。
+`manual_action` 与速度命令使用相同的元数据，但 `values` 是四轴 `[-1, 1]` 归一化杆量；接收回执是 `manual_result`。仿真采用与 F407 相同的 `±0.15` 中位死区，死区以外线性映射到 `shared/machine_profile.jsonc` 的正反向速度上限，再由现有 AGX 执行器驱动。这只是尚未标定液压阀/负载响应时的运动代理，**不代表**真机杆量对应的精确速度。两种命令共享一个目标，新的命令替换旧目标；无效、过期或断连时清零。`--manual-axis` 可直观看到各轴运动，`--value` 可选杆量。
 
 新场景的三轴 AGX 滑动约束已设为**油缸伸长为正、收缩为负**，`actuator_state` 的位置/速度和 `velocity_reference` 都直接采用这个方向。关节角趋势与真机一致：伸长时 boom 角增大、arm 与 bucket 角减小。`manual_action` 保持真机杆量方向：boom、stick 的正杆量对应正物理速度，bucket 的正杆量对应负物理速度，swing 正杆量对应正回转速度。杆量到速度的近似映射仅在 Unity 执行器入口处理，主项目保留摇杆/ACT 原始动作。
 
@@ -55,3 +55,14 @@ python3 RLExcavator/tools/sim_bridge_client.py --manual-axis swing --value -0.75
 ## 2026-10-05 目录整理
 
 运行脚本统一放在 `Assets/Scripts/Runtime`，包括设备驱动、土体复位、协议桥、相机采集、机器坐标系和自由镜头。移除了 Target 为空的旧 LinkCamera 和无实际 lightmap 的旧示例 LightingData 引用。场景所需物理材料、天空和颗粒网格集中在 `Assets/Environment`，保留资源 GUID。AGX 插件主体仍为 `Assets/AGXUnity`；未调整执行器方向、速度、物理步长、土体分辨率或协议字段。
+
+## 2026-10-10 只读物料测量
+
+`ExcavatorMaterialTelemetry` 挂在 `ExcavatorPhysics`，关联当前土体与铲斗；`DumpTruck/MaterialRegion`
+是车厢内部统计盒，在 Inspector 选中测量组件可查看青色 Gizmo。其尺寸以世界米定义，不重复乘层级缩放。
+只在显式 `read_effect` 请求时查询 AGX，不加入 Update/物理步循环；缺测返回 available=false 和原因。
+
+测量包含斗内质量、颗粒/松散体积、模型斗容、AGX 装载比例，以及车厢区域物理土粒质量/体积/数量。
+当前原生斗容约 2.36 L，不能当作实物厂家斗容；读数用于仿真流程比较，未标定真实土体载荷。
+详细字段和阶段采样规则只维护在[主项目交互契约](../../earthmoving-autonomy/docs/follow-sim-contract.md#7-阶段边界物料反馈2026-10-10)。
+物理参数、模型、运行相机和四轴方向均保持原值；本次场景新增的只有测量组件、统计区域与桥接引用。

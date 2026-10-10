@@ -8,7 +8,7 @@
 - 动作顺序 `[boom, stick, bucket, swing]`，输出是归一化速度参考；主项目按 shared profile 换算物理速度，再发给 Unity。
 - 油缸伸长为正，行程分别为 boom `[-0.080,0.095]`、stick `[-0.090,0.060]`、bucket `[-0.045,0.085]` m；到点容差 0.03 m。
 
-同目录的 `ScaleFollow3cm_20260929.baseline.json` 保存训练来源、模型/机器参数哈希、当时的机器参数与可达工作空间快照，以及验收摘要。这是冻结的实验记录，不是第二份运行配置。运行时仍只读取工作区 `shared/machine_profile.json`；改变方向、行程或观测定义后，需重新评估模型适配。
+同目录的 `ScaleFollow3cm_20260929.baseline.json` 保存训练来源、模型/机器参数哈希、当时的机器参数与可达工作空间快照，以及验收摘要。这是冻结的实验记录，不是第二份运行配置。运行时仍只读取工作区 `shared/machine_profile.jsonc`；改变方向、行程或观测定义后，需重新评估模型适配。
 
 验收结果：两个新种子的已完成回合共 1047/1047 成功，MoveToDig 472 回合、CarryMaterial 575 回合；来自同一训练路点采样器，不含评估窗口结束时未完成的回合。ONNX 与 PyTorch 的 2558 个采样观测最大动作误差约 `9.54e-7`。主项目两组五路点和默认两路点均完成；停止后再保持 1 秒，尖端漂移约 0.059 mm。
 
@@ -24,7 +24,7 @@ cd /home/zhaoshuai/workspace_uinty/RL_prj/earthmoving-autonomy
 python -m earthmoving_autonomy follow
 ```
 
-主项目 `config/follow.json` 默认使用本模型。日常只需修改路点与任务模式；不要用此前方向未修正的模型替换它。
+主项目 `config/follow.jsonc` 默认使用本模型。日常只需修改路点与任务模式；不要用此前方向未修正的模型替换它。
 
 ## 仓库内容
 

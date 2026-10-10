@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Text;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace RLExcavator
 {
   public class MachineProfileLoader : MonoBehaviour
   {
-    [Tooltip("启动时读取 shared/machine_profile.json。关闭后仍可通过静态 LoadFromPath/LoadFromJson 使用。")]
+    [Tooltip("启动时读取 shared/machine_profile.jsonc。关闭后仍可通过静态 LoadFromPath/LoadFromJson 使用。")]
     public bool loadOnStart = true;
 
     [Tooltip("启动读取成功后打印 action_order、正反向速度与 obs 维度，作为场景侧接线自检。")]
@@ -52,6 +54,7 @@ namespace RLExcavator
       if ( string.IsNullOrEmpty( json ) )
         throw new ArgumentException( "Profile JSON must not be empty.", nameof( json ) );
 
+      json = NormalizeJsonComments( json );
       string[] actionOrder = ExtractStringArray( json, "action_order" );
       string actuatorsJson = ExtractObject( json, "actuators" );
       var actuators = new List<MachineActuatorProfile>();
@@ -73,13 +76,33 @@ namespace RLExcavator
         ParseTaskProfile( ExtractObject( json, "task_profile" ) ) );
     }
 
+    private static string NormalizeJsonComments( string json )
+    {
+      try {
+        using ( var reader = new JsonTextReader( new StringReader( json ) ) ) {
+          reader.DateParseHandling = DateParseHandling.None;
+          JObject profile = JObject.Load( reader, new JsonLoadSettings {
+            CommentHandling = CommentHandling.Ignore
+          } );
+          while ( reader.Read() ) {
+            if ( reader.TokenType != JsonToken.Comment )
+              throw new FormatException( "Unexpected content after machine profile object." );
+          }
+          return profile.ToString( Formatting.None );
+        }
+      }
+      catch ( JsonException exception ) {
+        throw new FormatException( "Invalid machine profile JSONC: " + exception.Message, exception );
+      }
+    }
+
     public static string DefaultProfilePath()
     {
-      string projectSharedPath = Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.json" ) );
+      string projectSharedPath = Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.jsonc" ) );
       if ( File.Exists( projectSharedPath ) )
         return projectSharedPath;
 
-      return Path.Combine( Application.streamingAssetsPath, "machine_profile.json" );
+      return Path.Combine( Application.streamingAssetsPath, "machine_profile.jsonc" );
     }
 
     public static string FormatStartupLog( MachineProfile profile )

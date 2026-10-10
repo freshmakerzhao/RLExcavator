@@ -1,4 +1,5 @@
 import importlib.util
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -52,6 +53,28 @@ class ScreenTests(unittest.TestCase):
         (self.root / 'output').mkdir()
         with self.assertRaises(ValueError):
             screen.build_plan(screen.parse_args(self.argv))
+
+    def test_plan_hashes_commented_jsonc_profile_before_legacy_json(self):
+        assets = self.root / 'player_Data/StreamingAssets'
+        assets.mkdir(parents=True)
+        profile = assets / 'machine_profile.jsonc'
+        profile.write_text('// current profile\n{"machine_id": "fixture"}\n')
+        (assets / 'machine_profile.json').write_text('{"machine_id": "legacy"}')
+
+        plan = screen.build_plan(screen.parse_args(self.argv))
+
+        record = plan['sources']['player_machine_profile']
+        self.assertEqual(record['path'], str(profile))
+        self.assertEqual(record['sha256'], hashlib.sha256(profile.read_bytes()).hexdigest())
+
+    def test_plan_still_hashes_profile_in_existing_json_player_build(self):
+        profile = self.root / 'player_Data/StreamingAssets/machine_profile.json'
+        profile.parent.mkdir(parents=True)
+        profile.write_text('{"machine_id": "existing-build"}')
+
+        plan = screen.build_plan(screen.parse_args(self.argv))
+
+        self.assertEqual(plan['sources']['player_machine_profile']['path'], str(profile))
 
     def test_execute_never_overwrites_existing_output(self):
         plan = screen.build_plan(screen.parse_args(self.argv))

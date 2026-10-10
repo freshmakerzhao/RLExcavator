@@ -1235,6 +1235,7 @@ Transform:
   - {fileID: 1172600414}
   - {fileID: 2088484487}
   - {fileID: 405946543}
+  - {fileID: 989975947}
   m_Father: {fileID: 148842939}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &370282116
@@ -7095,6 +7096,37 @@ MonoBehaviour:
   m_enableMassProperties: 1
   m_material: {fileID: 0}
   m_halfExtents: {x: 0.0225, y: 0.2675, z: 0.555}
+--- !u!1 &989975946
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 989975947}
+  m_Layer: 0
+  m_Name: MaterialRegion
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &989975947
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 989975946}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0.7071068, z: -0, w: 0.7071068}
+  m_LocalPosition: {x: -0.516555, y: 0.30607635, z: 0.14693195}
+  m_LocalScale: {x: 0.99999976, y: 1, z: 0.99999976}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 330823780}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1112673423
 GameObject:
   m_ObjectHideFlags: 0
@@ -77891,6 +77923,7 @@ GameObject:
   - component: {fileID: 8395339076322462010}
   - component: {fileID: 8395339076322462011}
   - component: {fileID: 8395339076322462012}
+  - component: {fileID: 8395339076322462013}
   m_Layer: 0
   m_Name: ExcavatorPhysics
   m_TagString: Untagged
@@ -77918,6 +77951,7 @@ MonoBehaviour:
   frontCamera: {fileID: 1602964800}
   soil: {fileID: 8395339076322462011}
   wallContacts: {fileID: 8395339076322462012}
+  materialTelemetry: {fileID: 8395339076322462013}
   boomJoint: {fileID: 3380699927350285789}
   armJoint: {fileID: 3074389789232640508}
   bucketJoint: {fileID: 4884669882550065233}
@@ -77953,6 +77987,22 @@ MonoBehaviour:
   - {fileID: 765813985}
   - {fileID: 611084043}
   - {fileID: 984243407}
+--- !u!114 &8395339076322462013
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8395339076322462008}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9701f14628a873e7aab312177e7320f1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RLExcavator.ExcavatorMaterialTelemetry
+  shovel: {fileID: 5977156891906593985}
+  soil: {fileID: 8395339076322462011}
+  truckRegion: {fileID: 989975947}
+  truckRegionSize: {x: 0.335314, y: 0.192937, z: 0.67584}
 --- !u!4 &8397706607923066950
 Transform:
   m_ObjectHideFlags: 0

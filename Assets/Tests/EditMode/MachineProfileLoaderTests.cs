@@ -1,3 +1,4 @@
+using System;
 using System.IO;
 using NUnit.Framework;
 using UnityEngine;
@@ -6,6 +7,63 @@ namespace RLExcavator.Tests
 {
   public class MachineProfileLoaderTests
   {
+    [TestCase( "// \"machine_id\": \"comment-only\"\n" )]
+    [TestCase( "/* \"machine_id\": \"comment-only\" */\n" )]
+    public void LoadFromJsonIgnoresCommentedOutKeys( string comment )
+    {
+      string json = File.ReadAllText( SharedProfilePath() );
+      MachineProfile expected = MachineProfileLoader.LoadFromJson( json );
+
+      MachineProfile actual = MachineProfileLoader.LoadFromJson( comment + json );
+
+      Assert.That( actual.MachineId, Is.EqualTo( expected.MachineId ) );
+      Assert.That( actual.ActionOrder, Is.EqualTo( expected.ActionOrder ) );
+    }
+
+    [Test]
+    public void LoadFromJsonIgnoresInlineCommentsAroundActuatorValues()
+    {
+      string json = File.ReadAllText( SharedProfilePath() );
+      MachineProfile expected = MachineProfileLoader.LoadFromJson( json );
+      string commented = json.Replace( "\"max_speed_positive\":",
+        "/* \"max_speed_positive\": 999, } ] */ \"max_speed_positive\": // speed in SI units\n" );
+
+      MachineProfile actual = MachineProfileLoader.LoadFromJson( commented + "\n// end of profile" );
+
+      foreach ( string name in expected.ActionOrder )
+        Assert.That( actual.GetActuator( name ).MaxSpeedPositive,
+          Is.EqualTo( expected.GetActuator( name ).MaxSpeedPositive ) );
+    }
+
+    [Test]
+    public void LoadFromJsonPreservesCommentMarkersAndEscapesInsideStrings()
+    {
+      string json = File.ReadAllText( SharedProfilePath() );
+      MachineProfile expected = MachineProfileLoader.LoadFromJson( json );
+      string encodedId = "https://lab/*profile*/设备/\\\"quoted\\\"/\\\\fixture";
+      string modified = json.Replace( "\"" + expected.MachineId + "\"", "\"" + encodedId + "\"" );
+
+      MachineProfile actual = MachineProfileLoader.LoadFromJson( modified );
+
+      Assert.That( actual.MachineId, Is.EqualTo( "https://lab/*profile*/设备/\"quoted\"/\\fixture" ) );
+    }
+
+    [TestCase( "\n/* unterminated" )]
+    [TestCase( "\n{}" )]
+    public void LoadFromJsonRejectsMalformedTrailingContent( string suffix )
+    {
+      string json = File.ReadAllText( SharedProfilePath() );
+
+      Assert.Throws<FormatException>( () => MachineProfileLoader.LoadFromJson( json + suffix ) );
+    }
+
+    [Test]
+    public void DefaultProfilePathUsesJsoncExtension()
+    {
+      Assert.That( Path.GetFileName( MachineProfileLoader.DefaultProfilePath() ),
+        Is.EqualTo( "machine_profile.jsonc" ) );
+    }
+
     [Test]
     public void LoadSharedProfileReturnsLockedActionOrderAndDimensions()
     {
@@ -85,7 +143,7 @@ namespace RLExcavator.Tests
 
     private static string SharedProfilePath()
     {
-      return Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.json" ) );
+      return Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.jsonc" ) );
     }
   }
 }

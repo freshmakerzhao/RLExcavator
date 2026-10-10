@@ -58,12 +58,12 @@ namespace RLExcavator.Tests
         "Plugins",
         "AnyCPU",
         "libgrpc_csharp_ext.x64.so" );
-      string machineProfile = Path.Combine( root, "machine_profile.json" );
+      string machineProfile = Path.Combine( root, "machine_profile.jsonc" );
 
       try {
         Directory.CreateDirectory( Path.GetDirectoryName( grpcSource ) );
         File.WriteAllText( grpcSource, "grpc" );
-        File.WriteAllText( machineProfile, "profile" );
+        File.WriteAllText( machineProfile, "// staged comment\n{\"machine_id\":\"fixture\"}" );
 
         Type type = Type.GetType(
           "RLExcavator.Editor.TrajectoryTrainingBuild, Assembly-CSharp-Editor" );
@@ -84,8 +84,8 @@ namespace RLExcavator.Tests
           File.ReadAllText( Path.Combine(
             dataPath,
             "StreamingAssets",
-            "machine_profile.json" ) ),
-          Is.EqualTo( "profile" ) );
+            "machine_profile.jsonc" ) ),
+          Is.EqualTo( "// staged comment\n{\"machine_id\":\"fixture\"}" ) );
       }
       finally {
         if ( Directory.Exists( root ) )

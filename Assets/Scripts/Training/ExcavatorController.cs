@@ -56,11 +56,11 @@ namespace RLExcavator
     public float swingMaxSpeedNegative = 0f;
 
     [Header("机型 Profile")]
-    [Tooltip("启动时从 shared/machine_profile.json 读取四个执行器正/反向速度上限，作为速度上限的唯一权威来源。")]
+    [Tooltip("启动时从 shared/machine_profile.jsonc 读取四个执行器正/反向速度上限，作为速度上限的唯一权威来源。")]
     public bool loadMaxSpeedsFromMachineProfile = true;
     [Tooltip("启动应用 profile 速度后打印一行自检日志。")]
     public bool logMachineProfileSpeedLoad = true;
-    [Tooltip("启动时从 shared/machine_profile.json 读取执行器 range，并写入 AGX RangeController。")]
+    [Tooltip("启动时从 shared/machine_profile.jsonc 读取执行器 range，并写入 AGX RangeController。")]
     public bool loadRangesFromMachineProfile = true;
     [Tooltip("启动应用 profile range 后打印一行自检日志。")]
     public bool logMachineProfileRangeLoad = true;

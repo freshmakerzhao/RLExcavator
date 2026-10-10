@@ -452,7 +452,7 @@ namespace RLExcavator.Tests
 
     private static string SharedProfilePath()
     {
-      return Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.json" ) );
+      return Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.jsonc" ) );
     }
   }
 }

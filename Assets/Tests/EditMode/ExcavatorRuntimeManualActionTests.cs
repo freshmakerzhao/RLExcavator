@@ -15,7 +15,7 @@ namespace RLExcavator.Tests
     public void ManualStickHasNeutralZoneAndDirectionalSpeedScale( string axis, float direction )
     {
       MachineProfile profile = MachineProfileLoader.LoadFromPath(
-        Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.json" ) ) );
+        Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.jsonc" ) ) );
       MachineActuatorProfile limit = profile.GetActuator( axis );
       Type driver = Type.GetType( "RLExcavator.ExcavatorRuntimeActuators, Assembly-CSharp" );
       Assert.That( driver, Is.Not.Null );

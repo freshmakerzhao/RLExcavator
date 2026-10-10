@@ -120,7 +120,7 @@ namespace RLExcavator.Tests
     }
 
     private static MachineProfile Profile() => MachineProfileLoader.LoadFromPath(
-      Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.json" ) ) );
+      Path.GetFullPath( Path.Combine( Application.dataPath, "../../shared/machine_profile.jsonc" ) ) );
 
     private static void Set( object target, string name, object value ) =>
       target.GetType().GetField( name, Fields ).SetValue( target, value );

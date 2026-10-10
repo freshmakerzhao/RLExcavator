@@ -165,7 +165,7 @@ namespace RLExcavator
     public float bucketPitchNormalizerDeg = 180f;
 
     [Header("Locked scale profile")]
-    [Tooltip("启动时从 shared/machine_profile.json 读取观测归一化常数。")]
+    [Tooltip("启动时从 shared/machine_profile.jsonc 读取观测归一化常数。")]
     public bool loadObservationNormalizersFromMachineProfile = true;
 
     [Tooltip("打印一次 38 维观测协议自检日志。")]
@@ -1326,7 +1326,7 @@ namespace RLExcavator
         }
       }
       catch ( System.Exception exception ) {
-        Debug.LogError( "[ExcavatorTrajectoryAgent] Failed to load observation constants from machine_profile.json: " + exception.Message, this );
+        Debug.LogError( "[ExcavatorTrajectoryAgent] Failed to load observation constants from machine_profile.jsonc: " + exception.Message, this );
       }
     }
 

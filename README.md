@@ -13,7 +13,8 @@ python -m earthmoving_autonomy follow
 python -m earthmoving_autonomy teleop
 ```
 
-Unity 监听 `127.0.0.1:18790`。机器参数仍读取同级 `shared/machine_profile.json`。不要移动整个仓库来改变这个相对位置。
+Unity 监听 `127.0.0.1:18790`。机器参数仍读取同级 `shared/machine_profile.jsonc`。不要移动整个仓库来改变这个相对位置。
+`MachineProfileLoader` 使用项目已有的 Newtonsoft.Json 读取 JSONC，支持 `//` 和 `/* */` 注释；可达工作空间仍是 Unity 导出的标准 JSON。
 
 ## 目录
 

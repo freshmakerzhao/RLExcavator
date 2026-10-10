@@ -4,7 +4,7 @@ namespace RLExcavator
 {
   /// <summary>
   /// Applies trajectory-training difficulty for the scale excavator.
-  /// Machine speed limits still come only from machine_profile.json.
+  /// Machine speed limits still come only from machine_profile.jsonc.
   /// </summary>
   [DisallowMultipleComponent]
   [DefaultExecutionOrder( -10000 )]

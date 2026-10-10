@@ -23,7 +23,9 @@ python tools/mlagents_train_no_onnx.py config/trajectory_ppo.yaml \
   --seed=20260929 --time-scale=20 --num-envs=2 --no-graphics
 ```
 
-修正后的播放器由 `RLExcavator.Editor.TrajectoryTrainingBuild.BuildLinux64()` 从 `Assets/Scenes/Training/ExcavatorRLTrain_Scale.unity` 构建；默认输出路径已改为上面的 `ExcavatorTrajectoryLimitsV2`。使用 `--env` 后无需在编辑器按 Play。四个环境均为 `Default`，不加载旧推理模型。场景仍用五路点 `FullTraining` 课程和原奖励；训练 prefab 不再把可视化目标球半径加进到点容差，按 `shared/machine_profile.json` 的 0.03 m 判断。三缸物理方向修正在 `ExcavatorScaleDown.prefab`，活动限位由同一个 shared profile 在启动时写入 AGX 约束。
+修正后的播放器由 `RLExcavator.Editor.TrajectoryTrainingBuild.BuildLinux64()` 从 `Assets/Scenes/Training/ExcavatorRLTrain_Scale.unity` 构建；默认输出路径已改为上面的 `ExcavatorTrajectoryLimitsV2`。使用 `--env` 后无需在编辑器按 Play。四个环境均为 `Default`，不加载旧推理模型。场景仍用五路点 `FullTraining` 课程和原奖励；训练 prefab 不再把可视化目标球半径加进到点容差，按 `shared/machine_profile.jsonc` 的 0.03 m 判断。三缸物理方向修正在 `ExcavatorScaleDown.prefab`，活动限位由同一个 shared profile 在启动时写入 AGX 约束。
+
+新构建将机器参数原样复制到播放器的 `StreamingAssets/machine_profile.jsonc`。`tools/run_checkpoint_screen.py` 优先记录该文件的字节哈希，并继续识别已有播放器的 `machine_profile.json`；历史构建和冻结基线无需改写。
 
 `traj_full_follow_positive_20260929` 在旧限位和约 0.0678 m 的有效到点容差下训练，已于 4,517,139 步暂停并保留。其权重可以作为修正阶段的初始化，但不能以 `--resume` 继续旧 run，因为新阶段改变了物理限位、观测归一化和到点判据。2026-09-29 的 10 万步短探针显示，用旧权重初始化的策略可在新标准下继续提高成绩；详见工作区 `EvaluationReport/2026-09-29_rl_limits_repair_and_training_decision.md`。旧方向语义的模型仍不可使用。
 
@@ -33,7 +35,7 @@ python tools/mlagents_train_no_onnx.py config/trajectory_ppo.yaml \
 
 `traj_extension_positive_fast2_20260928` 从零开始直接训练完整难度，在约 1290 万步中断。`traj_tracking_easy_positive_20260929` 从零开始完成短路径预训练，在 1,150,322 步中断。`traj_full_follow_positive_20260929` 从短路径 checkpoint 初始化，停在 4,517,139 步。修正后的 3 cm Follow 训练应另开 run，使用相同轴方向的已训练权重初始化；短路径模型不作为基线。
 
-1. **先验物理可达性**：用当前 `machine_profile.json` 的正反向速度和固定死区，分别检查 MoveToDig、CarryMaterial 的采样目标能否在 `maxStepsPerWaypoint=1200` 内到达。不可达时先调整路点分布或训练时间预算，不修改权威机器速度来迁就指标。
+1. **先验物理可达性**：用当前 `machine_profile.jsonc` 的正反向速度和固定死区，分别检查 MoveToDig、CarryMaterial 的采样目标能否在 `maxStepsPerWaypoint=1200` 内到达。不可达时先调整路点分布或训练时间预算，不修改权威机器速度来迁就指标。
 2. **短路径预训练（已完成）**：关闭附加奖励并在短路径学习位置跟踪；其 checkpoint 仅是初始化资产。
 3. **完整 Follow（2026-09-30 训练完成，2026-10-01 到点验收通过）**：新 run 在修正限位和 3 cm 到点判据下完成 20,000,037 步。两个新种子的确定性推理共完成 1047/1047 回合；主项目 MoveToDig、CarryMaterial 五路点和默认两路点均完成，终点停止后误差仍在容差内。正式导出文件为 `Assets/AIModels/ScaleFollow3cm_20260929.onnx`，主项目默认配置已引用。完整证据见工作区 `EvaluationReport/2026-10-01_rl_follow_acceptance.md`；该验收范围为尖端到点和停止。
 4. **后续优化**：仿真中从选点到挖掘、倾倒的完整流程跑通后，再针对真实失败模式逐项研究死区、终点制动等改进；不把当前短路径成功率当成系统完成率。

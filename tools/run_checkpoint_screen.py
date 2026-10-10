@@ -83,9 +83,12 @@ def build_plan(args):
              'config': (root / args.config).resolve(strict=True), 'player': player,
              'checkpoint': source / 'ExcavatorTrajectory/checkpoint.pt'}
     sources = {name: source_record(path) for name, path in files.items()}
-    profile = player.parent / (player.stem + '_Data/StreamingAssets/machine_profile.json')
-    if profile.is_file():
-        sources = {**sources, 'player_machine_profile': source_record(profile)}
+    assets = player.parent / (player.stem + '_Data/StreamingAssets')
+    for name in ('machine_profile.jsonc', 'machine_profile.json'):
+        profile = assets / name
+        if profile.is_file():
+            sources = {**sources, 'player_machine_profile': source_record(profile)}
+            break
     command = [str(python), str(files['wrapper']), str(files['config']),
                '--env=' + str(player), '--inference', '--deterministic',
                '--initialize-from=' + str(source), '--results-dir=' + str(output / 'results'),

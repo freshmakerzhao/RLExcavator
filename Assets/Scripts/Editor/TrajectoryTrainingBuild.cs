@@ -58,7 +58,7 @@ namespace RLExcavator.Editor
           $"Trajectory training build failed: {report.summary.result}" );
 
       string machineProfilePath = Path.GetFullPath(
-        Path.Combine( Application.dataPath, "../../shared/machine_profile.json" ) );
+        Path.Combine( Application.dataPath, "../../shared/machine_profile.jsonc" ) );
       StageRuntimeAssets( outputPath, machineProfilePath );
 
       Debug.Log( $"Trajectory training build succeeded: {outputPath}" );
@@ -96,7 +96,7 @@ namespace RLExcavator.Editor
         true );
       File.Copy(
         machineProfilePath,
-        Path.Combine( streamingAssetsDirectory, "machine_profile.json" ),
+        Path.Combine( streamingAssetsDirectory, "machine_profile.jsonc" ),
         true );
     }
 

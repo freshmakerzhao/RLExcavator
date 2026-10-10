@@ -43,6 +43,7 @@ namespace RLExcavator
       public CameraImage front_rgb;
       public RawJointAngles raw_joint_angles_rad;
       public ExcavatorWallContacts.State wall_contact;
+      public ExcavatorMaterialTelemetry.State material_state;
     }
 
     [Serializable]
@@ -109,6 +110,8 @@ namespace RLExcavator
     public ExcavatorRuntimeSoil soil;
     [Tooltip("Read-only contact telemetry for the excavator and four soil-container walls.")]
     public ExcavatorWallContacts wallContacts;
+    [Tooltip("阶段边界读取的斗内及车厢物料统计；不在每个物理步遍历颗粒。")]
+    public ExcavatorMaterialTelemetry materialTelemetry;
     [Tooltip("Raw boom hinge angle for calibration; not an ACT sensor angle.")]
     public Constraint boomJoint;
     [Tooltip("Raw arm hinge angle for calibration; not an ACT sensor angle.")]
@@ -310,6 +313,19 @@ namespace RLExcavator
         m_hasTarget = true;
         Complete( pending, new Reply { kind = manual ? "manual_result" : "velocity_result", epoch = m_epoch,
           sequence = request.sequence, accepted = true, reason = "accepted" } );
+        return;
+      }
+
+      if ( request.kind == "read_effect" ) {
+        if ( request.epoch != m_epoch || m_epoch == 0 ) { Reject( pending, request, "wrong_epoch" ); return; }
+        // 与当前位姿使用同一状态序号，不推进物理，也不采集 RGB。
+        Reply effect = ReadState();
+        if ( !effect.state_valid ) { Reject( pending, request, "effect_state_invalid" ); return; }
+        effect.kind = "effect";
+        effect.reason = "effect_read";
+        effect.material_state = materialTelemetry != null ? materialTelemetry.ReadState() :
+          new ExcavatorMaterialTelemetry.State { available = false, reason = "material_reader_missing" };
+        Complete( pending, effect );
         return;
       }
 
