@@ -1,0 +1,13 @@
+BellCrank is Steering.Kinematic.Base:
+    .doc: """
+    Steering with an interaction that constrain the wheels of two suspensions
+    to Bell-crank steering geometry.
+    """
+    with Steering.Interfaces.BellCrank
+
+    interaction becomes Steering.Kinematic.Interactions.BellCrank:
+        knuckle_angle: knuckle_angle
+        knuckle_length: knuckle_length
+        initial_angle_right_tie_rod: initial_angle_right_tie_rod
+        steering_column_distance: steering_column_distance
+        gear: gear

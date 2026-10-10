@@ -1,0 +1,31 @@
+{
+  "description": "Used in John Deere forwarder. https://www.deere.com/en/forwarders/1210g-forwarder/#tag-compare",
+  "reference": "https://www.deere.com/assets/pdfs/common/industries/engines-and-drivetrain/specsheets/6068hf485_aux.pdf",
+  "name": "JohnDeere-6068HF485",
+
+  "displacementVolume":    0.0068,     // m^3
+  "maxTorque":             1025,       // Nm
+  "maxTorqueRPM":          1400,       // rpm
+  "maxPowerRPM":           2200,       // rpm
+  "idleRPM":               800,        // rpm 
+  "maxRPM":                4000,        // rpm 
+  "crankShaftInertia":     2.5,        // kg.m^2 
+
+  // Parameters controlling the mean effective friction torque. This corresponds to
+  // page 722, section 13.5.1 in "Internal combustion engine fundamentals" by John B. Heywood, 1988.
+  // These parameters must be parameterized against the real engine.
+  // The values here are the default that might not result in the correct overall behavior.
+  // Without access to real world data these values should be considered placeholders for accurate measurements.
+  "FrictionTorqueParameters":
+  {
+    "cfr0": 0.97,
+    "cfr1": 0.15,
+    "cfr2": 0.05
+  },
+
+  // Optional
+  "airFuelRatio": 14.5, // Diesel
+  "heatValue": 45400000 // Diesel
+
+}
+

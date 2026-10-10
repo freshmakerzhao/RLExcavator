@@ -1,0 +1,14 @@
+Base is MachineModeling.Components.Composite.Base:
+    .doc: """
+    A Ripper is a tool attached to the chassis of the vehicle,
+    usually at the back.
+    We define the ripper frame to be the part that is
+    always connected to the chassis.
+    There may be other parts of various types of rippers
+    that also have linkages and actuators also connected
+    directly to the chassis.
+    It has two connectors for connecting to the chassis.
+    """
+    frame is MachineModeling.Components.Composite.Base with Ripper.Interfaces.Frame.BaseConnectors:
+        local_transform.position: {0,0,0}
+    frame_angle is Real: (37.0)/180*Math.PI

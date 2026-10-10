@@ -1,0 +1,26 @@
+TensionInitialisation:
+    .doc: """
+Defines how the initial tension of the track is determined. Please note that
+the final tension of the track is not only determined by these parameters and
+the tensile stiffness of the track system. The tension also depends on the wheel
+configuration and contacts with other components in the simulations such as the
+terrain.
+    tension_force    - If given this is the inital tension in the track, N
+    rest_length      - If given this is the rest lenght of the track, meter.
+                       The initial tension of the track is given from the final length of the track
+                       when routed around all wheels. The tension is then the difference between
+                       routed length and reste length times the tensile stiffness.
+    node_distance    - If given this is the initla spacing between track nodes. The
+                       spacing will give rise to a tension in the track that depends
+                       on the tensile stiffness.
+
+Note that if all three or two are given only one of them will be used to initialize
+the tension in the track. The priority order is the same order as they are listed here,
+tension_force, rest_length, node_distance.
+"""
+
+    optional tension_force is Real
+
+    optional rest_length is Real
+
+    optional node_distance is Real

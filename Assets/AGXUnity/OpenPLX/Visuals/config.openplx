@@ -1,5 +1,5 @@
 
 config is BundleConfig:
     name: "Visuals"
-    version: "0.20.2"
-    dependencies: ["Math==0.20.2"]
+    version: "0.26.7"
+    dependencies: ["Math==0.26.7", "Physics==0.26.7"]

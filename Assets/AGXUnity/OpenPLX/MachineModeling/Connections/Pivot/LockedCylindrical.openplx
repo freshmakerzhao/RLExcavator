@@ -1,0 +1,3 @@
+LockedCylindrical is Connections.Pivot.Cylindrical:
+    lock is Physics3D.Interactions.LinearSpring:
+        connectors: cylindrical.connectors

@@ -35,6 +35,9 @@ namespace AGXUnityEditor
 
     public bool ApplyData()
     {
+      if ( AGXUnity.LicenseManager.IsAssetImportWorkerProcess )
+        return false;
+
       IsApplied = true;
 
       Environment.Set( Environment.Variable.AGX_DIR, AGX_DIR );
@@ -52,6 +55,7 @@ namespace AGXUnityEditor
                             "or delete \"Assets/AGXUnity/Editor/Data/AGXInitData.asset.\"" );
         }
       }
+
 
       // All binaries should be in path, try initialize agx.
       try {
@@ -138,6 +142,9 @@ namespace AGXUnityEditor
 
     public static bool Initialize()
     {
+      if ( AGXUnity.LicenseManager.IsAssetImportWorkerProcess )
+        return false;
+
 #if UNITY_EDITOR_WIN
       // Dependencies dir set and we're certain setup_env has been executed.
       if ( Environment.IsSet( Environment.Variable.AGX_DEPENDENCIES_DIR ) )
@@ -227,6 +234,7 @@ namespace AGXUnityEditor
       const int AGX_DEPENDENCIES = 0;
       const int AGXTERRAIN_DEPENDENCIES = 1;
       const int INSTALLED = 2;
+      const int OPENPLX_DIR = 3;
 
       Instance.AGX_DIR = agxDir;
 
@@ -245,6 +253,10 @@ namespace AGXUnityEditor
         new BinDirData()
         {
           CMakeKey = "CMAKE_INSTALL_PREFIX:PATH="
+        },
+        new BinDirData()
+        {
+          CMakeKey = "OPENPLX_BUNDLES_DIR:PATH="
         }
       };
       using ( var stream = cmakeCache.OpenText() ) {
@@ -257,6 +269,7 @@ namespace AGXUnityEditor
           binData.Any( data => data.StoreValue( line ) );
         }
       }
+
 
       if ( !binData.All( data => data.IsOptional || data.HasValue ) ) {
         foreach ( var data in binData )
@@ -286,6 +299,8 @@ namespace AGXUnityEditor
                                                             Path.DirectorySeparatorChar +
                                                             installPath );
 
+      binData[ OPENPLX_DIR ].Directory = new DirectoryInfo( binData[ OPENPLX_DIR ].Value );
+
       if ( binData.Any( data => !data.IsOptional && ( data.Directory == null || !data.Directory.Exists ) ) ) {
         foreach ( var data in binData )
           if ( !data.IsOptional && ( data.Directory == null || !data.Directory.Exists ) )
@@ -295,11 +310,13 @@ namespace AGXUnityEditor
 
       AGX_BIN_PATH        = ( from data in binData
                               where data.Directory != null
-                              select $"{data.Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" ).ToArray();
+                              select $"{data.Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" )
+                             .Append( $"{binData[ OPENPLX_DIR ].Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64" )
+                             .ToArray();
       var installedBinDir = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}x64";
       AGX_PLUGIN_PATH     = $"{installedBinDir}{Path.DirectorySeparatorChar}plugins";
       AGX_DATA_DIR        = $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data";
-      AGX_OPENPLX_PATHS   = new string[] { $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}openplxbundles", $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}openplx" };
+      AGX_OPENPLX_PATHS   = new string[] { $"{binData[ OPENPLX_DIR ].Directory.FullName}{Path.DirectorySeparatorChar}openplxbundles", $"{binData[ INSTALLED ].Directory.FullName}{Path.DirectorySeparatorChar}data{Path.DirectorySeparatorChar}openplx" };
       return true;
     }
 

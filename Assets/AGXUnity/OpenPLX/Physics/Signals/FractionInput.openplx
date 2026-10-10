@@ -5,4 +5,5 @@ Preferrably between zero and one, but not forced to be.
 """
     type: Physics.Signals.InputOutputType.Percentage
     source is FractionInputTrait
+    initial_value is Real: 0.0
     marshalling.value is RealField

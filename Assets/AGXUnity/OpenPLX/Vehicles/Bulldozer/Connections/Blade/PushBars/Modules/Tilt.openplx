@@ -1,0 +1,17 @@
+trait Tilt:
+    blade_angle is Real: 0
+
+    left_tilt_actuator is MachineModeling.Actuators.Linear.Base
+
+    right_tilt_actuator is MachineModeling.Actuators.Linear.Base
+
+    # Keep the tilt actuator at a constant distance
+    left_tilt_connection becomes MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: left_tilt_actuator
+        from: left_push_bar.cylinder_connector
+        to: blade.left_upper_connector
+
+    right_tilt_connection becomes MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: right_tilt_actuator
+        from: right_push_bar.cylinder_connector
+        to: blade.right_upper_connector

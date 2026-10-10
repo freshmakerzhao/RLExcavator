@@ -1,2 +1,19 @@
 
-Material
+Material is Physics.Optics.Material:
+    with Visuals.Optics.VisualMaterial
+    .doc: """
+This model serves as a base for all visual materials, providing an abstraction to
+the physical composition of the material that is more similar to typical material
+modelling workflows.
+
+To create a custom material, this model should be used as a base and specific surface
+feature traits should be added depending on the properties of the material.
+For instance, to model a red, metallic, material, on would do like so:
+
+const RedMetallic is Visuals.Materials.Material:
+    with Visuals.Materials.SurfaceFeatures.BaseColor
+    with Visuals.Materials.SurfaceFeatures.Metallic
+
+    base_color_tint: Visuals.Properties.Color.from_rgb(1,0,0)
+    metallic: 1
+"""

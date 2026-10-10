@@ -1,0 +1,18 @@
+trait Metallic:
+    .doc: """
+A surface's metallic value defines whether the surface is dielectric (non-metallic, value = 0)
+or not. This property can be defined for the surface as a whole or vary using a texture mapping.
+Physically speaking, this property is binary and only values of 0 or 1 are physically accurate,
+many engines, however, allow blending between the modes by specifying values in between.
+
+If an metallic_map is provided, the sampled values is scaled by the constant metallic value.
+Otherwise, the metallic value is used as is.
+"""
+    metallic is Real: 1.0
+    metallic_map is Visuals.Textures.DefaultTexture
+
+    # Propagate outer values to the physical visible light spectrum band
+    visible becomes Visuals.Optics.VisibleBand with Visuals.Optics.SurfaceFeatures.Metallic:
+        metallic: metallic
+        metallic_map: metallic_map
+

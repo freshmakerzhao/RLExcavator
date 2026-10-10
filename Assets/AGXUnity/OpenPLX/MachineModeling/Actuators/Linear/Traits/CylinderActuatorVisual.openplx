@@ -1,0 +1,13 @@
+trait CylinderActuatorVisual:
+    .doc: """
+    Trait for adding default cylinder visuals to the barrel and rod of a linear cylinder actuator.
+    """
+    barrel.body.visual is Visuals.Geometries.Cylinder:
+        height: barrel.body.length
+        radius: barrel.body.diameter * 0.5
+        local_transform: barrel.body.cylinder.local_transform
+
+    rod.body.visual is Visuals.Geometries.Cylinder:
+        height: rod.body.length
+        radius: rod.body.diameter * 0.5
+        local_transform: rod.body.cylinder.local_transform

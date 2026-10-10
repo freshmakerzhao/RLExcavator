@@ -1,0 +1,11 @@
+Ackermann is Steering.Kinematic.Base:
+    .doc: """
+    Steering with an interaction that constrain the wheels of two suspensions
+    to Ackermann steering mechanism.
+    """
+
+    with Steering.Interfaces.Ackermann
+
+    interaction becomes Steering.Kinematic.Interactions.Ackermann:
+        knuckle_angle: knuckle_angle
+        knuckle_length: knuckle_length

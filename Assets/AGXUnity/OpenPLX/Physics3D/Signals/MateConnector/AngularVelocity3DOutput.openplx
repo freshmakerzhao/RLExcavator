@@ -6,4 +6,3 @@ relative_to      - You may specify a MateConnector as the relative_to parameter 
 """
     # Impl note: Prevent users to accidentally use anything else but MateConnector:s
     source becomes MCAngularVelocity3DOutputTrait
-

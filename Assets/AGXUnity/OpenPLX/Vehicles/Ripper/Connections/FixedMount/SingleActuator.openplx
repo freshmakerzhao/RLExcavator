@@ -1,0 +1,11 @@
+SingleActuator is Ripper.Connections.FixedMount.Base:
+    with Ripper.Connections.Traits.SingleLiftActuator
+
+    ripper becomes Ripper.FixedMount.SingleActuator
+
+    actuator is MachineModeling.Actuators.Linear.Base
+
+    actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: actuator
+        from: lift_actuator_connector
+        to: ripper.frame.actuator_connector

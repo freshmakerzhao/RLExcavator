@@ -1,0 +1,7 @@
+trait Ackermann is Steering.Interfaces.Base:
+    .doc: """
+Ackermann steering mechanism.
+"""
+
+    knuckle_angle: -2.007
+    knuckle_length: 0.16

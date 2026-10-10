@@ -1,0 +1,23 @@
+trait PeriodicGeometriesVisual:
+    .doc: """
+    Defines the visual geometries of the track links as a periodic array of geometries,
+    allowing for more complex shapes and variations in the visual representation of the links.
+    The list of visuals is periodic and will cycle until all links in the track are covered.
+
+    Example:
+    Two alternating geometries, a cylinder and a box, are defined as visual geometries for the links.
+
+    Cylinder is Visuals.Geometries.Cylinder:
+        radius: 0.05 / 2
+        height: 0.5
+
+    Box is Visuals.Geometries.Box:
+        size: { 0.5, 0.1, 0.1 }
+
+    Link is TrackSystem.Components.Tracks.LinkDescription.Box:
+        with TrackSystem.Components.Tracks.Traits.PeriodicGeometriesVisual
+        width: 0.5
+        height: 0.05
+        visual_geometries: [Cylinder, Box]
+"""
+    visual_geometries is Visuals.Node[]

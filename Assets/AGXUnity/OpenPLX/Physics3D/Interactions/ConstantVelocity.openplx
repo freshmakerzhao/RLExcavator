@@ -1,0 +1,37 @@
+ConstantVelocity is Mate:
+    with Physics.Signals.AngleOutputTrait
+    with Physics.Signals.AngularVelocity1DOutputTrait
+    with Physics3D.Signals.Force3DOutputTrait
+    with Physics3D.Signals.Torque3DOutputTrait
+    .doc: """
+    A constant velocity mate which constrains four degrees of freedom between two bodies.
+    Two rotational degrees of freedom are left unconstrained -
+    rotation around normal and cross.
+    When rotating one body around main, the constrained degree of freedom will keep the
+    rotatation constant around their local main axes.
+    """
+    # SNAP will try to reposition connected body according to the initial angles
+    # around normal and cross.
+    initial_normal_angle is Real: 0.0
+    initial_cross_angle is Real: 0.0
+
+    dissipation becomes Physics3D.Interactions.Dissipation.DefaultConstantVelocityDissipation
+    flexibility becomes Physics3D.Interactions.Flexibility.DefaultConstantVelocityFlexibility
+    toughness becomes Physics3D.Interactions.Toughness.DefaultConstantVelocityToughness
+
+
+    normal_angle_output is Physics.Signals.AngleOutput:
+        enabled: false
+        source: this
+
+    cross_angle_output is Physics.Signals.AngleOutput:
+        enabled: false
+        source: this
+
+    torque_output is Physics3D.Signals.Torque3DOutput:
+        source: this
+        enabled: false
+
+    force_output is Physics3D.Signals.Force3DOutput:
+        source: this
+        enabled: false

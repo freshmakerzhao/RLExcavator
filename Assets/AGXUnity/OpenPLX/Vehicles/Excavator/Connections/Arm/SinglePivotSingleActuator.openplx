@@ -1,0 +1,16 @@
+SinglePivotSingleActuator is Vehicles.Excavator.Connections.Arm.Base:
+    .doc: """
+    Arm connection with one chassis-to-arm pivot and one linear actuator.
+    """
+
+    arm becomes MachineModeling.Components.Primitive.Base with MachineModeling.Components.Composite.Arm.Interfaces.SingleJoint, MachineModeling.Components.Composite.Arm.Interfaces.SingleActuator reference
+    chassis becomes MachineModeling.Components.Primitive.Base with Vehicles.Excavator.Interfaces.Arm.SingleJoint, Vehicles.Excavator.Interfaces.Arm.SingleActuator reference
+
+    initial_angle is Real: 0.0
+
+    connection is MachineModeling.Connections.Pivot.Actuated.Linear:
+        from: chassis.arm_connector
+        to: arm.from
+        ground_connector: chassis.arm_actuator_connector
+        drive_connector: arm.from_actuator
+        pivot.hinge.initial_angle: initial_angle

@@ -1,0 +1,6 @@
+RectangularPhotodetector:
+    .doc: """
+    Base for rectangular photodetectors.
+    """
+    width is Real
+    height is Real

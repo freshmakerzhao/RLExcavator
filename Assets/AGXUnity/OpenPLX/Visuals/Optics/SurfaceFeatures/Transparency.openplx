@@ -1,0 +1,13 @@
+trait Transparency:
+    .doc: """
+Defines a material as being partially transparent either across the entire surface
+or in certain parts as defined by the alpha_map.
+
+It is common to use a single texture for base_color and alpha values which can be achieved
+using a swizzle operation on the alpha_map texture.
+
+If an alpha_map is provided, the sampled values is scaled by the constant alpha value.
+Otherwise, the alpha value is used as is.
+"""
+    alpha is Real: 1.0
+    alpha_map is Visuals.Textures.DefaultTexture

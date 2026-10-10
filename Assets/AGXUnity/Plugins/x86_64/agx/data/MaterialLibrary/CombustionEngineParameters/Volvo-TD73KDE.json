@@ -1,0 +1,30 @@
+{
+  "description": "Used in Volvo Wheel Loader L120D.",
+  "reference": "https://www.volvoce.com/-/media/volvoce/global/global-site/product-archive/documents/spec-sheets/wheel-loaders/v-l120d-213-2321-0004.pdf?v=_nxHPw",
+  "name": "Volvo-TD73KDE",
+
+  "displacementVolume":    0.0067,     // m^3
+  "maxTorque":             920,        // Nm
+  "maxTorqueRPM":          1100,       // rpm
+  "maxPowerRPM":           2100,       // rpm
+  "idleRPM":               600,        // rpm
+  "maxRPM":                5000,       // rpm 
+  "crankShaftInertia":     2.0,        // kg.m^2 
+
+  // Parameters controlling the mean effective friction torque. This corresponds to
+  // page 722, section 13.5.1 in "Internal combustion engine fundamentals" by John B. Heywood, 1988.
+  // These parameters must be parameterized against the real engine.
+  // The values here are the default that might not result in the correct overall behavior.
+  // Without access to real world data these values should be considered placeholders for accurate measurements.
+  "FrictionTorqueParameters":
+  {
+    "cfr0": 0.97,
+    "cfr1": 0.15,
+    "cfr2": 0.05
+  },
+
+  // Optional
+  "airFuelRatio": 14.5, // Diesel
+  "heatValue": 45400000 // Diesel
+}
+

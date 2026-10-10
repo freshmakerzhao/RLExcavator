@@ -1,0 +1,19 @@
+Lift is Bulldozer.Connections.Blade.PushBars.Base:
+    with Modules.Lift
+    .doc: """
+    The link length will determine the blade angle
+    """
+
+    left_link is MachineModeling.Components.Primitive.Link.Base
+    right_link is MachineModeling.Components.Primitive.Link.Base
+
+    # Keep the tilt actuator at a constant distance
+    left_tilt_connection becomes MachineModeling.Components.Primitive.Link.Connections.Base:
+        link: left_link
+        from: left_push_bar.cylinder_connector
+        to: blade.left_upper_connector
+
+    right_tilt_connection becomes MachineModeling.Components.Primitive.Link.Connections.Base:
+        link: right_link
+        from: right_push_bar.cylinder_connector
+        to: blade.right_upper_connector

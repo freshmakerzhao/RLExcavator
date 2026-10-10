@@ -1,0 +1,6 @@
+Base is Physics3D.System:
+    .doc: """
+An interface for designing vehicles.
+'chassis'         - The chassis of the vehicle.
+"""
+    chassis is Chassis.Rigid.Base or Chassis.Articulated.Base

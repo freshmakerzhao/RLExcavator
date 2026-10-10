@@ -1,0 +1,5 @@
+Base is Physics3D.System:
+    .doc: """
+    The Composite Component is a composition of multiple
+    bodies and mates.
+    """

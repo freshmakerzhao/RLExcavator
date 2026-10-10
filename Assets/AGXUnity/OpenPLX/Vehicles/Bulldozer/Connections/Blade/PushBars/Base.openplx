@@ -1,0 +1,32 @@
+Base is Bulldozer.Connections.Blade.Base:
+    .doc: """
+    Base model for PushBar connection to blade.
+    The blade can move in different directions,
+    depending on the type of connection.
+    Canonical bulldozer blade motion vocabulary
+    Motion	             Industry term	  Axis (informal)
+    Up / down    	      Lift	           vertical
+    Left / right yaw	  Angle	           vertical axis
+    Edge up / down	      Tilt	           longitudinal axis
+    Fore / aft	          Pitch            lateral axis
+    Vertical float	      Float            passive
+    """
+
+    left_push_bar is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.PushBars.BaseConnectors
+    right_push_bar is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.PushBars.BaseConnectors
+
+    left_push_bar_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: left_push_bar.front_connector
+        to: blade.left_lower_connector
+
+    right_push_bar_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: right_push_bar.front_connector
+        to: blade.right_lower_connector
+
+    left_lift_connection is MachineModeling.Connections.Base
+
+    right_lift_connection is MachineModeling.Connections.Base
+
+    left_tilt_connection is MachineModeling.Connections.Base
+
+    right_tilt_connection is MachineModeling.Connections.Base

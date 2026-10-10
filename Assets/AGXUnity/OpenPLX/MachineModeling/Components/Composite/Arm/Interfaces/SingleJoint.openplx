@@ -1,0 +1,2 @@
+trait SingleJoint:
+    from  is Physics3D.Interactions.MateConnector

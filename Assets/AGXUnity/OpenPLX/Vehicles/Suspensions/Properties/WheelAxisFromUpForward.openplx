@@ -1,0 +1,7 @@
+trait WheelAxisFromUpForward:
+    .doc: """
+    Upgrades a MateConnector to be oriented
+    with the main_axis in the wheel axis direction
+    """
+    main_axis: up_vector.cross(forward_vector)
+    normal: up_vector

@@ -1,4 +1,4 @@
-ElasticWheel is Wheel:
+ElasticWheel is Wheels.Base:
     tire is Physics3D.Bodies.RigidBody with Vehicles.Wheels.TireTrait
 
     tire_mate is Physics3D.Interactions.Lock:

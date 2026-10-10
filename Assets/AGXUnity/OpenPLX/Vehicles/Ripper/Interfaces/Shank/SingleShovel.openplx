@@ -1,0 +1,10 @@
+trait SingleShovel:
+    left_upper_corner is Math.Vec3
+    right_upper_corner is Math.Vec3
+    left_lower_corner is Math.Vec3
+    right_lower_corner is Math.Vec3
+
+    shovel is Terrain.Shovel:
+        body: this.body
+        top_edge: Math.Line.from_points(right_upper_corner, left_upper_corner)
+        cutting_edge: Math.Line.from_points(right_lower_corner, left_lower_corner)

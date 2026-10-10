@@ -1,0 +1,11 @@
+DefaultUniversalFlexibility is DefaultMateFlexibility:
+    .doc: """
+    Defines one flexibility model for each constrained degree of freedom for a Universal.
+    Two rotational degrees of freedom are left unconstrained -
+    rotation around normal and cross, therefore we define flexibility for around main,
+    the constrained rotational direction.
+    """
+    along_main is Physics.Interactions.Flexibility.DefaultFlexibility
+    along_normal is Physics.Interactions.Flexibility.DefaultFlexibility
+    along_cross is Physics.Interactions.Flexibility.DefaultFlexibility
+    around_main is Physics.Interactions.Flexibility.DefaultFlexibility

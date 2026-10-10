@@ -1,0 +1,13 @@
+trait RigidCylinderPart:
+    .doc: """
+    A trait for upgrading a rigid body to
+    one of the two parts of a Linear Cylinder Actuator.
+    """
+    connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.Y_AXIS()
+        normal: Math.Vec3.X_AXIS()
+    internal_connector is Physics3D.Interactions.MateConnector:
+        main_axis: Math.Vec3.Z_AXIS()
+        normal: Math.Vec3.X_AXIS()
+    length is Real
+    diameter is Real

@@ -1,11 +1,30 @@
 trait SurfaceViscosity:
     .doc: """
-The surface viscosity in [N/(m/s)].
-To be used with a DryFriction model where 0 (zero) is completely dry
-and viscosity > 0 introduces a viscous friction term.
+Surface viscosity defines the viscous resistance in the tangential contact direction.
+It has units
 
-works with Physics.Interactions.Dissipation.DefaultDryFriction
+N/(m/s) = Ns/m = kg/s
+
+an is a viscous damping coefficient acting on the relative slip velocity at the contact.
+
+The viscous friction force is typically proportional to the slip velocity:
+
+F_v = c_v * v_slip
+
+where c_v is the surface viscosity.
+
+This parameter is used together with a DryFriction model to regularize the friction response. A value of
+
+c_v = 0
+
+means that no viscous resistance is applied. In that case, the contact does not generate any viscous friction force.
+
+Increasing c_v increases the viscous resistance, meaning that a larger tangential force is generated for a given slip velocity. Equivalently, for a given tangential force, the resulting slip velocity becomes smaller.
+
+In this sense, the surface viscosity controls how strongly the dry-friction model is regularized by viscosity.
+The inverse of this viscosity is called friction compliance.
+
+This model works with Physics.Interactions.Dissipation.DefaultDryFriction
 """
 
     viscosity is Real
-

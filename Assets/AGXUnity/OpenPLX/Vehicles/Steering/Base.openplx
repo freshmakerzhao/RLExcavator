@@ -1,0 +1,4 @@
+Base is MachineModeling.Connections.Base:
+    .doc: """
+    A steering connection that couples some steering mechanisms
+    """

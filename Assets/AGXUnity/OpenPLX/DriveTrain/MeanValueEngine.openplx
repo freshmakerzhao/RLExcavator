@@ -1,6 +1,7 @@
 MeanValueEngine is Physics.Interactions.Interaction1DOF:
     with DriveTrain.Traits.RotationalPowerGenerator
     with Physics.Signals.FractionInputTrait
+    with Physics.Signals.FractionOutputTrait
     with Physics.Signals.RpmOutputTrait
     with Physics.Signals.Torque1DOutputTrait
     .doc: """
@@ -53,4 +54,7 @@ MeanValueEngine is Physics.Interactions.Interaction1DOF:
 
     # Control input
     throttle_input is Physics.Signals.FractionInput:
+        source: this
+        initial_value: initial_throttle
+    throttle_output is Physics.Signals.FractionOutput:
         source: this

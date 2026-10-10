@@ -1,0 +1,7 @@
+trait CylinderByMaxLength:
+    .doc: """
+    Trait for defining the actuator length limits by using max_length and
+    stroke_length, instead of the default min_length and stroke_length.
+    """
+    max_length is Real
+    min_length: max_length - stroke_length

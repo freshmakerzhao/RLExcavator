@@ -8,7 +8,7 @@
 
 
     <!-- Contact data -->
-    <Parameter.EntityData name="@ContactPoint" type="ContactPoint" read="instance" write="point, normal, depth, area, enabled, elasticRestLengthShape1, elasticRestLengthShape2, faceIndex1, faceIndex2, faceFeature1, faceFeature2, shape1, shape2, velocity, state" globalResult="TRUNCATE"/>
+    <Parameter.EntityData name="@ContactPoint" type="ContactPoint" read="instance" write="point, normal, depth, area, volume, enabled, elasticRestLengthShape1, elasticRestLengthShape2, faceIndex1, faceIndex2, faceFeature1, faceFeature2, shape1, shape2, velocity, state" globalResult="TRUNCATE"/>
     <Parameter.EntityData name="@GeometryContact" type="GeometryContact" read="instance" write="broadPhasePair, body1, body2, geometry1, geometry2, hasSurfaceVelocity, points, material" globalResult="TRUNCATE, ORDER"/>
 
     <!-- Separations -->

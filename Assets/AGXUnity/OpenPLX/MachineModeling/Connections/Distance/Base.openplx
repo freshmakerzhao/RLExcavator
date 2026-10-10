@@ -1,0 +1,4 @@
+Base is MachineModeling.Connections.Base:
+    with Connections.Traits.PairwiseConnection
+    distance is Physics3D.Interactions.Distance:
+        connectors: [from, to]

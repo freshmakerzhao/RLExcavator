@@ -1,0 +1,5 @@
+Base is MachineModeling.Connections.Base:
+    with Connections.Traits.PairwiseConnection
+
+    ball is Physics3D.Interactions.Ball:
+        connectors: [from, to]

@@ -1,0 +1,17 @@
+trait CylindricalVisual:
+    .doc: """
+    A trait that defines a cylindrical visual for a track wheel.
+
+    Example:
+
+    Define a sprocket with a cylindrical geometry and visual geometry in the rigid body.
+
+    Sprocket is Vehicles.TrackSystem.Components.TrackWheels.Sprocket:
+        with Vehicles.TrackSystem.Components.TrackWheels.Traits.CylindricalShape
+        with Vehicles.TrackSystem.Components.TrackWheels.Traits.CylindricalVisual
+        radius: 0.15
+        width: 0.5
+    """
+    body.visual is Visuals.Geometries.Cylinder:
+        radius: radius
+        height: width

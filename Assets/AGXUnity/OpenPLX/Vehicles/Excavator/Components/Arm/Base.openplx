@@ -1,0 +1,25 @@
+Base is MachineModeling.Components.Composite.Base:
+    .doc: """
+    Base model of an excavator arm composed of boom and stick parts.
+
+    The concrete connections between the parts are intentionally left
+    replaceable so specialized arm variants can define their own joint and
+    linkage implementations.
+    """
+
+    with MachineModeling.Components.Composite.Arm.Interfaces.SingleEndJoint
+    with MachineModeling.Components.Composite.Arm.Interfaces.SingleEndActuator
+
+    boom is MachineModeling.Components.Primitive.Base with MachineModeling.Components.Composite.Arm.Interfaces.SingleJoint, MachineModeling.Components.Composite.Arm.Interfaces.SingleEndJoint, MachineModeling.Components.Composite.Arm.Interfaces.SingleEndActuator:
+        local_transform.position: {0,0,0}
+
+    stick is MachineModeling.Components.Primitive.Base with MachineModeling.Components.Composite.Arm.Interfaces.SingleJoint, MachineModeling.Components.Composite.Arm.Interfaces.SingleEndJoint, MachineModeling.Components.Composite.Arm.Interfaces.SingleActuator, MachineModeling.Components.Composite.Arm.Interfaces.SingleEndActuator
+
+    boom_stick_connection is MachineModeling.Connections.Pivot.Actuated.Base:
+        from: boom.to
+        to: stick.from
+        ground_connector: boom.to_actuator
+        drive_connector: stick.from_actuator
+
+    to: stick.to
+    to_actuator: stick.to_actuator

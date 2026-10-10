@@ -1,0 +1,5 @@
+trait Avalanching:
+    enable is Bool: true
+    max_height_growth is Real: Math.INF
+    decay_fraction is Real: 0.1
+    error_threshold is Real: 0.05

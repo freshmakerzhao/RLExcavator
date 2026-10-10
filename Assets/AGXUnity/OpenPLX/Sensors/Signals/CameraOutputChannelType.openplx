@@ -1,0 +1,14 @@
+const CameraOutputChannelType:
+    .doc: """
+    The allowed output types per channel element.
+    """
+    I8 is Int: 1
+    U8 is Int: 2
+    I16 is Int: 4
+    U16 is Int: 5
+    I32 is Int: 7
+    U32 is Int: 8
+    F32 is Int: 9
+    I64 is Int: 10
+    U64 is Int: 11
+    F64 is Int: 12

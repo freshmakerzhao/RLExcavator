@@ -1,0 +1,7 @@
+ContinousPulse is Math.Distributions.Cyclic.Base:
+    .doc: """
+A variation of a descrete pattern, where the intended signal or function
+increases with the additional_ampliude with a real value interval
+"""
+    amplitude is Real
+    interval is Real

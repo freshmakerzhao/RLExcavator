@@ -1,0 +1,12 @@
+Base is Vehicles.Steering.Base:
+    .doc: """
+    Base type for kinematic steering.
+    One interaction constrain the wheels of two suspensions
+    to a specific kinematic coupling.
+    Both the steering model and the interaction should have the same
+    Steering Interface, i.e. Ackermann, BellCrank, etc.
+    """
+    interaction is Steering.Kinematic.Interactions.Base
+
+    left_suspension is Vehicles.Suspensions.SingleMate.Base with Vehicles.Suspensions.Properties.Steering reference
+    right_suspension is Vehicles.Suspensions.SingleMate.Base with Vehicles.Suspensions.Properties.Steering reference

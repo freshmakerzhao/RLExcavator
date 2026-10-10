@@ -1,0 +1,57 @@
+﻿DefaultTrackDissipation:
+    .doc: """
+    Defines dampings for each constrained degree of freedom for a Track System.
+
+    tensile - Attenuation factor for longitudinal tension/compression.
+              Damps high-frequency oscillations during stretching and compression of track segments.
+
+    bending_vertical - Damping for bending around the VERTICAL axis.
+                       Damps oscillations in side-to-side bending of the track.
+
+    bending_lateral - Damping for bending around the LATERAL axis.
+                      Damps oscillations in sagging (bending across track width).
+
+    shear_vertical - Damping for shear deformation along the VERTICAL axis.
+                     Damps oscillations in shear deformation across the track height.
+
+    shear_lateral - Damping for shear deformation along the LATERAL axis.
+                    Damps oscillations in shear deformation across the track width.
+
+    torsional - Damping for torsional deformation around the main track longitudinal axis.
+                Damps oscillations in twisting of the track about its longitudinal axis.
+
+
+    vertical_bushing_damping         -  Scales the viscous damping in the vertical
+                                        movement between track links, representing
+                                        velocity-dependent energy dissipation in
+                                        inter-link bushings. This is a scaling parameter
+                                        with default value of 1.
+                                        Increaset this value if you experience
+                                        excessive vertical oscillations of the track links.
+                                        Decrease this value if the track becomes overly
+                                        damped, observed as a sluggish vertical response
+                                        and a slow return to equilibrium after excitation.
+    min_normal_force                 -  minimum normal force used in dissipation calculation.
+    bending_friction_coefficient     -  scales the dissipative force between track links
+                                        based on the normal force.
+
+    The friction limit in the dissipation is:
+        f_L = normal force * bending_friction_coefficient
+
+    The normal force is computed as:
+        max(F_n, min_normal_force)
+
+    Note: dissipation scales with 1 / (track node mass)^2.
+    """
+    tensile is Physics.Interactions.Dissipation.DefaultDissipation
+    bending_vertical is Physics.Interactions.Dissipation.DefaultDissipation
+    bending_lateral is Physics.Interactions.Dissipation.DefaultDissipation
+    shear_vertical is Physics.Interactions.Dissipation.DefaultDissipation
+    shear_lateral is Physics.Interactions.Dissipation.DefaultDissipation
+    torsional is Physics.Interactions.Dissipation.DefaultDissipation
+
+    bending_friction_coefficient is Real: 1.0
+
+    min_normal_force is Real: 100
+
+    vertical_bushing_damping is Real: 1.0

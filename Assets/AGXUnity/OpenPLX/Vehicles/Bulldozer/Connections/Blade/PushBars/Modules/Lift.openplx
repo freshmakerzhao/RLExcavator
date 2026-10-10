@@ -1,0 +1,16 @@
+trait Lift:
+    push_bar_angle is Real: 0
+
+    left_lift_actuator is MachineModeling.Actuators.Linear.Base
+
+    right_lift_actuator is MachineModeling.Actuators.Linear.Base
+
+    left_lift_connection becomes MachineModeling.Actuators.Linear.Connections.Base:
+        from: chassis.left_lift_connector
+        to: blade.left_mid_connector
+        actuator: left_lift_actuator
+
+    right_lift_connection becomes MachineModeling.Actuators.Linear.Connections.Base:
+        from: chassis.right_lift_connector
+        to: blade.right_mid_connector
+        actuator: right_lift_actuator

@@ -1,0 +1,7 @@
+const WrapMode:
+  .doc:"""
+Defines sampling behaviour for values outside of the [0,1] range
+"""
+  Repeat is Int: 0  # Repeat the texture infinitely, e.g. range (1,2] is mapped to (0,1]
+  Clamp is Int: 1   # Clamp the texture to the edges, e.g. 1.5 is mapped to 1
+  Mirror is Int: 2  # Mirror the texture over the edges, e.g. 1.25 is mapped to 0.75

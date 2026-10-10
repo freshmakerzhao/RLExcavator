@@ -1,0 +1,5 @@
+Base is Ripper.Base:
+    .doc: """
+    A FixedMount ripper has only one actuated degree of freedom.
+    It can lift the ripper up and down.
+    """

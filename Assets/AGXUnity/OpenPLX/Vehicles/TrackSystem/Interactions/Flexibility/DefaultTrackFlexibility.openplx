@@ -1,0 +1,24 @@
+﻿DefaultTrackFlexibility:
+    .doc: """
+    Defines linear elastic flexibility model for each constrained degree of freedom for a Track System.
+    Includes stiffness values and attenuation factors for each deformation mode.
+
+    tensile - Linear flexibility for longitudinal tension/compression.
+
+    bending_vertical - Linear elastic stiffness for side-to-side bending around the VERTICAL axis.
+
+    bending_lateral - Linear elastic stiffness for sagging around the LATERAL axis.
+
+    shear_vertical - Linear elastic stiffness for shear deformation along the VERTICAL axis.
+
+    shear_lateral - Linear elastic stiffness for shear deformation along the LATERAL axis.
+
+    torsional - Linear elastic stiffness for torsional deformation around the main track longitudinal axis.
+    """
+
+    tensile is Physics.Interactions.Flexibility.DefaultFlexibility
+    bending_vertical is Physics.Interactions.Flexibility.DefaultFlexibility
+    bending_lateral is Physics.Interactions.Flexibility.DefaultFlexibility
+    shear_vertical is Physics.Interactions.Flexibility.DefaultFlexibility
+    shear_lateral is Physics.Interactions.Flexibility.DefaultFlexibility
+    torsional is Physics.Interactions.Flexibility.DefaultFlexibility

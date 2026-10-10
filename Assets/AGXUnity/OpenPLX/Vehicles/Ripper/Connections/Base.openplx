@@ -1,0 +1,9 @@
+Base is MachineModeling.Connections.Base:
+    ripper is Ripper.Base reference
+
+    ripper_connection_group is Simulation.CollisionGroup:
+        systems: [this]
+
+    disable_ripper_group is Simulation.DisableCollisionPair:
+        group1: ripper_connection_group
+        group2: ripper_connection_group

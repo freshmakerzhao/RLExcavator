@@ -1,0 +1,17 @@
+Bearings is Connections.Pivot.Hinge:
+    .doc: """
+    A Bearing connection specializes the simple Hinge connection
+    to have two Mates instead of one, one for each bearing.
+
+    This Bearing connection does not have the concept of an axle,
+    instead each side both have a pearing pair,
+    and they should both have the same separation.
+    """
+    with Connections.Pivot.Traits.Bearings
+
+    left_mate is Physics3D.Interactions.Cylindrical:
+        connectors: [from_bearings.left, to_bearings.left]
+        enable_snap: false
+    right_mate is Physics3D.Interactions.Cylindrical:
+        connectors: [from_bearings.right, to_bearings.right]
+        enable_snap: false

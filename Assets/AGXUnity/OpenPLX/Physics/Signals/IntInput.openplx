@@ -4,3 +4,4 @@ An Input that is an integer.
 """
     type: Physics.Signals.InputOutputType.Integer
     source is IntInputTrait
+    initial_value is Int: 0

@@ -1,0 +1,2 @@
+Base is Bulldozer.Articulated.Base:
+    blade_connection becomes Bulldozer.Connections.Blade.PushBars.Base

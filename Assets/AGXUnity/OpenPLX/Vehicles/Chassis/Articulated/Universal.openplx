@@ -1,0 +1,6 @@
+Universal is Chassis.Articulated.Base:
+    front_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.SingleJoint
+    rear_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.SingleJoint
+    frame_connection becomes Chassis.Articulated.Connections.Universal:
+        front_frame: front_frame
+        rear_frame: rear_frame

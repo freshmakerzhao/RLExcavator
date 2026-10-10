@@ -1,0 +1,4 @@
+trait BearingsFromConnector:
+    local_transform.position: connector.position
+    local_axis: connector.main_axis
+    connector is Physics3D.Interactions.MateConnector reference

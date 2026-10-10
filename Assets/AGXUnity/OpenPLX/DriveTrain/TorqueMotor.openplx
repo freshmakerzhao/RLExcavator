@@ -7,4 +7,3 @@ TorqueMotor is Physics.Interactions.Interaction1DOF:
     torque_output is Physics.Signals.Torque1DOutput:
         source: this
         enabled: false
-

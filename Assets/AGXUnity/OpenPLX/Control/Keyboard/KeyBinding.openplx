@@ -1,0 +1,17 @@
+KeyBinding:
+    .doc: """
+Binds a set of keys to a set of actions. Actions are added with composition, for example:
+
+up is KeyBinding:
+    keys: ["KEY_up"]
+    hold becomes Actions.Set:
+        targets: [signal_interface.throttle_input]
+        value becomes Real: 2.3
+    release becomes Actions.Set:
+        targets: hold.targets
+        value becomes Real: 0.0
+"""
+    keys is String[]
+    press is Action
+    hold is Action with HoldTrait
+    release is Action

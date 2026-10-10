@@ -1,0 +1,15 @@
+Server:
+    .doc: """
+Abstract server interface for remote communication with an OpenPLX runtime.
+Exposes either a signal interface or all inputs and outputs in a Physics.System
+if a system reference is provided.
+
+If wait_for_client is set to true, the application that runs the server should
+wait for the client to connect before starting.
+
+Note: Asynchronous servers are not yet implemented.
+"""
+    enabled is Bool: true
+    synchronous is Bool: true
+    wait_for_client is Bool: false
+    interface is Physics.Signals.SignalInterface or Physics.System or Control.OrderedInterface

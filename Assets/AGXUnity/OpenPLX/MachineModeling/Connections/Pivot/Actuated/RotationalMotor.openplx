@@ -1,0 +1,10 @@
+RotationalMotor is MachineModeling.Connections.Pivot.Actuated.Base:
+    .doc: """
+    Hinge pivot connection driven directly by a rotational actuator.
+
+    Use this variant when the actuator torque is applied about the hinge
+    axis.
+    """
+    with MachineModeling.Connections.Pivot.Actuated.Configurations.Hinge
+
+    actuator becomes MachineModeling.Actuators.Rotational.Base

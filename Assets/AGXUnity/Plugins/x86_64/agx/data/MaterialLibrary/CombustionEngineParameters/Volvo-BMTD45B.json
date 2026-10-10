@@ -1,0 +1,31 @@
+{
+  "description": "Engine used in Volvo wheel loader",
+  "reference": "https://www.volvoce.com/global/en/product-archive/wheel-loaders/volvo-bm-l-series/l70/",
+  "name": "Volvo-BMTD45B",
+
+  "displacementVolume":    0.00448,    // m^3
+  "maxTorque":             425.0,      // Nm
+  "maxTorqueRPM":          1400,       // rpm
+  "maxPowerRPM":           2200,       // rpm
+  "idleRPM":               800,        // rpm
+  "maxRPM":                4500,       // rpm  
+  "crankShaftInertia":     1.5,        // kg.m^2 
+
+  // Parameters controlling the mean effective friction torque. This corresponds to
+  // page 722, section 13.5.1 in "Internal combustion engine fundamentals" by John B. Heywood, 1988.
+  // These parameters must be parameterized against the real engine.
+  // The values here are the default that might not result in the correct overall behavior.
+  // Without access to real world data these values should be considered placeholders for accurate measurements.
+  "FrictionTorqueParameters":
+  {
+    "cfr0": 0.97,
+    "cfr1": 0.15,
+    "cfr2": 0.05
+  },
+
+  // Optional
+  "airFuelRatio": 14.5, // Diesel
+  "heatValue": 45400000 // Diesel
+
+}
+

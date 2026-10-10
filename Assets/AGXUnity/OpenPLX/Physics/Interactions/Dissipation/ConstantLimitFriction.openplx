@@ -3,4 +3,3 @@ ConstantLimitFriction is DefaultFriction:
     Defines a constant maximum friction force, for linear dof's, or torque for angular dof's.
     """
     limit is Real
-    

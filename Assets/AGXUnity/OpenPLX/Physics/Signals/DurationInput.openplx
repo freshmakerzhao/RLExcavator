@@ -1,4 +1,5 @@
 DurationInput is Physics.Signals.Input:
     type: Physics.Signals.InputOutputType.Duration
     source is DurationInputTrait
+    initial_value is Real: 0.0
     marshalling.duration is RealField

@@ -6,4 +6,5 @@ the input will update that value.
 """
     type: Physics.Signals.InputOutputType.Angle
     source is AngleInputTrait
+    initial_value is Real: 0.0
     marshalling.angle is RealField

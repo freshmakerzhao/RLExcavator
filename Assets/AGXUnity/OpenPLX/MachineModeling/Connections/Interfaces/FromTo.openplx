@@ -1,0 +1,4 @@
+
+trait FromTo:
+    from is Physics3D.Interactions.MateConnector reference
+    to is Physics3D.Interactions.MateConnector reference

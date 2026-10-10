@@ -1,0 +1,22 @@
+BearingPair is Physics3D.System:
+    .doc: """
+    A bearing pair, with defined separation.
+    The left bearing is at half negative separation distance from the local origin
+    along the common local_axis, equally the right is half positive separation distance.
+    Snap is disabled for the two bearing mates.
+    Instead a snap_mate will snap the pair at the center of the axle
+    """
+    separation is Real
+    local_axis is Math.Vec3
+
+    body is Physics3D.Bodies.RigidBody reference
+
+    left is MachineModeling.Components.Primitive.Bearing.Base:
+        redirected_parent: body
+        position: -local_axis.normal() * separation * 0.5
+        main_axis: local_axis
+
+    right is MachineModeling.Components.Primitive.Bearing.Base:
+        redirected_parent: body
+        position: local_axis.normal() * separation * 0.5
+        main_axis: local_axis

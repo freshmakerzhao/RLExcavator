@@ -1,0 +1,6 @@
+Base is MachineModeling.Connections.Base:
+    with Connections.Interfaces.FromTo
+
+    hinge is Physics3D.Interactions.Hinge:
+        connectors: [from, to]
+        enabled: false

@@ -1,0 +1,5 @@
+trait Autofocus:
+    .doc: """
+    Trait for lens systems with an autofocus feature.
+    """
+    minimum_focus_distance is Real

@@ -1,0 +1,10 @@
+Offset is Control.Keyboard.Action:
+    .doc: """
+Keyboard action that reads a value from an output and adds the `offset` and writes the result to the target inputs.
+
+Optional `min` and `max` bounds clamp the resulting value.
+"""
+    source is Physics.Signals.Output reference
+    offset is Real
+    optional min is Real
+    optional max is Real

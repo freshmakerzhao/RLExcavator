@@ -1,0 +1,6 @@
+trait DefaultConnectors:
+    chassis_connector.position: Math.Vec3.from_xyz(-1,0,0)
+    equipment_connector.position: Math.Vec3.from_xyz(1,0,0)
+
+    chassis_connector.main_axis: Math.Vec3.Y_AXIS()
+    equipment_connector.main_axis: Math.Vec3.Y_AXIS()

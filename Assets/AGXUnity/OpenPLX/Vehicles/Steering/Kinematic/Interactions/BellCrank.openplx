@@ -1,0 +1,5 @@
+BellCrank is Steering.Kinematic.Interactions.Base:
+    .doc: """
+Bell-crank steering geometry.
+"""
+    with Steering.Interfaces.BellCrank

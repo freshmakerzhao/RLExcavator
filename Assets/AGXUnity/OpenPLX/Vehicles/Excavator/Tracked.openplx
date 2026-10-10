@@ -1,0 +1,21 @@
+Tracked is Excavator.Standard:
+    chassis becomes Vehicles.Chassis.Rigid.Base with Vehicles.Chassis.Interfaces.Outputs:
+        observer:
+            redirected_parent: chassis.body
+            position: {0.0, 0.0, 0.0}
+
+
+    undercarriage is MachineModeling.Components.Primitive.Base
+    swing_connection is Excavator.Connections.SwingJoint.Base
+
+    left_track is Vehicles.TrackSystem.Base
+    right_track is Vehicles.TrackSystem.Base
+
+    drive_train is Physics3D.System
+
+    no_undercarriage_chassis_collisions is Simulation.CollisionGroup:
+        systems: [chassis, undercarriage]
+
+    disable_chassis_undercarriage_pairs is Simulation.DisableCollisionPair:
+        group1: no_undercarriage_chassis_collisions
+        group2: no_undercarriage_chassis_collisions

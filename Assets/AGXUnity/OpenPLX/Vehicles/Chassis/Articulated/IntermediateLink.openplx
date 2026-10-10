@@ -1,0 +1,16 @@
+IntermediateLink is Chassis.Articulated.Base:
+    .doc: """
+    The link has a dual connector interface to the front
+    and a single connector interface to the rear
+    """
+    link is MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.DualJoint, Chassis.Articulated.Interfaces.SingleJoint
+
+    front_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.DualJoint
+    rear_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.SingleJoint
+    frame_connection becomes Chassis.Articulated.Connections.IntermediateLink:
+        front_frame: front_frame
+        rear_frame: rear_frame
+        upper_from_connector: front_frame.upper_joint_connector
+        lower_from_connector: front_frame.lower_joint_connector
+        upper_to_connector: link.upper_joint_connector
+        lower_to_connector: link.lower_joint_connector

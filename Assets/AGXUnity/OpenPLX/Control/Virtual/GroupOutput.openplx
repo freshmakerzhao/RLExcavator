@@ -1,0 +1,9 @@
+GroupOutput is Physics.Signals.Output:
+    .doc: """
+A virtual output control that combines a sorted list of other outputs
+into a single output where the constituent outputs are nested under keys.
+"""
+    type: 0
+    marshalling.is_dynamic: true
+    source_keys is String[]
+    sources is Physics.Signals.Output[]

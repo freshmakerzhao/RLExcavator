@@ -1,0 +1,12 @@
+Base is MachineModeling.Connections.Base:
+    .doc: """
+    The swing joint defines the connection between the undercarriage and the chassis.
+
+    The most common is to a have rotational joint that allows the upper part of the
+    excavators to rotate freely 360 degrees.
+
+    This is a `base` model and is to be extended with a more detailed model.
+    """
+
+    chassis is MachineModeling.Components.Primitive.Base reference
+    undercarriage is MachineModeling.Components.Primitive.Base reference

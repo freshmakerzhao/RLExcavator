@@ -1,0 +1,12 @@
+CameraActiveIllumination:
+    with Traits.MateConnectorAttachment
+    .doc: """
+    Active illumination source synchronized with a camera. This can either be used to model a
+    constant lamp illuminating the scene, or a flash.
+    The flash duration is optionally specified to turn this (by default) lamp into a flash acting
+    the given duration during the camera capture frame. This corresponds to the ISO t0.1 measurement.
+    """
+    camera is CameraLogic reference
+    mate_connector_attachment: camera.mate_connector_attachment
+    light is Optics.Lights.PointLight or Optics.Lights.Spotlight
+    optional flash_duration is Real

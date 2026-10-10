@@ -1,0 +1,32 @@
+DualLiftDualTiltActuated is Ripper.Connections.PowerAngle.Base:
+    with Ripper.Connections.Traits.DualLiftActuator
+    with Ripper.Connections.Traits.DualTiltActuator
+    ripper becomes Ripper.PowerAngle.DualLiftDualTiltActuated
+
+    left_lift_actuator is MachineModeling.Actuators.Linear.Base
+
+    left_lift_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: left_lift_actuator
+        from: left_lift_actuator_connector
+        to: ripper.frame.left_actuator_connector
+
+    left_tilt_actuator is MachineModeling.Actuators.Linear.Base
+
+    left_tilt_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: left_tilt_actuator
+        from: left_tilt_actuator_connector
+        to: ripper.shank.left_actuator_connector
+
+    right_lift_actuator is MachineModeling.Actuators.Linear.Base
+
+    right_lift_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: right_lift_actuator
+        from: right_lift_actuator_connector
+        to: ripper.frame.right_actuator_connector
+
+    right_tilt_actuator is MachineModeling.Actuators.Linear.Base
+
+    right_tilt_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: right_tilt_actuator
+        from: right_tilt_actuator_connector
+        to: ripper.shank.right_actuator_connector

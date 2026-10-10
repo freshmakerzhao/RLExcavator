@@ -1,0 +1,4 @@
+trait GeneralProperties:
+    enable_deformation is Bool: true
+    enable_update_dynamic_body_mass is Bool: true
+    penetration_force_velocity_scaling is Real: 0.0

@@ -157,7 +157,7 @@ RenderStateManager
   NormalMapTextureUnit 3
   HeightMapTextureUnit INT
   SpecularMapTextureUnit INT
-  SphereMapTextureUnit INT
+  MetallicMapTextureUnit INT
   CubeMapTextureUnit INT
   NumTextureUnits INT
 

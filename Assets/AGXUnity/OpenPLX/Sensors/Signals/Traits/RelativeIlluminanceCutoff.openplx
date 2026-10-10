@@ -1,0 +1,8 @@
+trait RelativeIlluminanceCutoff:
+    .doc: """
+    Illuminance value cutoff in relative (output) space for a camera output.
+    This is applied to an output post exposure effects.
+    All values in (minimum, maximum) are kept as is.
+    """
+    minimum_relative_illuminance is Real: 0.0
+    maximum_relative_illuminance is Real: 1.0

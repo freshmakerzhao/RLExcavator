@@ -1,6 +1,6 @@
 DefaultCylindricalFlexibility is DefaultMateFlexibility:
     .doc: """
-    
+
     """
     along_normal is Physics.Interactions.Flexibility.DefaultFlexibility
     along_cross is Physics.Interactions.Flexibility.DefaultFlexibility

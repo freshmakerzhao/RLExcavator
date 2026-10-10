@@ -1,0 +1,11 @@
+IMUOutput is Physics.Signals.Output:
+    type: 0
+    fields is IMUOutputField[]
+    source is IMULogic reference
+    marshalling: marshalling_from_fields(fields)
+
+    static fn marshalling_from_fields(fields: IMUOutputField[]) -> Physics.Signals.Marshalling
+
+    # C++ extensions
+    .extend_public: "std::vector<double> readValues(const std::shared_ptr<openplx::Sensors::Signals::SensorOutputSignal>& signal, const std::shared_ptr<openplx::Sensors::Signals::IMUOutputField>& imu_output) const;"
+    .extend_public: "std::shared_ptr<openplx::Sensors::Signals::SensorOutputSignal> createSignal(const std::vector<double>& Values) const;"

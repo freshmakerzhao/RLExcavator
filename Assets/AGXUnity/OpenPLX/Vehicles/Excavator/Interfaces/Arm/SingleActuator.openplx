@@ -1,0 +1,6 @@
+trait SingleActuator:
+    .doc: """
+    A trait for adding a single actuator connector to control the excavator arm.
+    """
+
+    arm_actuator_connector is Physics3D.Interactions.MateConnector

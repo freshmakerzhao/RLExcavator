@@ -18,12 +18,15 @@ initially_engaged will tell wether the clutch is engaged or not before any signa
 
     engage_input is Physics.Signals.EngageInput:
         source: this
+        initial_value: initially_engaged
+
     engaged_output is Physics.Signals.EngagedOutput:
         enabled: false
         source: this
 
     engagement_duration_input is DriveTrain.Signals.AutomaticClutchEngagementDurationInput:
         source: this
+        initial_value: engagement_duration
 
     engagement_duration_output is DriveTrain.Signals.AutomaticClutchEngagementDurationOutput:
         source: this
@@ -31,6 +34,7 @@ initially_engaged will tell wether the clutch is engaged or not before any signa
 
     disengagement_duration_input is DriveTrain.Signals.AutomaticClutchDisengagementDurationInput:
         source: this
+        initial_value: disengagement_duration
 
     disengagement_duration_output is DriveTrain.Signals.AutomaticClutchDisengagementDurationOutput:
         source: this

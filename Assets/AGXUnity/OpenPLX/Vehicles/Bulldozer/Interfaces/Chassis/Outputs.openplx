@@ -1,0 +1,14 @@
+trait Outputs:
+    .doc: """
+    Outputs intended for a Primitive Component
+    """
+    position_observer is Physics3D.Interactions.RedirectedMateConnector:
+        redirected_parent: body
+        position: {0.0, 0.0, 0.0}
+
+    pos_output is Physics3D.Signals.MateConnector.PositionOutput:
+        source: position_observer
+    vel_output is Physics3D.Signals.MateConnector.LinearVelocity3DOutput:
+        source: position_observer
+    acc_output is Physics3D.Signals.MateConnector.Acceleration3DOutput:
+        source: position_observer

@@ -1,0 +1,18 @@
+Base is MachineModeling.Components.Primitive.Base:
+    .doc: """
+    The most basic track wheel definition intended for extension, not for direct usage.
+    Assumed to have its origin at the TrackSystem.Base origin,
+    thereby center_connector can be placed relative the TrackSystem.System.
+
+    See
+        Vehicles.TrackSystem.Components.TrackWheels.Sprocket,
+        Vehicles.TrackSystem.Components.TrackWheels.Idler,
+        Vehicles.TrackSystem.Components.TrackWheels.RoadWheel, and
+        Vehicles.TrackSystem.Components.TrackWheels.Roller
+    """
+    local_center_axis is Math.Vec3: Math.Vec3.Y_AXIS()
+    center_connector is Physics3D.Interactions.RedirectedMateConnector:
+        redirected_parent: body
+        main_axis: local_center_axis
+    radius is Real
+    width is Real

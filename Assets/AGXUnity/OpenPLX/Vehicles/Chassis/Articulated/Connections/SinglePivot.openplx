@@ -1,0 +1,7 @@
+SinglePivot is Vehicles.Chassis.Articulated.Connections.Base:
+    front_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.SingleJoint
+    rear_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.SingleJoint
+
+    pivot is MachineModeling.Connections.Pivot.Base:
+        from: front_frame.joint_connector
+        to: rear_frame.joint_connector

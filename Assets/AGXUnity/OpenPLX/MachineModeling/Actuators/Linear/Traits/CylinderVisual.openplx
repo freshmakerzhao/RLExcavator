@@ -1,0 +1,10 @@
+trait CylinderVisual:
+    .doc: """
+    Trait for adding a cylinder visual to the barrel or rod of the linear cylinder actuator.
+    """
+    visual is Visuals.Geometries.Cylinder:
+        height: length
+        radius: diameter * 0.5
+        local_transform:
+            rotation: Math.Quat.from_to(Math.Vec3.Y_AXIS(), Math.Vec3.Z_AXIS())
+            position: Math.Vec3.from_xyz(0, 0, length * 0.5)

@@ -14,3 +14,4 @@ TorsionSpring is SpringInteraction1DOF:
 
     target_angle_input is Physics.Signals.AngleInput:
         source: this
+        initial_value: angle

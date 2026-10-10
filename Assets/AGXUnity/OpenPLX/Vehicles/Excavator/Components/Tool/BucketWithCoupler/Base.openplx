@@ -1,0 +1,18 @@
+Base is Vehicles.Excavator.Components.Tool.Base:
+    .doc: """
+    Tool assembly consisting of a bucket and a quick coupler.
+    """
+
+    coupler is Vehicles.Excavator.Components.Coupler.QuickCoupler:
+        local_transform.position: {0,0,0}
+
+    bucket is Vehicles.Excavator.Components.Tool.Bucket.Base
+
+    bucket_coupling is MachineModeling.Connections.Fixed.DualHingeLockCoupling:
+        from_connector_1: coupler.to
+        to_connector_1: bucket.from
+        from_connector_2: coupler.to_actuator
+        to_connector_2: bucket.from_actuator
+
+    from: coupler.from
+    from_actuator: coupler.from_actuator

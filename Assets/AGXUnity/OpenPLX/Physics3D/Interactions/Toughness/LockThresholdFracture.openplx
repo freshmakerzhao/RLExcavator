@@ -1,7 +1,7 @@
 LockThresholdFracture is DefaultLockToughness:
     .doc: """
     Define a threshold fracture model for each constrained degree of freedom for a Lock.
-    Each dimension can then fail individually at their fracture points.     
+    Each dimension can then fail individually at their fracture points.
     """
     default_limit is Real: 10000.0
     along_main becomes Physics.Interactions.Toughness.ThresholdFracture:

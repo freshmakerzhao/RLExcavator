@@ -1,0 +1,43 @@
+﻿TrackAttenuation is DefaultTrackDissipation:
+    .doc: """
+    Defines attenuation constants for high-frequency damping of each constrained degree of freedom for a Track System.
+    These attenuation factors damp high-frequency oscillations above the Nyquist frequency for numerical stability.
+
+    tensile - Attenuation factor for longitudinal tension/compression.
+              Damps high-frequency oscillations during stretching and compression of track segments.
+
+    bending_vertical - Attenuation factor for bending around the VERTICAL axis.
+                       Damps oscillations in side-to-side bending of the track.
+
+    bending_lateral - Attenuation factor for bending around the LATERAL axis.
+                      Damps oscillations in sagging (bending across track width).
+
+    shear_vertical - Attenuation factor for shear deformation along the VERTICAL axis.
+                     Damps oscillations in shear deformation across the track height.
+
+    shear_lateral - Attenuation factor for shear deformation along the LATERAL axis.
+                    Damps oscillations in shear deformation across the track width.
+
+    torsional - Attenuation factor for torsional deformation around the main track longitudinal axis.
+                Damps oscillations in twisting of the track about its longitudinal axis.
+    """
+    tensile becomes Attenuation:
+        value: 2
+    bending_vertical becomes Attenuation:
+        value: 2
+    bending_lateral becomes Attenuation:
+        value: 2
+    shear_vertical becomes Attenuation:
+        value: 2
+    shear_lateral becomes Attenuation:
+        value: 2
+    torsional becomes Attenuation:
+        value: 2
+
+Attenuation is Physics.Interactions.Dissipation.DefaultDissipation:
+    .doc: """
+    Attenuation dissipation model using a scalar attenuation constant.
+    The attenuation value damps high-frequency oscillations above the Nyquist frequency for numerical stability.
+    Typical values range from 1.0 to 2.0, with higher values providing stronger high-frequency damping.
+    """
+    value is Real

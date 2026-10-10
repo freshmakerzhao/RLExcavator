@@ -1,0 +1,5 @@
+trait ManualFocus:
+    .doc: """
+    Trait for lens systems with a set manual focus distance.
+    """
+    focus_distance is Real

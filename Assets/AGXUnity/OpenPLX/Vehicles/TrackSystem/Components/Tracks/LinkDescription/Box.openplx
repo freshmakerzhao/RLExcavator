@@ -1,0 +1,8 @@
+Box is TrackSystem.Components.Tracks.LinkDescription.Base:
+    .doc: """
+Link description for a track belt with a contact_geometry with the shape of a box,
+and possible variations in size given BoxLinkVariation type.
+"""
+    contact_geometry is Physics3D.Geometries.Box:
+        size.y: width
+        size.z: height

@@ -1,4 +1,3 @@
 
-Geometry:
-    local_transform is Math.AffineTransform
-    material is Materials.Material
+Geometry is Visuals.Node:
+    material is Physics.Optics.Material with Visuals.Optics.VisualMaterial

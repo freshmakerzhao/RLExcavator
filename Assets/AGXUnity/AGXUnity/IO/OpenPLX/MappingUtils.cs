@@ -67,28 +67,91 @@ namespace AGXUnity.IO.OpenPLX
     }
 
     public static uint To32BitFnv1aHash( this openplx.Core.Object obj ) => obj.getName().To32BitFnv1aHash();
+
+    public static bool HasTrait<T>( this openplx.Core.Object obj )
+      where T : class
+    {
+      string traitName = typeof( T ).FullName.Substring( 8 );
+      return obj.hasTrait( traitName );
+    }
+
+    public static bool TryGetBoolAnnotation( this openplx.Core.Object obj, string name, out bool value )
+    {
+      value = true; // This will be overwritten
+      var annots = obj.findAnnotations(name);
+      if ( annots.IsEmpty )
+        return false;
+
+      foreach ( var annot in annots ) {
+        if ( annot.isTrue() ) {
+          value = true;
+          return true;
+        }
+        if ( annot.isFalse() ) {
+          value = false;
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public static bool TryGetRealAnnotation( this openplx.Core.Object obj, string name, out float value )
+    {
+      value = 0.0f; // This will be overwritten
+      var annots = obj.findAnnotations(name);
+      if ( annots.IsEmpty )
+        return false;
+
+      foreach ( var annot in annots ) {
+        if ( annot.isNumber() ) {
+          value = (float)annot.asReal();
+          return true;
+        }
+      }
+      return false;
+    }
+
+    public static bool TryGetStringAnnotation( this openplx.Core.Object obj, string name, out string value )
+    {
+      value = ""; // This will be overwritten
+      var annots = obj.findAnnotations(name);
+      if ( annots.IsEmpty )
+        return false;
+
+      foreach ( var annot in annots ) {
+        if ( annot.isString() ) {
+          value = annot.asString();
+          return true;
+        }
+      }
+      return false;
+    }
   }
   public static class Utils
   {
-
     public static void MapLocalTransform( Transform transform, openplx.Math.AffineTransform local_transform )
     {
       transform.localPosition = local_transform.position().ToHandedVector3();
       transform.localRotation = local_transform.rotation().ToHandedQuaternion();
     }
 
-    public static T? ReportUnimplementedS<T>( openplx.Core.Object obj, openplx.ErrorReporter err )
+    public static T? ReportUnimplementedS<T>( openplx.Core.Object obj, MapperData data )
       where T : struct
     {
-      err.reportError( new UnimplementedError( obj ) );
+      data.Warnings.Add( new UnimplementedWarning( obj ) );
       return null;
     }
 
-    public static T ReportUnimplemented<T>( openplx.Core.Object obj, openplx.ErrorReporter err )
+    public static T ReportUnimplemented<T>( openplx.Core.Object obj, MapperData data )
       where T : class
     {
-      err.reportError( new UnimplementedError( obj ) );
+      data.Warnings.Add( new UnimplementedWarning( obj ) );
       return null;
+    }
+
+    public static void ReportUnimplemented( openplx.Core.Object obj, MapperData data )
+    {
+      data.Warnings.Add( new UnimplementedWarning( obj ) );
     }
 
     public static void AddChild( GameObject parent, GameObject child, openplx.ErrorReporter err, openplx.Core.Object obj )

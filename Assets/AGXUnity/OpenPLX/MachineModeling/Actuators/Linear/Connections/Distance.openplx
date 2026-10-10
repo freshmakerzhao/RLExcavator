@@ -1,0 +1,10 @@
+Distance is Actuators.Linear.Connections.Base:
+    .doc: """
+    Defines a DistanceMotor between the ground and drive.
+    The range is limited between min_length and max_length = stroke_length + min_length
+"""
+    actuator becomes Actuators.Linear.Distance
+    range is Physics3D.Interactions.DistanceRange:
+        connectors: actuator.source.connectors
+        start: actuator.min_length
+        end: actuator.min_length + actuator.stroke_length

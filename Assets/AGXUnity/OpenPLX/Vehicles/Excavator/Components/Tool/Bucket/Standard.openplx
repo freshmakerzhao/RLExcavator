@@ -1,0 +1,7 @@
+Standard is Vehicles.Excavator.Components.Tool.Bucket.Base:
+    .doc: """
+    For modelling buckets that has one solid body.
+    """
+
+    body is Physics3D.Bodies.RigidBody:
+        kinematics.local_transform.position: {0,0,0}

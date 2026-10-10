@@ -1,0 +1,7 @@
+Fixed is DumpTruck.Connections.CargoBed.Base:
+    chassis_frame becomes MachineModeling.Components.Primitive.Base with DumpTruck.Interfaces.CargoBed.SingleJoint reference
+    cargo_bed becomes MachineModeling.Components.Primitive.Base with DumpTruck.Interfaces.CargoBed.SingleJoint reference
+
+    connection becomes MachineModeling.Connections.Fixed.Lock:
+        from: chassis_frame.cargo_bed_connector
+        to: cargo_bed.cargo_bed_connector

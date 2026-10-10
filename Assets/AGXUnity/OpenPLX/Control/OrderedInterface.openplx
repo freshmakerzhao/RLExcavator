@@ -1,0 +1,11 @@
+OrderedInterface:
+    .doc: """
+Ensures that control buffers are layed out in a predictable order.
+Input and output names are optional, if not provided inputs will be named
+input_X and outputs: output_X where X in the index in the corresponding
+arrays.
+"""
+    input_names is String[]: []
+    inputs is Physics.Signals.Input[]
+    output_names is String[]: []
+    outputs is Physics.Signals.Output[]

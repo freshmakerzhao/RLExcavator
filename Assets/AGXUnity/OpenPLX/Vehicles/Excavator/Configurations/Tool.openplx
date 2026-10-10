@@ -1,0 +1,16 @@
+trait Tool:
+    .doc: """
+    Adds a `tool` (e.g. bucket) to the excavator and connects it to the excavator arm
+    using the `tool_connection`. Also adds a linear actuator (e.g. hydraulic cylinder).
+    """
+    tool is Vehicles.Excavator.Components.Tool.Base
+
+    tool_connection is MachineModeling.Connections.Pivot.Actuated.LinearDoubleLinkage:
+        from: arm.to
+        to: tool.from
+        ground_connector: arm.to_actuator
+        drive_connector: tool.from_actuator
+        guide_connector: arm.to
+
+    tool_connection.actuator becomes MachineModeling.Actuators.Linear.Cylinder
+    tool_connection.actuator_connection becomes MachineModeling.Actuators.Linear.Connections.Cylinder

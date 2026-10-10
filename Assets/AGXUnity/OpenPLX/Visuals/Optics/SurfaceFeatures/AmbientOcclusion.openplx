@@ -1,0 +1,7 @@
+trait AmbientOcclusion:
+    .doc: """
+Defines the geometry self-occlusion using a texture to define the local occlusion
+level at any point on the geometry surface.
+"""
+    ambient_occlusion_map is Visuals.Textures.Texture
+    ambient_occlusion_scale is Real: 1

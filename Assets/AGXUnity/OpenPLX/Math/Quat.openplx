@@ -83,7 +83,6 @@ Quat:
     # Alias for to_euler_angles_xyzs
     fn to_euler_angles() -> Vec3
 
-
 # Operator overloads
 
 operator *(lhs: Quat, rhs: Real) -> Quat

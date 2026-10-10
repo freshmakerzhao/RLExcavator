@@ -1,0 +1,5 @@
+CameraLens is Lens:
+    .doc: """
+    A camera lens system approximated by a single lens and an aperture.
+    """
+    f_stop is Real

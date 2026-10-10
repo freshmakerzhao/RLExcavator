@@ -1,0 +1,2 @@
+DualActuator is Ripper.FixedMount.Base:
+    frame becomes MachineModeling.Components.Composite.Base with Ripper.Interfaces.Frame.BaseConnectors, Ripper.Interfaces.Frame.DualActuatorConnectors

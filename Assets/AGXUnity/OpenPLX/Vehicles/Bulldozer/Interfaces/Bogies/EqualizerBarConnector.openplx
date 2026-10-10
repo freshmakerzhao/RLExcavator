@@ -1,0 +1,2 @@
+trait EqualizerBarConnector:
+    equalizer_bar_connector is Physics3D.Interactions.MateConnector

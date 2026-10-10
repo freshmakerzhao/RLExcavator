@@ -1,0 +1,12 @@
+Hinge is MachineModeling.Connections.Pivot.Base:
+    .doc: """
+    A Hinge connecion is the simplst type of Pivot connection
+    and constrains all degrees of freedom, except the axis of rotation.
+    Note that to prevent rotation about the two other axes,
+    the Hinge defines constaints that will indroduce a moment.
+
+    To simulate a more realistic Pivot connection
+    see the Bearings and AxleBearings variants.
+    With them realistic Bearing forces can be computed.
+    """
+    hinge.enabled: true

@@ -32,6 +32,7 @@
   <Attribute.Scalar name="shape2" type="Physics.Geometry.ShapePtr" doc="Shape number 2 in contact"/>
 
   <Attribute.Scalar name="area" type="Real" value="1.0"/>
+  <Attribute.Scalar name="volume" type="Real" value="0.0"/>
   <Attribute.Scalar name="elasticRestLengthShape1" type="Real" value="1.0"/>
   <Attribute.Scalar name="elasticRestLengthShape2" type="Real" value="1.0"/>
 </Entity>

@@ -1,0 +1,11 @@
+DefaultConstantVelocityDissipation is DefaultMateDissipation:
+    .doc: """
+    Defines one dissipation model for each constrained degree of freedom for a ConstantVelocity.
+    Two rotational degrees of freedom are left unconstrained -
+    rotation around normal and cross, therefore we define dissipation for around main,
+    the constrained rotational direction.
+    """
+    along_main is Physics.Interactions.Dissipation.DefaultDissipation
+    along_normal is Physics.Interactions.Dissipation.DefaultDissipation
+    along_cross is Physics.Interactions.Dissipation.DefaultDissipation
+    around_main is Physics.Interactions.Dissipation.DefaultDissipation

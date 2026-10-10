@@ -4,4 +4,3 @@
 System:
     # C++ extensions
     .extend_public: "std::unordered_map<std::string, std::shared_ptr<openplx::Physics::Signals::SignalInterface>> getSignalInterfaces() const;"
-

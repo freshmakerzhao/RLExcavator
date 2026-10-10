@@ -1,0 +1,6 @@
+Base is Physics3D.System:
+    .doc: """
+    A connection is centered at the origin of its owner.
+    The transform has to be set, due to the SNAP algorithm to work.
+    """
+    local_transform.position: {0,0,0}

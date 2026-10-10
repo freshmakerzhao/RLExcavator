@@ -1,0 +1,11 @@
+Action:
+    .doc: """
+An abstract action that can be mapped to a key in a Control.Keyboard.Controller through a
+Control.Keyboard.KeyBinding. Concrete variants control the exact behavior, see for example
+Control.Keyboard.Actions.Once, Control.Keyboard.Action.Hold.
+
+targets: The target input controls to send the value specified by the action to.
+field_name: Optional field name for when the targets are not single field inputs.
+"""
+    targets is Physics.Signals.Input[]: []
+    optional field_name is String

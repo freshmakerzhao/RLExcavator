@@ -1,0 +1,5 @@
+trait DualPivot:
+    upper_from_connector is Physics3D.Interactions.MateConnector reference
+    lower_from_connector is Physics3D.Interactions.MateConnector reference
+    upper_to_connector is Physics3D.Interactions.MateConnector reference
+    lower_to_connector is Physics3D.Interactions.MateConnector reference

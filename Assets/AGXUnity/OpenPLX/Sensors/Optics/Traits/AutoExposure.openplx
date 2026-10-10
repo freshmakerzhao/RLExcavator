@@ -1,0 +1,6 @@
+trait AutoExposure:
+    .doc: """
+    Trait adding automatic exposure control to a photodetector. The dynamic range specifies the
+    maximum exposure value the auto-exposure can use.
+    """
+    dynamic_range is Real

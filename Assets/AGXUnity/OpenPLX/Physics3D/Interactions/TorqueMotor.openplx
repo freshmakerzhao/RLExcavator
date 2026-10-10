@@ -12,3 +12,4 @@ TorqueMotor is Physics.Interactions.Interaction1DOF:
         enabled: false
     torque_input is Physics.Signals.Torque1DInput:
         source: this
+        initial_value: default_torque

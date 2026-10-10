@@ -1,0 +1,21 @@
+trait DualShovel:
+
+    left_upper_corner_1 is Math.Vec3
+    right_upper_corner_1 is Math.Vec3
+    left_lower_corner_1 is Math.Vec3
+    right_lower_corner_1 is Math.Vec3
+
+    shovel_1 is Terrain.Shovel:
+        body: this.body
+        top_edge: Math.Line.from_points(right_upper_corner_1, left_upper_corner_1)
+        cutting_edge: Math.Line.from_points(right_lower_corner_1, left_lower_corner_1)
+
+    left_upper_corner_2 is Math.Vec3
+    right_upper_corner_2 is Math.Vec3
+    left_lower_corner_2 is Math.Vec3
+    right_lower_corner_2 is Math.Vec3
+
+    shovel_2 is Terrain.Shovel:
+        body: this.body
+        top_edge: Math.Line.from_points(right_upper_corner_2, left_upper_corner_2)
+        cutting_edge: Math.Line.from_points(right_lower_corner_2, left_lower_corner_2)

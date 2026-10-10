@@ -1,0 +1,5 @@
+SingleJointDualActuator is DumpTruck.Connections.CargoBed.Base:
+    with DumpTruck.Connections.CargoBed.Interfaces.SingleJoint
+    with DumpTruck.Connections.CargoBed.Interfaces.DualActuator
+
+    connection.hinge_range.enabled: false

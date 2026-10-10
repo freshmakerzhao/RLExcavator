@@ -1,0 +1,7 @@
+Fixed is Bulldozer.Connections.Undercarriage.Base:
+    left_bogie_connection becomes MachineModeling.Connections.Fixed.Lock:
+        from: chassis.left_bogie_connector
+        to: left_bogie.chassis_connector
+    right_bogie_connection becomes MachineModeling.Connections.Fixed.Lock:
+        from: chassis.right_bogie_connector
+        to: right_bogie.chassis_connector

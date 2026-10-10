@@ -411,6 +411,11 @@ namespace AGXUnity
       if ( !isOriented || referenceObject == null || FrictionModel == null )
         return;
 
+      if ( isOriented && FrictionModel.TrackFrictionModel ) {
+        Debug.LogWarning( "Setting IsOriented on a ContactMaterial with a track FrictionModel is redundant and will be ignored." );
+        return;
+      }
+
       if ( !Application.isPlaying ) {
         Debug.LogError( "Oriented friction: Invalid to initialize oriented friction in edit mode.", this );
         return;
@@ -445,8 +450,10 @@ namespace AGXUnity
 
       if ( rb != null )
         FrictionModel.InitializeOriented( rb, primaryDirection );
-      else
+      else if ( shape != null )
         FrictionModel.InitializeOriented( shape, primaryDirection );
+      else if ( observer != null )
+        FrictionModel.InitializeOriented( observer, primaryDirection );
     }
 
     protected override void Construct()
@@ -483,8 +490,12 @@ namespace AGXUnity
 
     public override void Destroy()
     {
-      if ( Simulation.HasInstance )
-        GetSimulation().getMaterialManager().remove( m_contactMaterial );
+      if ( Simulation.HasInstance ) {
+        var matManager = GetSimulation().getMaterialManager();
+        // AGX logs a warning if we try to remove a CM that is present so ensure that CM is actually added
+        if ( matManager.getContactMaterialVector().Contains( m_contactMaterial ) )
+          GetSimulation().getMaterialManager().remove( m_contactMaterial );
+      }
       m_contactMaterial = null;
     }
 

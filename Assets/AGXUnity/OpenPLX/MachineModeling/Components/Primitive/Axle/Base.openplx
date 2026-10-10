@@ -1,0 +1,4 @@
+Base is MachineModeling.Components.Primitive.Base:
+    central_connector is Physics3D.Interactions.RedirectedMateConnector:
+        position: {0,0,0}
+        main_axis: Constants.AlongAxle

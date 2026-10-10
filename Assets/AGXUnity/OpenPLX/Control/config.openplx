@@ -1,0 +1,4 @@
+config is BundleConfig:
+    name: "Control"
+    version: "0.26.7"
+    dependencies: ["Physics==0.26.7"]

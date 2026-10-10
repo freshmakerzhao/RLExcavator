@@ -1,0 +1,10 @@
+Base is MachineModeling.Connections.Base:
+    with MachineModeling.Connections.Traits.PairwiseConnection
+    link is MachineModeling.Components.Primitive.Link.Base reference
+    hinge_1 is MachineModeling.Connections.Pivot.Hinge:
+        from: from
+        to: link.connector_1
+
+    hinge_2 is MachineModeling.Connections.Pivot.Hinge:
+        from: link.connector_2
+        to: to

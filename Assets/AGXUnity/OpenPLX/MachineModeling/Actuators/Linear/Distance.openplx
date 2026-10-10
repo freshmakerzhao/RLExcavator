@@ -1,0 +1,2 @@
+Distance is Actuators.Linear.Base:
+    source becomes Physics3D.Interactions.DistanceMotor

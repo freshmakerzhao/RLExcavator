@@ -1,0 +1,9 @@
+Sinusoidal is Math.Distributions.Cyclic.Base:
+    .doc: """
+A variation of a pattern, where the amplitude will
+will increase with a Sinusoidal variation.
+The additional_amplitude is the amplitude of the function,
+and the period is the wavelength of the function.
+"""
+    amplitude is Real
+    period is Real

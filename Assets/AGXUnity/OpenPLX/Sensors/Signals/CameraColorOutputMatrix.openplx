@@ -1,0 +1,8 @@
+CameraColorOutputMatrix:
+    .doc: """
+    Specification of the sample content for a camera color output.
+    outputs - Specifies the number of output channels per sample
+    matrix - Specifies a linear remapping from a produced linear RGB1 source to the output channels
+    """
+    outputs is Int
+    matrix is Real[]

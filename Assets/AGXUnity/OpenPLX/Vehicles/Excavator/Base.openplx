@@ -1,0 +1,8 @@
+Base is Vehicles.Base:
+    with Vehicles.Interfaces.UpForwardVectors
+    
+    chassis:
+        local_transform.position: {0, 0, 0}
+
+    arm is Vehicles.Excavator.Components.Arm.Base
+    arm_connection is MachineModeling.Connections.Base

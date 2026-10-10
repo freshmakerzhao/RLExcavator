@@ -1,0 +1,17 @@
+CustomLength is Components.Primitive.Link.Base:
+    .doc: """
+    Link variant that places the two connectors symmetrically around
+    the body origin using a configurable length.
+    """
+
+    length is Real
+
+    connector_1 becomes Physics3D.Interactions.RedirectedMateConnector:
+        main_axis: Constants.AlongAxle
+        position: -Constants.AlongLink * length * 0.5
+        redirected_parent: body
+
+    connector_2 becomes Physics3D.Interactions.RedirectedMateConnector:
+        main_axis: Constants.AlongAxle
+        position: Constants.AlongLink * length * 0.5
+        redirected_parent: body

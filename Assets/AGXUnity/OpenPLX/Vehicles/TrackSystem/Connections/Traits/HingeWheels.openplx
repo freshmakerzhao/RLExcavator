@@ -1,0 +1,68 @@
+trait TwoWheels:
+    .doc: """
+    Here we extend the connection base with one more wheel connectors.
+    Note that the size of the track_wheels array in the track_system must
+    have at least the the number of hinges in the connection. E.g. if we use the
+    TwoWheels trait, the track_system must have at least two track_wheels.
+
+    Example:
+        tracks_connection is Vehicles.TrackSystem.Connections.Base with Vehicles.TrackSystem.Connections.Traits.TwoWheels:
+            track_system : track_system
+            connectors: [sprocket_connector,
+                        idler_connector]
+    """
+    hinge_2 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[1]
+        to: track_system.track_wheels[1].center_connector
+
+trait ThreeWheels is TwoWheels:
+    .doc: """
+    Here we extend the connection base with two more wheel connectors.
+    Note that the size of the track_wheels array in the track_system must
+    have at least the the number of hinges in the connection. E.g. if we use the
+    ThreeWheels trait, the track_system must have at least three track_wheels.
+
+    Example:
+        tracks_connection is Vehicles.TrackSystem.Connections.Base with Vehicles.TrackSystem.Connections.Traits.ThreeWheels:
+            track_system : track_system
+            connectors: [sprocket_connector,
+                        idler_connector]
+    """
+    hinge_3 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[2]
+        to: track_system.track_wheels[2].center_connector
+
+trait FourWheels is ThreeWheels:
+    hinge_4 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[3]
+        to: track_system.track_wheels[3].center_connector
+
+trait FiveWheels is FourWheels:
+    hinge_5 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[4]
+        to: track_system.track_wheels[4].center_connector
+
+trait SixWheels is FiveWheels:
+    hinge_6 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[5]
+        to: track_system.track_wheels[5].center_connector
+
+trait SevenWheels is SixWheels:
+    hinge_7 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[6]
+        to: track_system.track_wheels[6].center_connector
+
+trait EightWheels is SevenWheels:
+    hinge_8 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[7]
+        to: track_system.track_wheels[7].center_connector
+
+trait NineWheels is EightWheels:
+    hinge_9 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[8]
+        to: track_system.track_wheels[8].center_connector
+
+trait TenWheels is NineWheels:
+    hinge_10 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[9]
+        to: track_system.track_wheels[9].center_connector

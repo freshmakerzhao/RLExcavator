@@ -1,0 +1,3 @@
+RigidCylindrical is Components.Primitive.Axle.Base:
+    with Traits.Cylindrical
+    central_connector.redirected_parent: body

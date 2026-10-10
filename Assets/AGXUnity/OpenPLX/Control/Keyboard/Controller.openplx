@@ -1,0 +1,16 @@
+Controller:
+    .doc: """
+A Control.Keyboard.Controller can be added to a Physics3D.System to add a keyboard control interface to a model.
+A controller contains a set of Control.Keyboard.KeyBinding through composition. For example:
+
+my_keyboard_controller is Control.Keyboard.Controller:
+    up is KeyBinding:
+        keys: ["KEY_up"]
+        hold becomes Actions.Set:
+            targets: [signal_interface.throttle_input]
+            value becomes Real: 2.3
+        release becomes Actions.Set:
+            targets: hold.targets
+            value becomes Real: 0.0
+"""
+    enabled is Bool: false

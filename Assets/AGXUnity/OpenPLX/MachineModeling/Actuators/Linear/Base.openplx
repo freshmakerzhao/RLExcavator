@@ -1,0 +1,9 @@
+Base is Components.Composite.Base:
+    .doc: """
+    Abstract model for a linear actuator. By using this in your model,
+    you have the option to replace it with any linear actuator inheriting from this model.
+    """
+    min_length is Real
+    stroke_length is Real
+
+    source is Physics.Interactions.Interaction

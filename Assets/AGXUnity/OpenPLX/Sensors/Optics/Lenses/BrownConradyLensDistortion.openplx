@@ -1,0 +1,9 @@
+BrownConradyLensDistortion is Distortion:
+    .doc: """
+    Specification of the five parameter (k1, k2, k3, p1, p2) Brown-Conrady lens distortion model.
+    """
+    k1 is Real
+    k2 is Real
+    k3 is Real
+    p1 is Real
+    p2 is Real

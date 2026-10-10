@@ -1,0 +1,13 @@
+trait BoxVisual:
+    .doc: """
+    A trait that defines a box visual for all track links.
+    The length of the box will be adjusted to the length of the track link,
+    while the width and height can be specified.
+
+    Example:
+
+    Link is TrackSystem.Components.Tracks.LinkDescription.Box:
+        with TrackSystem.Components.Tracks.Traits.BoxVisual
+        width: 0.2
+        height: 0.05
+    """

@@ -1,0 +1,3 @@
+trait ForceMotor:
+    source becomes Physics3D.Interactions.ForceMotor:
+        connectors: cylindrical.connectors

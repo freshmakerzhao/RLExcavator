@@ -16,6 +16,7 @@ BoolField is Field:
     type: 0
 
 Marshalling:
+    is_dynamic is Bool: false
     size is Int: 0
     offset is Int: 0
     array_type is Int: 0 # 0 == None, 1 == Static, 2 == Dynamic, 3 == Flexible

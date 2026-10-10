@@ -1,0 +1,2 @@
+trait Axle:
+    axle is MachineModeling.Components.Primitive.Axle.Base

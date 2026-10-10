@@ -1,0 +1,2 @@
+CylinderPart is Components.Primitive.Base:
+    body becomes Physics3D.Bodies.RigidBody with Traits.RigidCylinderPart

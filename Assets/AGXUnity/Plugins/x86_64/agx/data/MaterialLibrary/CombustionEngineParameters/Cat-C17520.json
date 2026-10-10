@@ -1,0 +1,31 @@
+{
+  "description": "Used in CAT 797F. https://en.wikipedia.org/wiki/Caterpillar_797 https://www.cat.com/en_US/products/new/equipment/off-highway-trucks/mining-trucks/18093014.html",
+  "reference": "https://en.wikipedia.org/wiki/Caterpillar_C175",
+  "name": "Cat-C17520",
+
+  "displacementVolume":    0.106,      // m^3
+  "maxTorque":             9260,       // Nm
+  "maxTorqueRPM":          1500,       // rpm
+  "maxPowerRPM":           1800,       // rpm
+  "idleRPM":               500,        // rpm 
+  "maxRPM":                3000,       // rpm 
+  "crankShaftInertia":     10,         // kg.m^2 
+
+  // Parameters controlling the mean effective friction torque. This corresponds to
+  // page 722, section 13.5.1 in "Internal combustion engine fundamentals" by John B. Heywood, 1988.
+  // These parameters must be parameterized against the real engine.
+  // The values here are the default that might not result in the correct overall behavior.
+  // Without access to real world data these values should be considered placeholders for accurate measurements.
+  "FrictionTorqueParameters":
+  {
+    "cfr0": 0.97,
+    "cfr1": 0.15,
+    "cfr2": 0.05
+  },
+
+  // Optional
+  "airFuelRatio": 14.5, // Diesel
+  "heatValue": 45400000 // Diesel
+
+}
+

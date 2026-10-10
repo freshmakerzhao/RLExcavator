@@ -4,3 +4,4 @@ Rim is Physics3D.Bodies.RigidBody:
     geometry is Physics3D.Geometries.Cylinder:
         radius: radius
         height: width
+        local_transform.rotation: Math.Quat.from_to(Math.Vec3.Y_AXIS(), rotational_axis)

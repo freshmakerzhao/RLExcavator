@@ -1,0 +1,21 @@
+trait SingleJoint:
+    chassis_frame becomes MachineModeling.Components.Primitive.Base with DumpTruck.Interfaces.CargoBed.SingleJoint reference
+    cargo_bed becomes MachineModeling.Components.Primitive.Base with DumpTruck.Interfaces.CargoBed.SingleJoint reference
+
+    initial_angle is Real: 0.0
+    max_angle is Real : 180.0*(Math.PI/180)
+    min_angle is Real : -max_angle
+
+    connection becomes MachineModeling.Connections.Pivot.Hinge:
+        from: chassis_frame.cargo_bed_connector
+        to: cargo_bed.cargo_bed_connector
+
+        hinge.initial_angle: -initial_angle
+
+        hinge_range is Physics3D.Interactions.RotationalRange:
+            connectors: connection.hinge.connectors
+            start: min_angle
+            end: max_angle
+
+        hinge.flexibility becomes Physics3D.Interactions.Flexibility.LinearElasticHingeFlexibility:
+            default_stiffness: 1e16

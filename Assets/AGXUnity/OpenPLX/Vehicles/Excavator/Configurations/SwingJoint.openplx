@@ -1,0 +1,14 @@
+trait SwingJoint:
+    .doc: """
+    Adds the `undercarriage` and `swing_connection` which will allow for the
+    upper structure of the excavator to freely rotate around the vertical axis.
+    """
+    undercarriage is MachineModeling.Components.Primitive.Base
+    swing_connection is Excavator.Connections.SwingJoint.Base
+
+    no_undercarriage_chassis_collisions is Simulation.CollisionGroup:
+        systems: [chassis, undercarriage]
+
+    disable_chassis_undercarriage_pairs is Simulation.DisableCollisionPair:
+        group1: no_undercarriage_chassis_collisions
+        group2: no_undercarriage_chassis_collisions

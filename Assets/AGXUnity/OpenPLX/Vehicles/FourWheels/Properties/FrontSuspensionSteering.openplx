@@ -1,0 +1,14 @@
+trait FrontSuspensionSteering:
+    front_left_suspension becomes Vehicles.Suspensions.SingleMate.LinearSpringDamper with Vehicles.Suspensions.Properties.Steering:
+        mate becomes Vehicles.Suspensions.SingleMate.Interactions.LinearSpringDamper
+        attachment_connector: front_left_wheel.connector
+        chassis_connector: chassis.front_left_connector
+    chassis.front_left_connector is Physics3D.Interactions.MateConnector
+
+    front_right_suspension becomes Vehicles.Suspensions.SingleMate.LinearSpringDamper with Vehicles.Suspensions.Properties.Steering:
+        mate becomes Vehicles.Suspensions.SingleMate.Interactions.LinearSpringDamper
+        attachment_connector: front_right_wheel.connector
+        chassis_connector: chassis.front_right_connector
+    chassis.front_right_connector is Physics3D.Interactions.MateConnector
+
+    steering is Steering.Base

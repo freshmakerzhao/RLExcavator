@@ -1,0 +1,8 @@
+trait DualJoint:
+    .doc: """
+    A trait for adding dual connectors for mounting the excavator arm to the
+    vehicle chassis.
+    """
+
+    left_arm_connector is Physics3D.Interactions.MateConnector
+    right_arm_connector is Physics3D.Interactions.MateConnector

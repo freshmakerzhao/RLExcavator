@@ -1,0 +1,5 @@
+VisibleBand:
+    .doc: """
+Defines the light interactions with the optical material the this attribute is added
+to in the visible light band by specifying a number of surface features.
+"""

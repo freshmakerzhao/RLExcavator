@@ -1,0 +1,8 @@
+Base is MachineModeling.Components.Composite.Base:
+    front_frame is MachineModeling.Components.Primitive.Base:
+        local_transform.position: {0,0,0}
+    rear_frame is MachineModeling.Components.Primitive.Base
+
+    frame_connection is Chassis.Articulated.Connections.Base:
+        front_frame: front_frame
+        rear_frame: rear_frame

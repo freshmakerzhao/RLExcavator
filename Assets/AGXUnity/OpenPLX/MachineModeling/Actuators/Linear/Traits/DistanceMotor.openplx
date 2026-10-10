@@ -1,0 +1,2 @@
+trait DistanceMotor:
+    source becomes Physics3D.Interactions.DistanceMotor

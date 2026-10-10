@@ -1,0 +1,10 @@
+DualPivot is Chassis.Articulated.Base:
+    front_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.DualJoint
+    rear_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.DualJoint
+    frame_connection becomes Chassis.Articulated.Connections.DualPivot:
+        front_frame: front_frame
+        rear_frame: rear_frame
+        upper_from_connector: front_frame.upper_joint_connector
+        lower_from_connector: front_frame.lower_joint_connector
+        upper_to_connector: rear_frame.upper_joint_connector
+        lower_to_connector: rear_frame.lower_joint_connector

@@ -1,0 +1,17 @@
+Base is Bulldozer.Base:
+    chassis becomes MachineModeling.Components.Composite.Base:
+        front_frame is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Chassis.BaseConnectors, Bulldozer.Interfaces.Chassis.Outputs
+        rear_frame is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Chassis.BaseConnectors, Bulldozer.Interfaces.Chassis.Outputs
+        front_rear_connection is MachineModeling.Connections.Pivot.Hinge
+
+    front_undercarriage is MachineModeling.Components.Composite.Base:
+        local_transform.position: {0,0,0}
+        left_bogie is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors
+        right_bogie is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors
+    front_undercarriage_connection is Bulldozer.Connections.Undercarriage.Base
+
+    rear_undercarriage is MachineModeling.Components.Composite.Base:
+        local_transform.position: {0,0,0}
+        left_bogie is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors
+        right_bogie is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors
+    rear_undercarriage_connection is Bulldozer.Connections.Undercarriage.Base

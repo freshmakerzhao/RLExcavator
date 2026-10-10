@@ -1,0 +1,12 @@
+Base is Ripper.Base:
+    .doc: """
+    A FixedMount ripper has two actuated degrees of freedom.
+    Lift and angle.
+    The angle is defined between the two rigid parts
+    the the frame and the shank.
+    """
+
+    shank is MachineModeling.Components.Composite.Base with Ripper.Interfaces.Shank.FrameConnectors
+    frame becomes MachineModeling.Components.Composite.Base with Ripper.Interfaces.Frame.BaseConnectors, Ripper.Interfaces.Frame.ShankConnectors
+
+    shank_angle is Real: (0)/180*Math.PI

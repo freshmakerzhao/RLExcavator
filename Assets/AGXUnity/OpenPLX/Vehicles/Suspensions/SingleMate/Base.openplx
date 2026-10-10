@@ -1,0 +1,30 @@
+Base is Suspensions.Base:
+    .doc: """
+The SingleMateSuspension defines a one-mate connection between
+the chassis and an attached component for ground contact. Like a wheel, track, ski, etc.
+
+By default a SuspensionMate has a rotating degree of freedom for a rotating wheel around the main_axis of the connectors.
+If the Vehicles.Suspensions.Properties.Steering trait is given to the owning Suspension that will open up a second degree of freedom,
+orthogonal to the wheel axis along the normal. A Steering interaction can be introduced given two SteeringCompatibleSuspensions with the Steering trait.
+
+The direction of the linear suspension is local to the chassis along the chassis_local_direction vector.
+By default the normal of the chassis_connector is used.
+
+"""
+    chassis_connector is Physics3D.Interactions.MateConnector reference
+    attachment_connector is Physics3D.Interactions.MateConnector reference
+
+    chassis_local_direction is Math.Vec3: chassis_connector.normal
+
+    mate is Vehicles.Suspensions.SingleMate.Interactions.Base:
+        chassis_connector: chassis_connector
+        attachment_connector: attachment_connector
+
+    range is Physics3D.Interactions.LinearRange:
+        connectors: mate.connectors
+        flexibility becomes Physics.Interactions.Flexibility.LinearElastic:
+            stiffness: 1E12
+        dissipation becomes Physics.Interactions.Dissipation.MechanicalDamping:
+            damping_constant: 1E10
+        start: Math.NEG_INF
+        end: Math.INF

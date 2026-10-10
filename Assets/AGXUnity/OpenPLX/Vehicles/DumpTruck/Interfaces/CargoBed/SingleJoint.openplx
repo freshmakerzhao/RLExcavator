@@ -1,0 +1,2 @@
+trait SingleJoint:
+    cargo_bed_connector is Physics3D.Interactions.MateConnector

@@ -1,0 +1,2 @@
+Lift is Bulldozer.Rigid.PushBars.Base:
+    blade_connection becomes Bulldozer.Connections.Blade.PushBars.Lift

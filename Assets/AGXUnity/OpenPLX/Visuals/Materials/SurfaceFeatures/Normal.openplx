@@ -1,0 +1,12 @@
+trait Normal:
+    .doc: """
+Defines sub-geometry level features using a texture to define the local normals
+at any given point on the geometry surface.
+"""
+    normal_map is Visuals.Textures.Texture # Has no defaults
+    normal_scale is Real: 1.0
+
+    # Propagate outer values to the physical visible light spectrum band
+    visible becomes Visuals.Optics.VisibleBand with Visuals.Optics.SurfaceFeatures.Normal:
+        normal_map: normal_map
+        normal_scale: normal_scale

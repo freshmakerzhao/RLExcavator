@@ -1,0 +1,21 @@
+Cylinder is Actuators.Linear.Connections.Base:
+    .doc: """
+    Defines a hinge for the ground and drive connections.
+    The range is limited between min_length and max_length = stroke_length + min_length
+"""
+    actuator becomes Actuators.Linear.Cylinder
+
+    barrel_connection is Connections.Pivot.Hinge:
+        from: from
+        to: actuator.barrel.body.connector
+
+    rod_connection is Connections.Pivot.Hinge:
+        from: actuator.rod.body.connector
+        to: to
+
+    internal_group is Simulation.CollisionGroup:
+        bodies: [actuator.barrel.body, actuator.rod.body]
+
+    disable_internal is Simulation.DisableCollisionPair:
+        group1: internal_group
+        group2: internal_group

@@ -1,0 +1,65 @@
+DualTrackDifferential is Physics3D.System:
+    engine_shaft is DriveTrain.Shaft
+    torque_converter_shaft is DriveTrain.Shaft
+    gear_shaft is DriveTrain.Shaft
+
+    left_clutch_shaft is DriveTrain.Shaft
+    right_clutch_shaft is DriveTrain.Shaft
+
+    diff_left_shaft is DriveTrain.Shaft
+    diff_right_shaft is DriveTrain.Shaft
+
+    left_brake_shaft is DriveTrain.Shaft
+    right_brake_shaft is DriveTrain.Shaft
+
+    left_final_drive_shaft is DriveTrain.Shaft
+    right_final_drive_shaft is DriveTrain.Shaft
+
+    engine is Physics.Interactions.Interaction1DOF with DriveTrain.Traits.RotationalPowerGenerator, Physics.Signals.FractionInputTrait, Physics.Signals.RpmOutputTrait, Physics.Signals.Torque1DOutputTrait:
+        connectors: [engine_shaft.input]
+
+    torque_converter is DriveTrain.EmpiricalTorqueConverter:
+        connectors: [engine_shaft.output, torque_converter_shaft.input]
+
+    torque_converter_turbine_torque is DriveTrain.Signals.TorqueConverterTurbineTorqueOutput:
+        torque_converter: torque_converter
+    torque_converter_pump_torque is DriveTrain.Signals.TorqueConverterPumpTorqueOutput:
+        torque_converter: torque_converter
+
+    gear_box is DriveTrain.GearBox:
+        connectors: [torque_converter_shaft.output, gear_shaft.input]
+
+    differential is DriveTrain.Differential:
+         drive_shaft: gear_shaft
+         left_axle_shaft: diff_left_shaft
+         right_axle_shaft: diff_right_shaft
+         locked_up: true
+         locked_up_output.enabled: true
+
+    left_clutch is DriveTrain.ManualClutch:
+        connectors: [differential.left_axle_shaft.output, left_clutch_shaft.input]
+
+    right_clutch is DriveTrain.ManualClutch:
+        connectors: [differential.right_axle_shaft.output, right_clutch_shaft.input]
+
+    left_brake is DriveTrain.ManualBrake:
+        connectors: [left_clutch_shaft.output, left_brake_shaft.input]
+
+    right_brake is DriveTrain.ManualBrake:
+        connectors: [right_clutch_shaft.output, right_brake_shaft.input]
+
+    left_final_drive is DriveTrain.GearBox:
+        connectors: [left_brake_shaft.output, left_final_drive_shaft.input]
+        initial_gear: 1
+        has_neutral_gear: false
+
+    right_final_drive is DriveTrain.GearBox:
+        connectors: [right_brake_shaft.output, right_final_drive_shaft.input]
+        initial_gear: 1
+        has_neutral_gear: false
+
+    left_actuator is DriveTrain.Actuator:
+        connector_1d: left_final_drive_shaft.output
+
+    right_actuator is DriveTrain.Actuator:
+        connector_1d: right_final_drive_shaft.output

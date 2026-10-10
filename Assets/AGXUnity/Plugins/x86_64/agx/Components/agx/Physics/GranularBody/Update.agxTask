@@ -224,3 +224,53 @@
   <!--<Task instance="StoreContactForcesTask : GranularGranularContact_LocalJacobians" source="GranularBody.StoreContactForcesTask : GranularGranularContact_LocalJacobians32"/>-->
 
 </Task>
+
+
+<Task name="Update" implementation="GPU32" source="Update">
+
+  <Task instance="InitializeConstraintData : GranularGranularContact" source="GranularBody.InitializeConstraintData32 : GranularGranularContact_LocalJacobians"
+    resolve="@Simulation.Update.UpdateSystem.BuildInternalIslandGroups;@Simulation.Update.UpdateSystem.GpuPlaceholder" />
+
+  <Task source="GranularBody.InitializeConstraintData : GranularGeometryContact"
+    resolve="@Simulation.Update.UpdateSystem.BuildInternalIslandGroups;@Simulation.Update.UpdateSystem.GpuPlaceholder" />
+
+  <Task instance="TagContacts : ParticleGeometryContact" source="GranularBody.TagContacts : ParticleGeometryContact"
+    resolve="@Simulation.Update.UpdateSystem.BuildInternalIslandGroups;@Simulation.Update.UpdateSystem.GpuPlaceholder" />
+
+  <Task instance="InitializeSolveMaterial" source="GranularBody.InitializeSolveMaterial:Real32" enable="false"/>
+
+  <Task instance="CalculateJacobians : GranularGranularContact" source="GranularBody.CalculateJacobians32 : GranularGranularContact" enable="false" />
+  <Task instance="CalculateGMInv : GranularGranularContact" source="GranularBody.CalculateGMInv32 : GranularGranularContact" enable="false" />
+  <Task instance="CalculateGMInv : GranularGeometryContact" source="GranularBody.CalculateGMInv : GranularGeometryContact" enable="false" />
+
+  <!-- <Task instance="IntegrateVelocities : SolveBody" source="GranularBody.IntegrateVelocities : SolveBody32"/> -->
+  <Task instance="InitializeSolveBodies" source="GranularBody.InitializeSolveBodies : SolveBody32"/>
+  <Task instance="PreIntegratePositions : SolveBody" source="GranularBody.IntegratePositions : SolveBody32" name="PreIntegratePositions"/>
+  <Task instance="IntegratePositions : SolveBody" source="GranularBody.IntegratePositions : SolveBody32"/>
+
+  <Task instance="StoreContactLambdas : GranularGranularContact" source="GranularBody.StoreContactLambdas32 : GranularGranularContact" enable="false"/>
+</Task>
+
+
+<Task name="Update" implementation="GPU64" source="Update">
+  <Task instance="InitializeConstraintData : GranularGranularContact" source="GranularBody.InitializeConstraintData : GranularGranularContact_LocalJacobians"
+    resolve="@Simulation.Update.UpdateSystem.BuildInternalIslandGroups;@Simulation.Update.UpdateSystem.GpuPlaceholder" />
+
+  <Task source="GranularBody.InitializeConstraintData : GranularGeometryContact"
+    resolve="@Simulation.Update.UpdateSystem.BuildInternalIslandGroups;@Simulation.Update.UpdateSystem.GpuPlaceholder" />
+
+  <Task instance="TagContacts : ParticleGeometryContact" source="GranularBody.TagContacts : ParticleGeometryContact"
+    resolve="@Simulation.Update.UpdateSystem.BuildInternalIslandGroups;@Simulation.Update.UpdateSystem.GpuPlaceholder" />
+
+  <Task instance="InitializeSolveMaterial" source="GranularBody.InitializeSolveMaterial" enable="false"/>
+
+  <Task instance="CalculateJacobians : GranularGranularContact" source="GranularBody.CalculateJacobians : GranularGranularContact" enable="false" />
+  <Task instance="CalculateGMInv : GranularGranularContact" source="GranularBody.CalculateGMInv : GranularGranularContact" enable="false" />
+  <Task instance="CalculateGMInv : GranularGeometryContact" source="GranularBody.CalculateGMInv : GranularGeometryContact" enable="false" />
+
+  <Task instance="InitializeSolveBodies" source="GranularBody.InitializeSolveBodies"/>
+  <Task instance="PreIntegratePositions : SolveBody" source="GranularBody.IntegratePositions : SolveBody" name="PreIntegratePositions"/>
+  <Task instance="IntegratePositions : SolveBody" source="GranularBody.IntegratePositions : SolveBody"/>
+
+  <Task instance="StoreContactLambdas : GranularGranularContact" source="GranularBody.StoreContactLambdas : GranularGranularContact" enable="false"/>
+</Task>

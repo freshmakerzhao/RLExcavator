@@ -1,0 +1,12 @@
+Base is Bulldozer.Base:
+    chassis becomes MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Chassis.BaseConnectors, Bulldozer.Interfaces.Chassis.Outputs
+
+    undercarriage is MachineModeling.Components.Composite.Base:
+        local_transform.position: {0,0,0}
+        left_bogie is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors
+        right_bogie is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors
+    undercarriage_connection is Bulldozer.Connections.Undercarriage.Base
+
+    drive_train is Physics3D.System
+    left_track is TrackSystem.Base
+    right_track is TrackSystem.Base

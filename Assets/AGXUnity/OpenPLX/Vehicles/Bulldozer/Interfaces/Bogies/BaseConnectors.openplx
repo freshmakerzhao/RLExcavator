@@ -1,0 +1,3 @@
+trait BaseConnectors:
+    chassis_connector is Physics3D.Interactions.MateConnector
+    equipment_connector is Physics3D.Interactions.MateConnector

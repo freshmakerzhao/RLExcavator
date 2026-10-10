@@ -1,0 +1,16 @@
+trait Bearings:
+    .doc: """
+    A trait for upgrading a Hinge connection to one with bearings.
+    Independent of if there is an axle in the connection or not.
+    """
+    hinge.enabled: false
+    bearing_collision_group is Simulation.CollisionGroup:
+        systems: [from_bearings, to_bearings]
+
+    disable_bearings is Simulation.DisableCollisionPair:
+        group1: bearing_collision_group
+        group2: bearing_collision_group
+
+    from_bearings is MachineModeling.Components.Composite.BearingPair reference
+
+    to_bearings is MachineModeling.Components.Composite.BearingPair reference

@@ -1,0 +1,17 @@
+Base is Vehicles.Base:
+    with Vehicles.Interfaces.UpForwardVectors
+
+    chassis:
+        local_transform.position: {0, 0, 0}
+
+    cargo_bed is MachineModeling.Components.Primitive.Base
+    cargo_bed_connection is DumpTruck.Connections.CargoBed.Base
+
+    drivetrain is Physics3D.System
+
+    no_inter_chassis_collisions is Simulation.CollisionGroup:
+        systems: [chassis]
+
+    disable_geometry_pairs is Simulation.DisableCollisionPair:
+        group1: no_inter_chassis_collisions
+        group2: no_inter_chassis_collisions

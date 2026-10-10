@@ -1,0 +1,9 @@
+Base is MachineModeling.Connections.Base:
+    .doc: """
+    A universal connection is free to rotate around two axes.
+    It is modeled using a hinge with rotation enabled
+    about a second axis, the normal.
+    """
+    with Connections.Interfaces.FromTo
+    universal is Physics3D.Interactions.Universal:
+        connectors: [from, to]

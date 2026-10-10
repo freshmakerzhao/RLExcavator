@@ -1,0 +1,20 @@
+const VertexAttributeType:
+    Position is Int: 0
+    Normal is Int: 1
+    Color is Int: 2
+    UV is Int: 3
+
+VertexAttribute:
+    type is Int
+    data is String # base64 encoded data for this vertex attribute
+
+Base64TriMeshGeometry is TriMeshGeometry:
+    .doc: """
+A visual mesh consisting of a base64 encoded index data and a vertex attribute
+list where the data in each attribute is base64 encoded.
+"""
+    numVertices is Int
+    attributes is VertexAttribute[]: []
+
+    numIndices is Int
+    indexData is String

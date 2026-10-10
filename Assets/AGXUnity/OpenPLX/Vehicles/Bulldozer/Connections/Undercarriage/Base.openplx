@@ -1,0 +1,15 @@
+Base is MachineModeling.Connections.Base:
+    .doc: """
+    Internal connection for undercarriage to
+    connect chassis to the bogie.
+    For an articulated chassis each of the frames
+    must have one connections each.
+    """
+
+    chassis is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Chassis.BaseConnectors reference
+    left_bogie is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors reference
+    right_bogie is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors reference
+
+    left_bogie_connection is MachineModeling.Connections.Base
+
+    right_bogie_connection is MachineModeling.Connections.Base

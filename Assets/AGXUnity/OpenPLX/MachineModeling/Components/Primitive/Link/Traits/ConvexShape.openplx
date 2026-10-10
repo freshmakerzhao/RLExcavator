@@ -1,0 +1,13 @@
+trait ConvexShape:
+    in_between_axis is Math.Vec3: (connector_1.position-connector_2.position).normal()
+    cross_axis is Math.Vec3: connector_1.main_axis.cross(in_between_axis).normal()
+    shape_width is Real: 0.01
+    shape_height is Real: 0.05
+    body.geometry is Physics3D.Geometries.ConvexMesh:
+        vertices: [connector_1.position, connector_2.position,
+                   connector_1.position + connector_1.main_axis * -shape_width + cross_axis * -shape_height, connector_2.position + connector_2.main_axis * -shape_width + cross_axis * -shape_height,
+                   connector_1.position + connector_1.main_axis * shape_width + cross_axis * -shape_height, connector_2.position + connector_2.main_axis * shape_width + cross_axis * -shape_height,
+                   connector_1.position + connector_1.main_axis * -shape_width + cross_axis * shape_height, connector_2.position + connector_2.main_axis * -shape_width + cross_axis * shape_height,
+                   connector_1.position + connector_1.main_axis * shape_width + cross_axis * shape_height, connector_2.position + connector_2.main_axis * shape_width + cross_axis * shape_height]
+    body.visual is Visuals.Geometries.ConvexMesh:
+        vertices: body.geometry.vertices

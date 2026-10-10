@@ -25,7 +25,12 @@ namespace AGXUnity.IO.OpenPLX
       }
     }
 
-    public static string TransformOpenPLXPath( string path ) => System.IO.Path.IsPathRooted( path ) ? path : path.Replace( "Assets/", OpenPLXRoot + "/" );
+    public static string TransformOpenPLXPath( string path )
+    {
+      if ( System.IO.Path.IsPathRooted( path ) || !path.StartsWith( "Assets/" ) )
+        return path;
+      return OpenPLXRoot + path.Substring( 6 );
+    }
 
     public static List<string> FindDeclaredModels( string path )
     {
@@ -94,6 +99,9 @@ namespace AGXUnity.IO.OpenPLX
       UnityEngine.Object importedObject = null;
       if ( loadedModel != null ) {
         importedObject = mapper.MapObject( loadedModel, path );
+        foreach ( var warning in mapper.Data.Warnings )
+          ErrorReporter?.Invoke( warning );
+
         if ( importedObject == null || mapper.Data.ErrorReporter.getErrorCount() > 0 ) {
           foreach ( var error in mapper.Data.ErrorReporter.getErrors() )
             ErrorReporter?.Invoke( error );
@@ -111,6 +119,7 @@ namespace AGXUnity.IO.OpenPLX
       else
         ErrorCallback?.Invoke();
 
+      GC.Collect();
       return importedObject;
     }
 

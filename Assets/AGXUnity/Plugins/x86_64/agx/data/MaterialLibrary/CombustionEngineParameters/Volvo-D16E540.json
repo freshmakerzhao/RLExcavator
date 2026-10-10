@@ -1,0 +1,30 @@
+{
+  "description": "Used in Volvo Excavator.",
+  "reference": "https://stpi.it.volvo.com/STPIFiles/Volvo/FactSheet/D16E540,%20EU4SCR_Eng_01_1163211.pdf",
+  "name": "Volvo-D16E540",
+
+  "displacementVolume":    0.0161,     // m^3
+  "maxTorque":             2600,       // Nm
+  "maxTorqueRPM":          1225,       // rpm
+  "maxPowerRPM":           1625,       // rpm
+  "idleRPM":               600,        // rpm 
+  "maxRPM":                3500,       // rpm 
+  "crankShaftInertia":     4.0,        // kg.m^2 
+
+  // Parameters controlling the mean effective friction torque. This corresponds to
+  // page 722, section 13.5.1 in "Internal combustion engine fundamentals" by John B. Heywood, 1988.
+  // These parameters must be parameterized against the real engine.
+  // The values here are the default that might not result in the correct overall behavior.
+  // Without access to real world data these values should be considered placeholders for accurate measurements.
+  "FrictionTorqueParameters":
+  {
+    "cfr0": 0.97,
+    "cfr1": 0.15,
+    "cfr2": 0.05
+  },
+
+  // Optional
+  "airFuelRatio": 14.5, // Diesel
+  "heatValue": 45400000 // Diesel
+}
+

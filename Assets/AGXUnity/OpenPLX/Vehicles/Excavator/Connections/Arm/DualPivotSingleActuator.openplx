@@ -1,0 +1,23 @@
+DualPivotSingleActuator is Vehicles.Excavator.Connections.Arm.Base:
+    .doc: """
+    Arm connection with left/right chassis-to-arm pivots and one linear actuator.
+    """
+
+    arm becomes MachineModeling.Components.Primitive.Base with MachineModeling.Components.Composite.Arm.Interfaces.DualJoint, MachineModeling.Components.Composite.Arm.Interfaces.SingleActuator reference
+    chassis becomes MachineModeling.Components.Primitive.Base with Vehicles.Excavator.Interfaces.Arm.DualJoint, Vehicles.Excavator.Interfaces.Arm.SingleActuator reference
+
+    initial_angle is Real: 0.0
+
+    left_pivot is MachineModeling.Connections.Pivot.Hinge:
+        from: chassis.left_arm_connector
+        to: arm.from_left
+        hinge.initial_angle: initial_angle
+
+    right_pivot is MachineModeling.Connections.Pivot.Hinge:
+        from: chassis.right_arm_connector
+        to: arm.from_right
+        hinge.initial_angle: initial_angle
+
+    actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        from: chassis.arm_actuator_connector
+        to: arm.from_actuator

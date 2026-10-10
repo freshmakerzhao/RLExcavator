@@ -17,6 +17,7 @@ This model assumes an ideal gear, characterized by no slippage or flexibility.
 
     ratio_input is Physics.Signals.FractionInput:
         source: this
+        initial_value: ratio
 
     ratio_output is Physics.Signals.FractionOutput:
         source: this

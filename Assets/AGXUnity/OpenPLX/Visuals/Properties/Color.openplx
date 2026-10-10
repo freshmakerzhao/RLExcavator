@@ -1,0 +1,14 @@
+Color:
+    .doc:"""
+Represents a color value using four real values in the range [0,1] for each
+of the Red, Green, Blue, and Alpha channels
+"""
+    r is Real: 0
+    g is Real: 0
+    b is Real: 0
+    a is Real: 1
+
+    # Hex conversion accepts the following format(s): [0x|#]rrggbb[aa]
+    static fn from_hex(hex: String) -> Color
+    static fn from_rgb(r: Real, g: Real, b: Real) -> Color
+    static fn from_rgba(r: Real, g: Real, b: Real, a: Real) -> Color

@@ -24,4 +24,3 @@ Physics3D has the concept of a reference mate connector at the origin.
         z: 1
     # A non parallel vector to main_axis axis
     normal is Math.Vec3: main_axis.get_orthogonal_unit_vector()
-

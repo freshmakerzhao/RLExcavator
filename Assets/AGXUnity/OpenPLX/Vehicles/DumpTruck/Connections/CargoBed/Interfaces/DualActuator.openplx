@@ -1,0 +1,41 @@
+trait DualActuator:
+    chassis_frame becomes MachineModeling.Components.Primitive.Base with DumpTruck.Interfaces.CargoBed.DualActuator reference
+    cargo_bed becomes MachineModeling.Components.Primitive.Base with DumpTruck.Interfaces.CargoBed.DualActuator reference
+
+    min_length      is Real
+    stroke_length   is Real
+    rod_diameter    is Real
+    barrel_diameter is Real
+
+    left_lift is MachineModeling.Actuators.Linear.Connections.Cylinder:
+        from: cargo_bed.left_cargo_bed_actuator_connector
+        to: chassis_frame.left_cargo_bed_actuator_connector
+
+        actuator:
+            min_length: min_length
+            stroke_length: stroke_length
+            rod.body.diameter: rod_diameter
+            barrel.body.diameter: barrel_diameter
+
+            cylindrical.flexibility becomes Physics3D.Interactions.Flexibility.LinearElasticCylindricalFlexibility:
+                default_stiffness: 1e16
+
+    right_lift is MachineModeling.Actuators.Linear.Connections.Cylinder:
+        from: cargo_bed.right_cargo_bed_actuator_connector
+        to: chassis_frame.right_cargo_bed_actuator_connector
+
+        actuator:
+            min_length: min_length
+            stroke_length: stroke_length
+            rod.body.diameter: rod_diameter
+            barrel.body.diameter: barrel_diameter
+
+            cylindrical.flexibility becomes Physics3D.Interactions.Flexibility.LinearElasticCylindricalFlexibility:
+                default_stiffness: 1e16
+
+    no_cargo_bed_actuator_collisions is Simulation.CollisionGroup:
+        systems: [left_lift, right_lift, chassis_frame, cargo_bed]
+
+    disable_geometry_pairs is Simulation.DisableCollisionPair:
+        group1: no_cargo_bed_actuator_collisions
+        group2: no_cargo_bed_actuator_collisions

@@ -1,0 +1,11 @@
+trait Roughness:
+    .doc: """
+Surface roughness attempts to model microscopic irregularities on the surface
+causing reflected light to be more diffused. A higher roughness value will result
+in wider specular highlights.
+
+If an roughness_map is provided, the sampled values is scaled by the constant roughness value.
+Otherwise, the roughness value is used as is.
+"""
+    roughness is Real: 1.0
+    roughness_map is Visuals.Textures.DefaultTexture

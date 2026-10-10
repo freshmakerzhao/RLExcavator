@@ -1,0 +1,5 @@
+Base is MachineModeling.Connections.Base:
+    chassis_frame is MachineModeling.Components.Primitive.Base reference
+    cargo_bed is MachineModeling.Components.Primitive.Base reference
+
+    connection is MachineModeling.Connections.Base

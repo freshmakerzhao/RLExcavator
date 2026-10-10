@@ -1,0 +1,3 @@
+DualLiftDualTiltActuated is Ripper.PowerAngle.Base:
+    frame becomes MachineModeling.Components.Composite.Base with Ripper.Interfaces.Frame.BaseConnectors, Ripper.Interfaces.Frame.DualActuatorConnectors, Ripper.Interfaces.Frame.ShankConnectors
+    shank becomes MachineModeling.Components.Composite.Base with Ripper.Interfaces.Shank.FrameConnectors, Ripper.Interfaces.Shank.DualActuatorConnectors

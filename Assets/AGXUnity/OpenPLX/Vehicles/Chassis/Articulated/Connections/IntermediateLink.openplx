@@ -1,0 +1,15 @@
+IntermediateLink is Vehicles.Chassis.Articulated.Connections.Base:
+    with Chassis.Articulated.Connections.Interfaces.DualPivot
+
+    front_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.DualJoint
+    rear_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.SingleJoint
+
+    link is MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.DualJoint, Chassis.Articulated.Interfaces.SingleJoint reference
+
+    to_link is Vehicles.Chassis.Articulated.Connections.DualPivot:
+        upper_from_connector: front_frame.upper_joint_connector
+        upper_to_connector: link.upper_joint_connector
+
+    from_link is MachineModeling.Connections.Pivot.Hinge:
+        from: link.joint_connector
+        to: rear_frame.joint_connector

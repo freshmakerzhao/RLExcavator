@@ -1,0 +1,8 @@
+Spotlight:
+    .doc: """
+    A conical Spotlight source specification. Intensity is given in lumen.
+    """
+    intensity is Real
+    outer_angle is Real
+    inner_angle is Real: outer_angle
+    optional color is Visuals.Properties.Color

@@ -1,0 +1,8 @@
+trait SingleActuatorFixedMountRipper:
+    .doc: """
+    Since not all bulldozers have rippers,
+    you may mount one using this trait,
+    and then specialize the types.
+    """
+    ripper is Vehicles.Ripper.FixedMount.SingleActuator
+    ripper_connection is Vehicles.Ripper.Connections.FixedMount.SingleActuator

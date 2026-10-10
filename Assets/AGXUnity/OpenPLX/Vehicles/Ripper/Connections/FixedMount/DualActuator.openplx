@@ -1,0 +1,18 @@
+DualActuator is Ripper.Connections.FixedMount.Base:
+    with Ripper.Connections.Traits.DualLiftActuator
+
+    ripper becomes Ripper.FixedMount.DualActuator
+
+    left_actuator is MachineModeling.Actuators.Linear.Base
+
+    left_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: left_actuator
+        from: left_lift_actuator_connector
+        to: ripper.frame.left_actuator_connector
+
+    right_actuator is MachineModeling.Actuators.Linear.Base
+
+    right_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: right_actuator
+        from: right_lift_actuator_connector
+        to: ripper.frame.right_actuator_connector

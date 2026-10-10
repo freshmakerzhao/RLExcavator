@@ -1,0 +1,8 @@
+Node:
+  .doc:"""
+This is the Visuals equivalent to Physics.System which allows entire hierarchies
+of models to be loaded with multiple different meshes at different positions.
+Notably, the Visuals.Node hierarchy also allows for scaling in addition
+to translation and rotation.
+"""
+  local_transform is Math.AffineTransform

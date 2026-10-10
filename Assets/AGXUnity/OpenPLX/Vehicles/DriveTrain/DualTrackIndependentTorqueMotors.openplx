@@ -1,0 +1,42 @@
+DualTrackIndependentTorqueMotors is Physics3D.System:
+    min_effort is Real: Math.NEG_INF
+    max_effort is Real: Math.INF
+
+    left_drive_shaft  is DriveTrain.Shaft:
+        inertia.inertia: 0.01
+    right_drive_shaft is DriveTrain.Shaft:
+        inertia.inertia: 0.01
+
+    left_brake_shaft is DriveTrain.Shaft:
+        inertia.inertia: 0.01
+    right_brake_shaft is DriveTrain.Shaft:
+        inertia.inertia: 0.01
+
+    left_final_drive_shaft  is DriveTrain.Shaft:
+        inertia.inertia: 0.01
+    right_final_drive_shaft is DriveTrain.Shaft:
+        inertia.inertia: 0.01
+
+    left_motor is DriveTrain.TorqueMotor:
+        min_effort: min_effort
+        max_effort: max_effort
+        connectors: [left_drive_shaft.input]
+    right_motor is DriveTrain.TorqueMotor:
+        min_effort: min_effort
+        max_effort: max_effort
+        connectors: [right_drive_shaft.input]
+
+    left_brake is DriveTrain.ManualBrake:
+        connectors: [left_drive_shaft.output, left_brake_shaft.input]
+    right_brake is DriveTrain.ManualBrake:
+        connectors: [right_drive_shaft.output, right_brake_shaft.input]
+
+    left_final_drive is DriveTrain.Gear:
+        connectors: [left_brake_shaft.output, left_final_drive_shaft.input]
+    right_final_drive is DriveTrain.Gear:
+        connectors: [right_brake_shaft.output, right_final_drive_shaft.input]
+
+    left_actuator is DriveTrain.Actuator:
+        connector_1d: left_final_drive_shaft.output
+    right_actuator is DriveTrain.Actuator:
+        connector_1d: right_final_drive_shaft.output

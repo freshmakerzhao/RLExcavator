@@ -1,0 +1,8 @@
+trait VisualMaterial:
+    .doc:"""
+Defines that the optical material that this trait is applied to is a visual material
+by adding a light frequency band corresponding to visible light. The light interaction
+in this band is further defined by adding surface features to this visible band
+which each specify a given property for the light interaction calculations.
+"""
+    visible is VisibleBand

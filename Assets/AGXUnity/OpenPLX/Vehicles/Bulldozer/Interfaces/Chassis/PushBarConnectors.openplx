@@ -1,0 +1,7 @@
+trait PushBarConnectors:
+    .doc: """
+    A trait for adding connectors for connecting
+    a PushBar to a chassis body
+    """
+    left_pushbar_connector is Physics3D.Interactions.MateConnector
+    right_pushbar_connector is Physics3D.Interactions.MateConnector

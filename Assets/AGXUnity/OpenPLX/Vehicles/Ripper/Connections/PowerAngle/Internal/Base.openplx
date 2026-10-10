@@ -1,0 +1,16 @@
+Base is MachineModeling.Connections.Base:
+    .doc: """
+    Connects the frame to the shank
+    """
+    frame is MachineModeling.Components.Composite.Base with Ripper.Interfaces.Frame.BaseConnectors, Ripper.Interfaces.Frame.ShankConnectors reference
+    shank is MachineModeling.Components.Composite.Base with Ripper.Interfaces.Shank.FrameConnectors reference
+    shank_angle is Real
+    left_hinge is MachineModeling.Connections.Pivot.Hinge:
+        hinge.initial_angle: shank_angle
+        from: frame.left_shank_connector
+        to: shank.left_frame_connector
+
+    right_hinge is MachineModeling.Connections.Pivot.Hinge:
+        hinge.initial_angle: shank_angle
+        from: frame.right_shank_connector
+        to: shank.right_frame_connector

@@ -1,0 +1,11 @@
+RampOffset is Control.Keyboard.Action:
+    with HoldTrait
+    .doc: """
+Keyboard action that reads a value from an output and adds offsets that value with the specified `rate` in units per second.
+
+Optional `min` and `max` bounds clamp the resulting value.
+"""
+    source is Physics.Signals.Output reference
+    rate is Real
+    optional min is Real
+    optional max is Real

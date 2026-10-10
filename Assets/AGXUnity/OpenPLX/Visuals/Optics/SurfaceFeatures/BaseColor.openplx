@@ -1,0 +1,8 @@
+trait BaseColor:
+    .doc: """
+Defines the base color used in the lighting calculations. For any given point, the
+color at that point should be interpreted as the color of base_color_map at that point
+multiplied by the base_color_tint value.
+"""
+    base_color_tint is Visuals.Properties.Color: Visuals.Properties.Color.from_rgb(1,1,1)
+    base_color_map is Visuals.Textures.DefaultTexture

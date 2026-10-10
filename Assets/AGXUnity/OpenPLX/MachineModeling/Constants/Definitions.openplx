@@ -1,0 +1,3 @@
+AlongAxle is Math.Vec3: Math.Vec3.Y_AXIS()
+AlongCylinder is Math.Vec3: Math.Vec3.Z_AXIS()
+AlongLink is Math.Vec3: Math.Vec3.X_AXIS()

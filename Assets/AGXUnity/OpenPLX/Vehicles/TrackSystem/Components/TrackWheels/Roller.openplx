@@ -1,0 +1,9 @@
+Roller is TrackSystem.Components.TrackWheels.Base:
+    .doc: """
+    A roller wheel with a rigid body. A cylindrical geometry can be added to the wheel via e.g. the CylindricalShape trait.
+    local_center_axis is y direction by default assuming that the non rotated cylinder axis is in y direction.
+    Note that the all track wheels should have their axis in the same direction as the sprocket.
+
+    Example:
+        roller is Vehicles.TrackSystem.Components.TrackWheels.Roller
+    """

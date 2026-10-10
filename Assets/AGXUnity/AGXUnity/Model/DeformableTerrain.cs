@@ -69,31 +69,6 @@ namespace AGXUnity.Model
     }
 
     /// <summary>
-    /// Restores the initial Unity terrain data and recreates the native terrain
-    /// instance so any dynamic soil mass/particles are cleared as part of reset.
-    /// </summary>
-    public void ResetHeightsAndRecreateNative()
-    {
-      if ( TerrainProperties != null )
-        TerrainProperties.Unregister( this );
-
-      if ( Simulation.HasInstance && Native != null )
-        GetSimulation()?.remove( Native );
-
-      Native = null;
-
-      ResetTerrainDataHeightsAndTransform();
-      InitializeNative();
-
-      PropertySynchronizer.Synchronize( this );
-      SetEnable( isActiveAndEnabled );
-
-      // Terrain-dependent renderers/material overlays subscribe to terrain
-      // modification callbacks, so force a full refresh after the native reset.
-      TriggerModifyAllCells();
-    }
-
-    /// <summary>
     /// If, e.g., OnDestroy wasn't called to reset the heights of the
     /// terrain this method can recover some data of the previous terrain
     /// height data. This method will subtract MaximumDepth from each
@@ -110,7 +85,7 @@ namespace AGXUnity.Model
       LicenseManager.LicenseInfo.HasModuleLogError( LicenseInfo.Module.AGXTerrain | LicenseInfo.Module.AGXGranular, this );
 
       m_initialHeights = TerrainData.GetHeights( 0, 0, TerrainDataResolution, TerrainDataResolution );
-
+      Terrain.terrainData = Instantiate( Terrain.terrainData );
       InitializeNative();
 
       Simulation.Instance.StepCallbacks.PostStepForward += OnPostStepForward;
@@ -169,13 +144,6 @@ namespace AGXUnity.Model
 
       TerrainData.SetHeights( 0, 0, m_initialHeights );
       transform.position = transform.position + MaximumDepth * Vector3.up;
-
-#if UNITY_EDITOR
-      // If the editor is closed during play the modified height
-      // data isn't saved, this resolves corrupt heights in such case.
-      UnityEditor.EditorUtility.SetDirty( TerrainData );
-      UnityEditor.AssetDatabase.SaveAssets();
-#endif
     }
 
     private void OnPostStepForward()

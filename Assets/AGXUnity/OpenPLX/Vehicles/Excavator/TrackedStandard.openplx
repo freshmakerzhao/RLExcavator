@@ -1,0 +1,20 @@
+TrackedStandard is Vehicles.Excavator.Base:
+    .doc: """
+    Defines a tracked excavator of the most common type, i.e.
+    - mono boom excavator arm with stick and bucket actuators.
+    - full 360 swing joint (slew joint)
+    - standard tool connection linkage
+    """
+
+    with Vehicles.Excavator.Configurations.Tracked
+    with Vehicles.Excavator.Configurations.SwingJoint
+    with Vehicles.Excavator.Configurations.Tool
+
+    arm becomes Vehicles.Excavator.Components.Arm.Standard
+
+    chassis becomes Vehicles.Chassis.Rigid.Base with Vehicles.Chassis.Interfaces.Outputs:
+        observer:
+            redirected_parent: chassis.body
+            position: {0.0, 0.0, 0.0}
+
+    drive_train is Physics3D.System

@@ -1,0 +1,17 @@
+RackAndPinion is Steering.Kinematic.Base:
+    .doc: """
+    Steering with an interaction that constrain the wheels of two suspensions
+    to a Rack-pinion steering mechanism.
+    """
+    with Steering.Interfaces.RackAndPinion
+    with Physics.Signals.AngleInputTrait
+    with Physics.Signals.AngleOutputTrait
+
+    interaction becomes Steering.Kinematic.Interactions.RackAndPinion:
+        knuckle_angle: knuckle_angle
+        knuckle_length: knuckle_length
+        initial_angle_right_tie_rod: initial_angle_right_tie_rod
+
+        steering_column_distance: steering_column_distance
+        rack_length: rack_length
+        gear: gear

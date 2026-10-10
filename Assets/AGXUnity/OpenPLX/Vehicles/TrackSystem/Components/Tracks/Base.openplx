@@ -1,0 +1,23 @@
+Base:
+    .doc: """
+Defines the geometrical properties of a track.
+
+The track is constructed by repeating the link geometries specified in
+link_description, link_count times.
+
+The link_description specifies the geometry and dimensions of a single track link,
+including its width and height. The length between link nodes defines the distance
+between consecutive link connections and is determined by the total track length
+and the number of links. This length is independent of the contact geometry defined
+in link_description.
+
+The material specifies the contact material used by the generated track links.
+If geometries in the link nodes define their own materials, this track-level material
+overrides them.
+"""
+
+    link_count is Int
+
+    link_description is Vehicles.TrackSystem.Components.Tracks.LinkDescription.Base
+
+    material is Physics.Geometries.Material

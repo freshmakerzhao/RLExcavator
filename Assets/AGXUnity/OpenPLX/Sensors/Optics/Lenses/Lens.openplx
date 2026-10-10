@@ -1,0 +1,5 @@
+Lens:
+    .doc: """
+    Base for a single focal length lens giving non-anamorphic projections.
+    """
+    focal_length is Real

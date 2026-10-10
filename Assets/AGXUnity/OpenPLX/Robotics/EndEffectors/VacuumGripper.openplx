@@ -7,6 +7,7 @@ VacuumGripper:
 
     activate_input is Physics.Signals.ActivateInput:
         source: this
+        initial_value: activated
 
     activated_output is Physics.Signals.ActivatedOutput:
         enabled: false

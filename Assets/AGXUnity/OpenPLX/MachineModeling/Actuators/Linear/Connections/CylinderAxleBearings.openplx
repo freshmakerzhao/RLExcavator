@@ -1,0 +1,27 @@
+CylinderAxleBearings is Actuators.Linear.Connections.Cylinder:
+    .doc: """
+    Use an Axle for the cylinder bearing connection.
+    Prevent it to slide sideways relative the connected components.
+"""
+    actuator becomes Actuators.Linear.CylinderBearings:
+        barrel_separation: from_bearings.separation
+        rod_separation: to_bearings.separation
+
+    barrel_axle is MachineModeling.Components.Primitive.Axle.RigidCylindrical
+    rod_axle is MachineModeling.Components.Primitive.Axle.RigidCylindrical
+
+    barrel_connection becomes MachineModeling.Connections.Pivot.LockedAxleBearings:
+        from_bearings: from_bearings
+        to_bearings: actuator.barrel.bearings
+        axle: barrel_axle
+
+    rod_connection becomes MachineModeling.Connections.Pivot.LockedAxleBearings:
+        from_bearings: actuator.rod.bearings
+        to_bearings: to_bearings
+        axle: rod_axle
+
+    from_bearings is MachineModeling.Components.Composite.BearingPair reference
+
+    to_bearings is MachineModeling.Components.Composite.BearingPair reference
+
+    internal_group.bodies: [actuator.barrel.body, actuator.rod.body, barrel_axle.body, rod_axle.body]

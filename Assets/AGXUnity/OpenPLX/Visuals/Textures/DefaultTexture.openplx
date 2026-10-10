@@ -1,0 +1,4 @@
+DefaultTexture:
+    .doc: """
+Represents an unset texture which leaves the default value up to the user to decide
+"""

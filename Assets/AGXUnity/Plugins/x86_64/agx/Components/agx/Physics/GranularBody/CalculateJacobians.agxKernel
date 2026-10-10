@@ -1,5 +1,5 @@
 <Kernel name="CalculateJacobians" implementation="GranularGranularContact">
-  <Parameter.EntityData name="constraint" bind="@GranularGranularContactConstraint" type="ContactConstraint" write="isImpacting, charContactTime, charMass"/>
+  <Parameter.EntityData name="constraint" bind="@GranularGranularContactConstraint" type="ContactConstraint" write="isImpacting, charContactTime, charMass, GMeta"/>
   <Parameter.EntityData name="constraintRow" bind="@GranularGranularContactConstraint.Row" type="Particle.ContactConstraintRow" write="epsilon, lambda, rhs, violation, velocity"/>
 
   <Parameter.EntityData name="contact" bind="@ParticlePairContact" type="ParticlePairContact" read="particle1, particle2, point, normal, depth, material, velocity" write="isImpacting"/>
@@ -18,7 +18,7 @@
 </Kernel>
 
 <Kernel name="CalculateJacobians" implementation="GranularGeometryContact">
-  <Parameter.EntityData name="constraint" bind="@GranularBodyContactConstraint" type="ContactConstraint" write="isImpacting, charContactTime, charMass"/>
+  <Parameter.EntityData name="constraint" bind="@GranularBodyContactConstraint" type="ContactConstraint" write="isImpacting, charContactTime, charMass, GMeta"/>
   <Parameter.EntityData name="constraintRow" bind="@GranularBodyContactConstraint.Row" type="Particle.ContactConstraintRow" write="epsilon, lambda, rhs, violation, velocity"/>
   
   <Parameter.EntityData name="contact" bind="@ParticleGeometryContact" type="ParticleGeometryContact" read="particle, body, point, normal, material, velocity" write="isImpacting"/>

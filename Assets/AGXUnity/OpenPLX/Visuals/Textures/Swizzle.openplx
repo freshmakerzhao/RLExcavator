@@ -1,0 +1,15 @@
+trait Swizzle:
+  .doc: """
+When this trait is applied to a texture, it signals that the texture channels should
+be reordered before the texture is accessed. This is commonly used when multiple
+property maps are packed into different color channels of the same texture.
+For instance, when using ORM (Occlusion, Roughness, Metallic) maps where the
+property maps are baked into the r,g,b channels of a single texture respectively.
+
+Valid values for the swizzle will depend on the source texture:
+- If the source texture has 4 channels, the characters should be from the set
+  [r,g,b,a], if it has 2, only [r, g] are properly defined.
+- The length of the swizzle should not exceed 4 characters and will affect the output
+  channels. i.e. a swizzle of length 3 will output a texture with 3 channels.
+"""
+  swizzle is String

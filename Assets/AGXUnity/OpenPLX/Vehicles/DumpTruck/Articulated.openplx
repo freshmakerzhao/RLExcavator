@@ -1,0 +1,68 @@
+Articulated is DumpTruck.Base:
+
+    initial_angle is Real:   0.0*(Math.PI/180)
+    max_angle is Real:      45.0*(Math.PI/180)
+
+    chassis becomes Vehicles.Chassis.Articulated.DualPivot:
+        front_frame becomes MachineModeling.Components.Primitive.Base with Vehicles.Chassis.Articulated.Interfaces.DualJoint, Vehicles.Chassis.Articulated.Interfaces.DualSteeringActuators, Vehicles.DumpTruck.Interfaces.Chassis.AFrame:
+            observer is Physics3D.Interactions.RedirectedMateConnector:
+                redirected_parent: chassis.front_frame.body
+                position: {0.0, 0.0, 0.0}
+            pos_output is Physics3D.Signals.MateConnector.PositionOutput:
+                source: chassis.front_frame.observer
+            vel_output is Physics3D.Signals.MateConnector.LinearVelocity3DOutput:
+                source: chassis.front_frame.observer
+            acc_output is Physics3D.Signals.MateConnector.Acceleration3DOutput:
+                source: chassis.front_frame.observer
+
+        rear_frame becomes MachineModeling.Components.Primitive.Base with Vehicles.Chassis.Articulated.Interfaces.DualJoint, Vehicles.Chassis.Articulated.Interfaces.DualSteeringActuators, DumpTruck.Interfaces.Chassis.DualAFrame, DumpTruck.Interfaces.CargoBed.SingleJoint, DumpTruck.Interfaces.CargoBed.DualActuator:
+            observer is Physics3D.Interactions.RedirectedMateConnector:
+                redirected_parent: chassis.rear_frame.body
+                position: {0.0, 0.0, 0.0}
+            pos_output is Physics3D.Signals.MateConnector.PositionOutput:
+                source: chassis.rear_frame.observer
+            vel_output is Physics3D.Signals.MateConnector.LinearVelocity3DOutput:
+                source: chassis.rear_frame.observer
+            acc_output is Physics3D.Signals.MateConnector.Acceleration3DOutput:
+                source: chassis.rear_frame.observer
+
+        frame_connection.upper_pivot becomes MachineModeling.Connections.Pivot.Hinge:
+            hinge.initial_angle: initial_angle
+            hinge_range is Physics3D.Interactions.RotationalRange:
+                connectors: chassis.frame_connection.upper_pivot.hinge.connectors
+                start: max_angle
+                end: -max_angle
+
+        frame_connection.lower_pivot becomes MachineModeling.Connections.Pivot.Hinge:
+            hinge.initial_angle: initial_angle
+            hinge_range is Physics3D.Interactions.RotationalRange:
+                connectors: chassis.frame_connection.lower_pivot.hinge.connectors
+                start: max_angle
+                end: -max_angle
+
+    steering is Vehicles.Steering.Articulated.DualCylinder:
+        left_front_connector: chassis.front_frame.left_steering_actuator_connector
+        right_front_connector: chassis.front_frame.right_steering_actuator_connector
+        left_rear_connector: chassis.rear_frame.left_steering_actuator_connector
+        right_rear_connector: chassis.rear_frame.right_steering_actuator_connector
+        min_length: 1.0
+        stroke_length: 1.0
+        rod_diameter: 0.1
+        barrel_diameter: 0.2
+
+    front_axle_connection is DumpTruck.Connections.Base
+    rear_axle_connection is DumpTruck.Connections.Base
+
+    front_axle_connection.chassis_frame: chassis.front_frame
+    rear_axle_connection.chassis_frame: chassis.rear_frame
+
+    cargo_bed_connection:
+        chassis_frame: chassis.rear_frame
+        cargo_bed: cargo_bed
+
+    steering_chassis_group is Simulation.CollisionGroup:
+        systems: [steering, chassis]
+
+    disable_steering_chassis_collisions is Simulation.DisableCollisionPair:
+        group1: steering_chassis_group
+        group2: steering_chassis_group

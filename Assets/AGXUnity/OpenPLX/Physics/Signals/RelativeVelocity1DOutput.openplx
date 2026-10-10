@@ -7,4 +7,3 @@ the output will give the current output value.
     type: Physics.Signals.InputOutputType.Torque1D
     source is RelativeVelocity1DOutputTrait
     marshalling.velocity is RealField
-

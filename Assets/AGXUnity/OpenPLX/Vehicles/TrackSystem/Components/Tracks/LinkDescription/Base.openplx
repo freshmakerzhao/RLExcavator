@@ -1,0 +1,35 @@
+Base:
+    .doc: """
+Defines the links of the tracks of a track system. Note that this link description
+also specifies the track width and height.
+
+Example:
+
+In the example below, the links are boxes via the LinkDescription.Box,
+and the visual geometry is added with the box visual trait.
+
+Link is TrackSystem.Components.Tracks.LinkDescription.Box:
+    with TrackSystem.Components.Tracks.Traits.BoxVisual
+    width: 0.2
+    height: 0.05
+
+The variation of the links is defined as a box variation, which allows
+for cyclic variations in the width and height of the links.
+
+Link is TrackSystem.Components.Tracks.LinkDescription.Box:
+    with TrackSystem.Components.Tracks.Traits.BoxVisual
+    width: 0.2
+    height: 0.05
+    variation becomes TrackSystem.Components.Tracks.LinkVariation.Box:
+        height_variation becomes Math.Distributions.Cyclic.DiscretePulse:
+            period: 5
+            amplitude: 0.1
+        width_variation becomes Math.Distributions.Cyclic.DiscretePulse:
+            period: 5
+            amplitude: 0.05
+"""
+    inertia is Physics3D.Bodies.Inertia
+    local_cm_transform is Math.AffineTransform
+    variation is TrackSystem.Components.Tracks.LinkVariation.Base
+    width is Real
+    height is Real

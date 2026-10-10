@@ -1,0 +1,11 @@
+AffineTransform1DOutput is Physics.Signals.Output:
+    .doc: """
+A virtual output control that multiplies a single real field
+from another output with a matching field with a scale factor and adds an offset.
+"""
+    type: 0
+    marshalling.is_dynamic: true
+    field_name is String
+    scale is Real
+    offset is Real
+    source is Physics.Signals.Output reference

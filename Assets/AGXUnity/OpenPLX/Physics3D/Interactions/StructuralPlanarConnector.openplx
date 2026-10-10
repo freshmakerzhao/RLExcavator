@@ -16,4 +16,3 @@ StructuralPlanarConnector is Physics3D.Interactions.RedirectedMateConnector:
         x: x
         y: y
         z: 0
-

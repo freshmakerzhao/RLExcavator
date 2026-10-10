@@ -1,0 +1,6 @@
+BladedDiaphragm:
+    .doc: """
+    Description of a diaphragm made up of a set of symmetrical blades.
+    """
+    blade_count is Int
+    blade_curvature is Real: 0.0

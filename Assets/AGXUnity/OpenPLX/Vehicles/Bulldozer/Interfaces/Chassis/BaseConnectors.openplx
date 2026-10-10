@@ -1,0 +1,7 @@
+trait BaseConnectors:
+    left_bogie_connector is Physics3D.Interactions.MateConnector
+    right_bogie_connector is Physics3D.Interactions.MateConnector
+    left_lift_connector is Physics3D.Interactions.MateConnector
+    right_lift_connector is Physics3D.Interactions.MateConnector
+    left_pushbar_connector is Physics3D.Interactions.MateConnector
+    right_pushbar_connector is Physics3D.Interactions.MateConnector

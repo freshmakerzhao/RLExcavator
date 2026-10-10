@@ -1,0 +1,60 @@
+const CameraColorOutputMatrices:
+    .doc: """
+    Predefined output matrices for mapping of camera color output channels.
+    """
+    LUMINANCE_OUTPUT is CameraColorOutputMatrix:
+        .doc: """
+        Predefined output matrix for perceived luminance assuming input linear RGB.
+        """
+        outputs: 1
+        matrix: [ 0.2126, 0.7152, 0.0722, 0 ]
+    MONO_OUTPUT is CameraColorOutputMatrix:
+        .doc: """
+        Predefined output matrix for the produced mono (red) channel value.
+        """
+        outputs: 1
+        matrix: [ 1, 0, 0, 0 ]
+    RGB_OUTPUT is CameraColorOutputMatrix:
+        .doc: """
+        Predefined output matrix for a standard RGB output.
+        """
+        outputs: 3
+        matrix: [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0
+        ]
+    BGR_OUTPUT is CameraColorOutputMatrix:
+        .doc: """
+        Predefined output matrix for a BGR output.
+        """
+        outputs: 3
+        matrix: [
+            0, 0, 1, 0,
+            0, 1, 0, 0,
+            1, 0, 0, 0
+        ]
+    BAYER_RGGB is CameraColorOutputMatrix:
+        .doc: """
+        Predefined output matrix for a red-green-green-blue Bayer mosaic output.
+        """
+        outputs: 4
+        matrix: [
+            1, 0, 0, 0,
+            0, 1, 0, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0
+        ]
+    BAYER_RGBW is CameraColorOutputMatrix:
+        .doc: """
+        Predefined output matrix for a for a red-white-green-blue Bayer mosaic, assuming input
+        linear RGB.
+        """
+        outputs: 4
+        matrix: [
+            1, 0, 0, 0,
+            0.2126, 0.7152, 0.0722, 0,
+            0, 1, 0, 0,
+            0, 0, 1, 0
+        ]
+

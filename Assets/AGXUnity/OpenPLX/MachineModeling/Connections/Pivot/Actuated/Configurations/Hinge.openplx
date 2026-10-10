@@ -1,0 +1,6 @@
+trait Hinge:
+    .doc: """
+    Configuration trait that turns an actuated pivot connection into a
+    hinge-based pivot.
+    """
+    pivot becomes MachineModeling.Connections.Pivot.Hinge

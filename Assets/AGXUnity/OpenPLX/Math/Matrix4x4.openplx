@@ -25,12 +25,19 @@ Matrix4x4:
     static fn from_rows(r0: Real[], r1: Real[], r2: Real[], r3: Real[]) -> Matrix4x4
     static fn from_columns(c0: Real[], c1: Real[], c2: Real[], c3: Real[]) -> Matrix4x4
     static fn from_vec3_quat(v : Vec3, q : Quat) -> Matrix4x4
+    static fn from_trs(translation: Vec3, rotation: Quat, scale: Vec3) -> Matrix4x4
+    static fn from_trs_skew(translation: Vec3, rotation: Quat, scale: Vec3, skew: Vec3) -> Matrix4x4
+    static fn from_translation(v: Vec3) -> Matrix4x4
+    static fn from_rotation(q: Quat) -> Matrix4x4
+    static fn identity() -> Matrix4x4
 
     fn transpose() -> Matrix4x4
     fn copy() -> Matrix4x4
+    fn inverse() -> Matrix4x4
     # The following two acts as if the matrix was an affine matrix with translation in the last column
     fn get_affine_translation() -> Vec3
     fn get_affine_rotation() -> Quat
+    fn get_affine_decomposition() -> AffineTransform
 
 operator +(lhs: Matrix4x4, rhs: Matrix4x4) -> Matrix4x4
 operator -(lhs: Matrix4x4, rhs: Matrix4x4) -> Matrix4x4

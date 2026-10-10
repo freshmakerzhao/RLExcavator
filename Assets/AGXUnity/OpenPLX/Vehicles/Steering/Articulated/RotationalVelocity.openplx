@@ -1,0 +1,16 @@
+RotationalVelocity is Steering.Articulated.Base:
+    .doc: """
+    choose one mate, from which the mate connectors are used
+    to define a rotational velocity motor
+    """
+    mate_reference is Physics3D.Interactions.Mate
+
+    motor is Physics3D.Interactions.RotationalVelocityMotor:
+        connectors: mate_reference.connectors
+
+    max_angle is Real
+
+    hinge_range is Physics3D.Interactions.RotationalRange:
+        connectors: mate_reference.connectors
+        start: max_angle
+        end: -max_angle

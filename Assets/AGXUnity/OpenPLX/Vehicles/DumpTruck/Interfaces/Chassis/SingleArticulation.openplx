@@ -1,0 +1,6 @@
+trait SingleArticulation:
+    .doc: """
+    A trait for adding connectors for connecting the front
+    and rear frame of the articulated vehicle.
+    """
+    articulated_steering_connector is Physics3D.Interactions.MateConnector

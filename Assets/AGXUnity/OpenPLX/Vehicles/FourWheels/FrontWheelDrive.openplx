@@ -1,0 +1,8 @@
+FrontWheelDrive is Vehicles.FourWheels.Base:
+    .doc: """
+    This Vehicle is abstract.
+    The Wheels have the most basic type
+    The suspension could be any System or the Suspension interaction
+    """
+    with Properties.FrontSuspensionSteering
+    with Properties.RearSuspension

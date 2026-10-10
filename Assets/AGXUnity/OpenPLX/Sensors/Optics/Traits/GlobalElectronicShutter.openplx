@@ -1,0 +1,5 @@
+trait GlobalElectronicShutter:
+    .doc: """
+    Trait adding a global electronic shutter to a photo detector.
+    """
+    shutter_speed is Real

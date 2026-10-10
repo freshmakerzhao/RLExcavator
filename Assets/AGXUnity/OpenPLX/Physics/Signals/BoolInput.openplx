@@ -4,4 +4,5 @@ An Input that is a boolean.
 """
     type: Physics.Signals.InputOutputType.Boolean
     source is BoolInputTrait
+    initial_value is Bool: false
     marshalling.value is BoolField

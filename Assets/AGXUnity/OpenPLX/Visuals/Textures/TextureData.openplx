@@ -1,0 +1,10 @@
+TextureData:
+  .doc: """
+Defines the actual data that a texture uses. This includes the dimensions of the
+texture as well as the format and the data. The data is represented as a base64
+encoded string which should be decoded depending on the texture format provided.
+"""
+  height is Int
+  width is Int
+  format is Int
+  data is String # Base64 encoded data

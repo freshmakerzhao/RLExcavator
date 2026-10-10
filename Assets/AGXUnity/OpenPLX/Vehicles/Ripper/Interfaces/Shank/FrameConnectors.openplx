@@ -1,0 +1,3 @@
+trait FrameConnectors:
+    left_frame_connector is Physics3D.Interactions.MateConnector
+    right_frame_connector is Physics3D.Interactions.MateConnector

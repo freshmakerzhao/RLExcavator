@@ -1,0 +1,13 @@
+QuickCoupler is Vehicles.Excavator.Components.Coupler.Base:
+    .doc: """
+    Defines a simplfied quick coupler modelled as a single rigid body.
+    """
+
+    coupler is MachineModeling.Components.Primitive.Base with Vehicles.Excavator.Components.Coupler.Interfaces.DualToFrom:
+        local_transform.position: {0, 0, 0}
+
+    to: coupler.to_connector_1
+    to_actuator: coupler.to_connector_2
+
+    from: coupler.from_connector_1
+    from_actuator: coupler.from_connector_2

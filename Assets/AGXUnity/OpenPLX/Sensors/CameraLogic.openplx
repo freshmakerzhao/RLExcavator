@@ -1,0 +1,7 @@
+CameraLogic is SensorLogic:
+    with Traits.MateConnectorAttachment
+    .doc: """
+    Logical sensor functioning of a camera, consisting of a sensor/photodetector and a lens.
+    """
+    lens is Optics.Lenses.CameraLens
+    sensor is Optics.RectangularPhotodetector

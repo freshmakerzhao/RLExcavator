@@ -9,6 +9,7 @@ ForceMotor is Physics.Interactions.Interaction1DOF:
 
     force_input is Physics.Signals.Force1DInput:
         source: this
+        initial_value: default_force
 
     force_output is Physics.Signals.Force1DOutput:
         source: this

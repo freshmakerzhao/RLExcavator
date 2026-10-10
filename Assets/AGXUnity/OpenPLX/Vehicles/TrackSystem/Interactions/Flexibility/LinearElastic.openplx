@@ -1,0 +1,50 @@
+﻿LinearElastic is DefaultTrackFlexibility:
+    .doc: """
+    Defines linear elastic flexibility model for each constrained degree of freedom for a Track System.
+    Includes stiffness values and attenuation factors for each deformation mode.
+
+    tensile - Linear elastic stiffness for longitudinal tension/compression [N/m].
+              The tensile stiffness of the track defines its resistance to stretching.
+              Higher values indicate a more rigid track in the longitudinal direction.
+              Stiffness is calculated as A * E / L, where A is cross section area,
+              E is youngs modulus and L is length.
+              The stiffness is defined per unit length [N/m] where L is 1 meter.
+
+    bending_vertical - Linear elastic stiffness for side-to-side bending around the VERTICAL axis [Nm^2].
+                       Defines resistance to bending.
+                       Calculated as E * I_a, where E is the youngs modulus and
+                       I_a is the second moment of area.
+
+    bending_lateral - Linear elastic stiffness for sagging around the LATERAL axis [Nm^2].
+                      Defines resistance to sagging (bending across track width).
+                      Calculated as E * I_a, where E is the youngs modulus and
+                      I_a is the second moment of area.
+
+    shear_vertical - Linear elastic stiffness for shear deformation along the VERTICAL axis [N/m].
+                     Resists shear deformation across the track height.
+                     Based on shear rigidity G*A [N], normalized per unit length.
+
+    shear_lateral - Linear elastic stiffness for shear deformation along the LATERAL axis [N/m].
+                    Resists shear deformation across the track width.
+                    Based on shear rigidity G*A [N], normalized per unit length.
+
+    torsional - Linear elastic stiffness for torsional deformation around the main track longitudinal axis [Nm^2].
+                Resists twisting of the track about its longitudinal axis.
+                Based on torsional rigidity G*J [Nm^2], normalized per unit length.
+
+    default_attenuation - Attenuation factor that damps high-frequency oscillations above the Nyquist frequency.
+                          Applied universally to all deformation modes.
+    """
+
+    tensile becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: 2.2e10
+    bending_vertical becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: 1.1e6
+    bending_lateral becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: 50
+    shear_vertical becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: 5.4e7
+    shear_lateral becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: 5.4e7
+    torsional becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: 1.1e8

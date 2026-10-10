@@ -1,0 +1,31 @@
+{
+  "description": "Diesel Engine in CAT D10 Dozer. https://s7d2.scene7.com/is/content/Caterpillar/CM20221025-d8691-7d308",
+  "reference": "https://emc.cat.com/pubdirect.ashx?media_string_id=SS-8230179-18397086-037.pdf",
+  "name": "Cat-C27",
+
+  "displacementVolume":    0.027,     // m^3
+  "maxTorque":             5255,      // Nm
+  "maxTorqueRPM":          1400,      // rpm
+  "maxPowerRPM":           1800,      // rpm
+  "idleRPM":               500,       // rpm 500
+  "maxRPM":                3000,      // rpm 
+  "crankShaftInertia":     10,        // kg.m^2
+
+  // Parameters controlling the mean effective friction torque. This corresponds to
+  // page 722, section 13.5.1 in "Internal combustion engine fundamentals" by John B. Heywood, 1988.
+  // These parameters must be parameterized against the real engine.
+  // The values here are the default that might not result in the correct overall behavior.
+  // Without access to real world data these values should be considered placeholders for accurate measurements.
+  "FrictionTorqueParameters":
+  {
+    "cfr0": 0.97,
+    "cfr1": 0.15,
+    "cfr2": 0.04
+  },
+
+  // Optional
+  "airFuelRatio": 14.5, // Diesel
+  "heatValue": 45400000 // Diesel
+
+}
+

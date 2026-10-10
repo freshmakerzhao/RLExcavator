@@ -1,0 +1,25 @@
+AxleBearings is Connections.Pivot.HingedAxle:
+    .doc: """
+    The AxleBearings connection require an axle,
+    where all four bearings in the two object connections
+    are connected to the axle.
+    With this connection both bearing forces and axle forces
+    are computed.
+    """
+    with Connections.Pivot.Traits.Bearings
+
+    from_hinge.enabled: false
+    to_hinge.enabled: false
+
+    left_from_mate is Physics3D.Interactions.Cylindrical:
+        connectors: [axle.central_connector, from_bearings.left]
+        enable_snap: false
+    right_from_mate is Physics3D.Interactions.Cylindrical:
+        connectors: [axle.central_connector, from_bearings.right]
+        enable_snap: false
+    left_to_mate is Physics3D.Interactions.Cylindrical:
+        connectors: [axle.central_connector, to_bearings.left]
+        enable_snap: false
+    right_to_mate is Physics3D.Interactions.Cylindrical:
+        connectors: [axle.central_connector, to_bearings.right]
+        enable_snap: false

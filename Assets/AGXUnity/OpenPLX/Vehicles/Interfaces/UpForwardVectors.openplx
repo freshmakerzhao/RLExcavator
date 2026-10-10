@@ -1,0 +1,7 @@
+trait UpForwardVectors:
+    .doc: """
+    Two orthogonal vectors that define what is
+    forward and up for a vehicle or one of its parts.
+    """
+    up_vector is Math.Vec3: {0,0,1}
+    forward_vector is Math.Vec3: {1,0,0}

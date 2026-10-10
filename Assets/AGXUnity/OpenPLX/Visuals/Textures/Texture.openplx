@@ -1,0 +1,7 @@
+Texture is DefaultTexture:
+  .doc: """
+Defines a texture with the given texture data. The texture access can be further
+configured by applying traits to instances of this model, e.g. the Swizzle and Sampler
+traits
+"""
+  data is TextureData

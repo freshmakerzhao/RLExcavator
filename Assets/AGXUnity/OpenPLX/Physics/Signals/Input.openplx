@@ -9,4 +9,3 @@ An Input, ie a receiver of signals.
     type is Int
     reference_id is String: ""
     marshalling is Marshalling
-

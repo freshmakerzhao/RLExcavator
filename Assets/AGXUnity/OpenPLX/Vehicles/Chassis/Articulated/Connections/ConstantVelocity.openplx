@@ -1,0 +1,7 @@
+ConstantVelocity is Vehicles.Chassis.Articulated.Connections.Base:
+    front_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.SingleJoint
+    rear_frame becomes MachineModeling.Components.Primitive.Base with Chassis.Articulated.Interfaces.SingleJoint
+
+    constant_velocity is MachineModeling.Connections.ConstantVelocity.Base:
+        from: front_frame.joint_connector
+        to: rear_frame.joint_connector

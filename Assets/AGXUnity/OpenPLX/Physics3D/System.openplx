@@ -29,4 +29,3 @@ reference_body - a body chosen to be carry the origin of the system.
     # kinematically_controlled is deprecated, use RigidBody.is_dynamic instead
     kinematically_controlled is Physics3D.Bodies.RigidBody[]: []
     optional reference_body is Physics3D.Bodies.Body reference
-

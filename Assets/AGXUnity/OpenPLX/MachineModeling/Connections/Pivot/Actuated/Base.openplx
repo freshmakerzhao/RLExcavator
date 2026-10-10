@@ -1,0 +1,19 @@
+Base is MachineModeling.Connections.Base:
+    .doc: """
+    Base type for pivot connections driven by an actuator.
+
+    The connection defines the pivot between the from and to components
+    and has references to the actuator drive and ground connectors which
+    are to be specified in more concrete variants.
+
+    """
+    with Connections.Interfaces.FromTo
+
+    ground_connector is Physics3D.Interactions.MateConnector reference
+    drive_connector is Physics3D.Interactions.MateConnector reference
+
+    pivot is MachineModeling.Connections.Pivot.Base:
+        from: from
+        to: to
+
+    actuator is MachineModeling.Components.Composite.Base

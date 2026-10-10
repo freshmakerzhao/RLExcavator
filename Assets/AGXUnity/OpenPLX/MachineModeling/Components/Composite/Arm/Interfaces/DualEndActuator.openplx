@@ -1,0 +1,3 @@
+trait DualEndActuator:
+    to_left_actuator  is Physics3D.Interactions.MateConnector
+    to_right_actuator is Physics3D.Interactions.MateConnector

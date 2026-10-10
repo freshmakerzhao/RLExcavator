@@ -1,0 +1,22 @@
+IMULogic is SensorLogic:
+    with Traits.MateConnectorAttachment
+    .doc: """
+    The IMU is a sensor that we can attach other sensors to, such as accelerometers,
+    gyroscopes and magnetometers.
+
+    An example of an IMU with an accelerometer and a gyroscope:
+
+    logic is Sensors.IMULogic:
+        accelerometer_logic is Sensors.AccelerometerLogic:
+            mate_connector_attachment: some_connector
+        gyroscope_logic is Sensors.GyroscopeLogic:
+            mate_connector_attachment: some_connector
+        output is Sensors.Signals.IMUOutput:
+            fields: [{Sensors.Signals.TriaxialOutputField.X_F64, logic.accelerometer_logic},
+                    {Sensors.Signals.TriaxialOutputField.Y_F64, logic.accelerometer_logic},
+                    {Sensors.Signals.TriaxialOutputField.X_F64, logic.gyroscope_logic},
+                    {Sensors.Signals.TriaxialOutputField.Z_F64, logic.accelerometer_logic},
+                    {Sensors.Signals.TriaxialOutputField.Y_F64, logic.gyroscope_logic}]
+            source: logic
+
+    """

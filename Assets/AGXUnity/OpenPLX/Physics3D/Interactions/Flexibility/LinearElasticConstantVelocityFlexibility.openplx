@@ -1,0 +1,13 @@
+LinearElasticConstantVelocityFlexibility is DefaultConstantVelocityFlexibility:
+    .doc: """
+    Define a linear elastic flexibility model for each constrained degree of freedom for a ConstantVelocity.
+    """
+    default_stiffness is Real: Physics.Interactions.Flexibility.Defaults.Stiffness
+    along_main becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: default_stiffness
+    along_normal becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: default_stiffness
+    along_cross becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: default_stiffness
+    around_main becomes Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: default_stiffness

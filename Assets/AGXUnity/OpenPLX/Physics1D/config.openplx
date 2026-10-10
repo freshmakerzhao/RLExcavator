@@ -1,5 +1,5 @@
 
 config is BundleConfig:
     name: "Physics1D"
-    version: "0.20.2"
-    dependencies: ["Physics==0.20.2"]
+    version: "0.26.7"
+    dependencies: ["Physics==0.26.7"]

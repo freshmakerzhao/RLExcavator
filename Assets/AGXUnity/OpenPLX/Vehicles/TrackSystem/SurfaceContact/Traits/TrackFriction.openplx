@@ -1,0 +1,28 @@
+trait TrackFriction:
+    .doc: """
+    The TrackFriction trait is intended for use to model friction in
+    tracked vehicle systems, where friction properties differ
+    between the longitudinal and transversal directions of the track.
+
+    The primary_direction defines the longitudinal direction of the track,
+    i.e., the forward (tensile/rolling) direction along the track path.
+
+    The secondary_coefficient defines the friction coefficient in the
+    transversal (lateral) direction. This direction is orthogonal to both
+    the contact normal and the primary_direction, representing the track's
+    resistance to sideways motion.
+
+    Example:
+    In the example below, the TrackFriction trait is added to the
+    DryConstantNormalForceFriction model. This model is the fastest
+    friction model from a performance perspective, but other models,
+    such as DryBoxFriction, are also suitable.
+
+    MyDryConstantNormalForceFriction is Physics.Interactions.Dissipation.DryConstantNormalForceFriction:
+        with Vehicles.TrackSystem.SurfaceContact.Traits.TrackFriction
+        secondary_coefficient: 0.1    # Friction coefficient in the transversal direction
+
+        coefficient: 1.0              # Friction coefficient in the longitudinal (track) direction
+        normal_force: 1000            # Constant normal force
+    """
+    secondary_coefficient is Real

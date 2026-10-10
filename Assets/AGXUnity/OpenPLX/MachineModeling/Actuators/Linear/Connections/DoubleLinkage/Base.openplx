@@ -1,0 +1,5 @@
+Base is MachineModeling.Connections.Pivot.Actuated.LinearDoubleLinkage:
+    .doc: """
+    Deprecated compatibility alias for a linear-actuated double-linkage
+    connection.
+    """

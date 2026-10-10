@@ -1,0 +1,6 @@
+Toggle is Control.Keyboard.Action:
+    .doc: """
+Reads the current value from a specific output and sends back the inverted boolean
+value to the target inputs.
+"""
+    current_value is Physics.Signals.BoolOutput reference

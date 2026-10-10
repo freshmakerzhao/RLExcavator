@@ -1,0 +1,15 @@
+DualCylinder is Steering.Articulated.DualActuator:
+    rod_diameter    is Real
+    barrel_diameter is Real
+
+    left_steering_actuator becomes MachineModeling.Actuators.Linear.Cylinder:
+        rod.body.diameter: rod_diameter
+        barrel.body.diameter: barrel_diameter
+    right_steering_actuator becomes MachineModeling.Actuators.Linear.Cylinder:
+        rod.body.diameter: rod_diameter
+        barrel.body.diameter: barrel_diameter
+
+    left_steering_actuator_connection becomes MachineModeling.Actuators.Linear.Connections.Cylinder:
+        actuator: left_steering_actuator
+    right_steering_actuator_connection becomes MachineModeling.Actuators.Linear.Connections.Cylinder:
+        actuator: right_steering_actuator

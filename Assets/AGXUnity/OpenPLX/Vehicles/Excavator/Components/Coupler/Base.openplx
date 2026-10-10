@@ -1,0 +1,15 @@
+Base is Vehicles.Excavator.Components.Tool.Base:
+    .doc: """
+    Base model for an excavator tool coupler which extends the `Tool.Base` model.
+
+    The base model only includes the bare minimum, i.e. two attachment points.
+    Together with the attachment points already defined in the `Tool.Base` it means
+    the coupler has a total of four attachment points. Normally, two points on the top
+    connecting to the excavator arm and cylinder and two points at the bottom connecting
+    to a working tool such as a bucket.
+
+    This is a `Base` model and is to be extended with a more detailed model.
+    """
+
+    with MachineModeling.Components.Composite.Arm.Interfaces.SingleEndJoint
+    with MachineModeling.Components.Composite.Arm.Interfaces.SingleEndActuator

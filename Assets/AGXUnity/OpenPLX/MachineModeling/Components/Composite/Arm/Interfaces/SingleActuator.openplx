@@ -1,0 +1,2 @@
+trait SingleActuator:
+    from_actuator  is Physics3D.Interactions.MateConnector

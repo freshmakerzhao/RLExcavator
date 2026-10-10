@@ -1,0 +1,21 @@
+DualHingeLockCoupling is MachineModeling.Connections.Base:
+    .doc: """
+    Fixed coupling between two components using two hinge-pin connector pairs.
+
+    This is useful for coupler-style attachments where the connection is
+    defined by two paired pin locations that together rigidly couple the parts.
+    """
+
+    from_connector_1 is Physics3D.Interactions.MateConnector reference
+    to_connector_1 is Physics3D.Interactions.MateConnector reference
+
+    from_connector_2 is Physics3D.Interactions.MateConnector reference
+    to_connector_2 is Physics3D.Interactions.MateConnector reference
+
+    connection_1 is MachineModeling.Connections.Pivot.Hinge:
+        from: from_connector_1
+        to: to_connector_1
+
+    connection_2 is MachineModeling.Connections.Pivot.Hinge:
+        from: from_connector_2
+        to: to_connector_2

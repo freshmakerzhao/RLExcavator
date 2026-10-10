@@ -1,0 +1,8 @@
+Standard is Vehicles.Excavator.Components.Arm.Base:
+    .doc: """
+    Standard excavator arm with a dedicated boom-stick connection of the most common type,
+    i.e. a single pivot connection between boom and stick with a single cylinder
+    actuating the stick.
+    """
+
+    with Vehicles.Excavator.Components.Arm.Configurations.BoomStick.BoomStickSingleCylinder

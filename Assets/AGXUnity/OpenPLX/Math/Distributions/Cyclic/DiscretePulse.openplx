@@ -1,0 +1,6 @@
+DiscretePulse is Math.Distributions.Cyclic.Base:
+    .doc: """
+A variation of a descrete pattern, where every N'th value will increase with the additional_amplitude.
+"""
+    amplitude is Real
+    period is Int

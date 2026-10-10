@@ -1,0 +1,17 @@
+Base is Vehicles.Excavator.Components.Tool.Base:
+    .doc: """
+    The `Bucket.Base` model extends the `Tool.Base` by defining a `Terrain.Shovel` which
+    will allow for the bucket to dig and deform the terrain.
+
+    The variables `left/right_upper/lower_corner` defines the `top_edge` and
+    `cutting_edge` of the bucket.
+    """
+
+    left_upper_corner is Math.Vec3
+    right_upper_corner is Math.Vec3
+    left_lower_corner is Math.Vec3
+    right_lower_corner is Math.Vec3
+
+    shovel is Terrain.Shovel:
+        top_edge: Math.Line.from_points(right_upper_corner, left_upper_corner)
+        cutting_edge: Math.Line.from_points(right_lower_corner, left_lower_corner)

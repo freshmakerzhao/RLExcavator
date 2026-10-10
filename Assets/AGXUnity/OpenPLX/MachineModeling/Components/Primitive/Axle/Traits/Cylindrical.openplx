@@ -1,0 +1,9 @@
+trait Cylindrical:
+    diameter is Real
+    length is Real
+    body.cylinder is Physics3D.Geometries.Cylinder:
+        radius: diameter * 0.5
+        height: length
+    body.visual is Visuals.Geometries.Cylinder:
+        radius: diameter * 0.5
+        height: length

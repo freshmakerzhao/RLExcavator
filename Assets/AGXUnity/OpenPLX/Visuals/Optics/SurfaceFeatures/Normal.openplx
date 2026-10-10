@@ -1,0 +1,7 @@
+trait Normal:
+    .doc: """
+Defines sub-geometry level features using a texture to define the local normals
+at any given point on the geometry surface.
+"""
+    normal_map is Visuals.Textures.Texture # Has no defaults
+    normal_scale is Real: 1.0

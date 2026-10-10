@@ -13,3 +13,5 @@ Mate is Physics.Interactions.Interaction:
     toughness is Physics3D.Interactions.Toughness.DefaultMateToughness
     clearance is Physics3D.Interactions.Clearance.DefaultMateClearance
     enable_snap is Bool: true
+    optional snap_linear_threshold is Real
+    optional snap_angular_threshold is Real

@@ -18,4 +18,3 @@ operator *(lhs: Vec2, rhs: Real) -> Vec2
 operator *(lhs: Vec2, rhs: Vec2) -> Real
 operator /(lhs: Vec2, rhs: Real) -> Vec2
 operator -(operand: Vec2) -> Vec2
-

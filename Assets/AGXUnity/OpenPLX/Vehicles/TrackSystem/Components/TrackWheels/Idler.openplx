@@ -1,0 +1,9 @@
+Idler is TrackSystem.Components.TrackWheels.Base:
+    .doc: """
+    An Idler with a rigid body. Usually a geomtry is added to the sprocket via e.g. the CylindricalShape trait.
+    local_center_axis is y direction by default assuming that the non rotated cylinder axis is in y direction.
+    Note that the all track wheels should have their axis in the same direction as the sprocket.
+
+    Example:
+        idler is Vehicles.TrackSystem.Components.TrackWheels.Idler
+    """

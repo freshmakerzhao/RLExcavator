@@ -1,0 +1,6 @@
+trait DualAFrame:
+    front_center_a_frame_connector is Physics3D.Interactions.MateConnector
+
+    rear_center_a_frame_connector is Physics3D.Interactions.MateConnector
+    rear_left_a_frame_connector is Physics3D.Interactions.MateConnector
+    rear_right_a_frame_connector is Physics3D.Interactions.MateConnector

@@ -28,7 +28,6 @@ EmpiricalTorqueConverter is Physics1D.Interactions.Mate:
 
     The model is populated with default values found from Figure 14.9 in "Modeling and control of engines and drivelines".
 
-
     The oil_density and diameter parameters effect the pump torque as
     pump_torque = geometry_factor(velocity_ratio) * pump_vel * pump_vel * oil_density * pow(diameter, 5)
     turbine_torque = torque_multiplier(velocity_ratio) * pump_torque

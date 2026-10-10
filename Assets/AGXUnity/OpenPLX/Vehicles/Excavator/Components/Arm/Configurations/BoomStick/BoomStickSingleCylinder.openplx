@@ -1,0 +1,4 @@
+trait BoomStickSingleCylinder:
+    boom_stick_connection becomes MachineModeling.Connections.Pivot.Actuated.Linear
+    boom_stick_connection.actuator becomes MachineModeling.Actuators.Linear.Cylinder
+    boom_stick_connection.actuator_connection becomes MachineModeling.Actuators.Linear.Connections.Cylinder

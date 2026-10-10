@@ -1,0 +1,17 @@
+LinearDoubleLinkage is MachineModeling.Connections.Pivot.Actuated.Linear:
+    .doc: """
+    Linear-actuated hinge pivot that has an additional linkage.
+    This kind is commonly used on for example excavator bucket connections.
+
+    The actuator will act thorugh the linkage instead of directly on the drive_connector.
+
+    """
+    guide_connector is Physics3D.Interactions.MateConnector reference
+
+    linkage is MachineModeling.Components.Composite.DoubleLinkage.SingleLink.Base:
+        guide_connector: guide_connector
+        drive_connector: drive_connector
+
+    actuator_connection:
+        from: ground_connector
+        to: linkage.drive_connector_1

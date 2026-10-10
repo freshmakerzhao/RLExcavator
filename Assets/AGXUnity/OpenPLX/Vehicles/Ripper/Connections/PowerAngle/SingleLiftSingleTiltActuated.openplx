@@ -1,0 +1,18 @@
+SingleLiftSingleAngleActuated is Ripper.Connections.PowerAngle.Base:
+    lift_actuator_connector is Physics3D.Interactions.MateConnector reference
+    tilt_actuator_connector is Physics3D.Interactions.MateConnector reference
+    ripper becomes Ripper.PowerAngle.SingleLiftSingleAngleActuated
+
+    lift_actuator is MachineModeling.Actuators.Linear.Base
+
+    lift_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: lift_actuator
+        from: lift_actuator_connector
+        to: ripper.frame.actuator_connector
+
+    tilt_actuator is MachineModeling.Actuators.Linear.Base
+
+    tilt_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: tilt_actuator
+        from: tilt_actuator_connector
+        to: ripper.shank.actuator_connector

@@ -1,0 +1,5 @@
+Cylindrical is Connections.Pivot.Base:
+    cylindrical is Physics3D.Interactions.Cylindrical:
+        connectors: hinge.connectors
+        # Use the hinge for snapping
+        enable_snap: false

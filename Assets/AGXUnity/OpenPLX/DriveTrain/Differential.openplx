@@ -19,3 +19,4 @@ Differential is Physics1D.Interactions.Mate:
         enabled: false
     lock_up_input is Physics.Signals.BoolInput:
         source: this
+        initial_value: locked_up

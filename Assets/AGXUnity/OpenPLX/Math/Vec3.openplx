@@ -30,4 +30,3 @@ operator *(lhs: Vec3, rhs: Real) -> Vec3
 operator *(lhs: Vec3, rhs: Vec3) -> Real
 operator /(lhs: Vec3, rhs: Real) -> Vec3
 operator -(operand: Vec3) -> Vec3
-

@@ -1,0 +1,9 @@
+trait BellCrank is Steering.Interfaces.Base:
+    .doc: """
+Bell-crank steering geometry.
+"""
+    knuckle_angle: -1.885
+    knuckle_length: 0.14
+    initial_angle_right_tie_rod is Real: 0
+    steering_column_distance is Real: 1.0
+    gear is Real: 1.0

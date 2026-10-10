@@ -1,0 +1,5 @@
+TextureMaskedDiaphragm:
+    .doc: """
+    Description of a diaphragm basing its shape on a given mask texture.
+    """
+    texture_mask is Visuals.Textures.Texture

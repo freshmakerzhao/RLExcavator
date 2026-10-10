@@ -1,0 +1,4 @@
+DistanceMotor is LinearVelocityMotor:
+    .doc: """
+A linear motor controlling the velocity between two points.
+"""

@@ -1,0 +1,7 @@
+trait SingleJoint:
+    .doc: """
+    A trait for adding a single connector for mounting the excavator arm to the
+    vehicle chassis.
+    """
+
+    arm_connector is Physics3D.Interactions.MateConnector

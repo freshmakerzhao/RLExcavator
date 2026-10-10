@@ -1,0 +1,26 @@
+Base is MachineModeling.Connections.Base:
+    .doc: """
+Using this component in a mechanism provides a standardized interface that can be
+replaced by any concrete linear-actuator connection inheriting from this model.
+This enables flexible choice of actuator implementation without changing the
+surrounding system.
+
+Nomenclature:
+For serial mechanisms without closed loops, the *ground* connection refers to the
+part closer to the root of the kinematic chain, while the *drive* connection
+refers to the part farther along the chain.
+
+Example:
+In an excavator arm, the linear actuator driving the stick has its ground
+connection attached to the boom, and its drive connection attached to the stick.
+
+Parameters:
+    connector_1 : MateConnector
+        The connector on the mechanism to which the actuator’s grounded end is
+        attached.
+    connector_2 : MateConnector
+        The connector on the mechanism to which the actuator’s driving end is
+        attached.
+"""
+    with Connections.Interfaces.FromTo
+    actuator is Actuators.Linear.Base

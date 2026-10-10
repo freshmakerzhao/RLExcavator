@@ -6,4 +6,5 @@ the input will update that value.
 """
     type: Physics.Signals.InputOutputType.AngularVelocity1D
     source is AngularVelocity1DInputTrait
+    initial_value is Real: 0.0
     marshalling.angular_velocity is RealField

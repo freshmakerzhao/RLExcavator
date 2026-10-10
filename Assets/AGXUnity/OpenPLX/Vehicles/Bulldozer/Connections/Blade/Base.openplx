@@ -1,0 +1,3 @@
+Base is MachineModeling.Connections.Base:
+    blade is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Blades.BaseConnectors reference
+    chassis is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Chassis.BaseConnectors reference

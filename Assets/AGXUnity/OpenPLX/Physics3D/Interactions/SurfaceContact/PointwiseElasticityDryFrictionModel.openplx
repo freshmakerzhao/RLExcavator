@@ -10,6 +10,6 @@ PointwiseElasticityDryFrictionModel is Physics.Interactions.SurfaceContact.Model
     The relaxation time defaults to maximum relaxation time of the two interacting materials.
     Mechanical damping capacity [Ns/m] defaults to the stiffness [N/m] multiplied with the relaxation time [s].
     """
-    
+
     normal_flexibility becomes Physics.Interactions.SurfaceContact.PointwiseElasticity
     friction becomes Physics.Interactions.Dissipation.DefaultDryFriction

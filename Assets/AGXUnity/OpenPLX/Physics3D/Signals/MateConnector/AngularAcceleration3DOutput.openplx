@@ -4,3 +4,4 @@ Emits a ValueOutputSignal where the signal value is the directional angular acce
 You may also specify a MateConnector as the relative_to parameter to get the value relative to that mate connector
 """
     type: Physics.Signals.InputOutputType.AngularAcceleration3D
+    marshalling becomes Vec3Marshalling

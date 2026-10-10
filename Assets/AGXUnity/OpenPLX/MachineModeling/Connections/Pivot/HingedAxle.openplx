@@ -1,0 +1,18 @@
+HingedAxle is Connections.Pivot.Hinge:
+    .doc: """
+    By specializing the Hinge connection
+    to a HingeAxle connection both objects
+    of the Pivot connection are constrained
+    to the axle instead of to each other.
+
+    It becomes natural to have this type of connection
+    when more than two objects are pivoting about the same axis.
+    For example when a hydraulic cylinder actuates
+    a linked system and not the object directly.
+
+    """
+    with Connections.Pivot.Traits.Axle
+    from_hinge is Physics3D.Interactions.Hinge:
+        connectors: [axle.central_connector, from]
+    to_hinge is Physics3D.Interactions.Hinge:
+        connectors: [axle.central_connector, to]

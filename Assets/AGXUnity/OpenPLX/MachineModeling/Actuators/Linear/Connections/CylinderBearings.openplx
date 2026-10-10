@@ -1,0 +1,20 @@
+CylinderBearings is Actuators.Linear.Connections.Cylinder:
+    .doc: """
+    Specializes the cylinder connection to have two bearings.
+    The range is limited between min_length and max_length = stroke_length + min_length
+"""
+    actuator becomes Actuators.Linear.CylinderBearings:
+        barrel_separation: from_bearings.separation
+        rod_separation: to_bearings.separation
+
+    from_bearings is MachineModeling.Components.Composite.BearingPair reference
+
+    to_bearings is MachineModeling.Components.Composite.BearingPair reference
+
+    barrel_connection becomes MachineModeling.Connections.Pivot.LockedBearings:
+        from_bearings: from_bearings
+        to_bearings: actuator.barrel.bearings
+
+    rod_connection becomes MachineModeling.Connections.Pivot.LockedBearings:
+        from_bearings: actuator.rod.bearings
+        to_bearings: to_bearings

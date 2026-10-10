@@ -1,0 +1,3 @@
+Base is MachineModeling.Connections.Base:
+    front_frame is MachineModeling.Components.Primitive.Base reference
+    rear_frame is MachineModeling.Components.Primitive.Base reference

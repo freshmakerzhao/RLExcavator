@@ -1,0 +1,7 @@
+trait DualActuator:
+    .doc: """
+    A trait for adding mate connectors for dual actuators to control the excavator arm.
+    """
+
+    left_arm_actuator_connector is Physics3D.Interactions.MateConnector
+    right_arm_actuator_connector is Physics3D.Interactions.MateConnector

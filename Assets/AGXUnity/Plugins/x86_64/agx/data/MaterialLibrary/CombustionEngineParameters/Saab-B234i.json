@@ -1,0 +1,31 @@
+{
+  "description": "Saab 9000 passenger car B234i engine parameters. Source: Figure 4.4, Eriksson2014, Modelling and control of engines. This engine has been installed on the cars such as Saab 900 II, Saab 9000 I and Saab 9-3 I. Check the description of Saab H engine here: https://en.wikipedia.org/wiki/Saab_H_engine",
+  "reference": "https://www.zemekoni.org/files/files/9000%202.1%20-%20Basic%20Engine%20B234%20M1990-.pdf",
+  "name": "Saab-B234i",
+
+  "displacementVolume":    0.0023,     // m^3
+  "maxTorque":             212,        // Nm
+  "maxTorqueRPM":          4000,       // rpm
+  "maxPowerRPM":           5500.0,     // rpm
+  "idleRPM":               1000,       // rpm 
+  "maxRPM":                10000,      // rpm 
+  "crankShaftInertia":     0.2,        // kg.m^2 
+
+  // Parameters controlling the mean effective friction torque. This corresponds to
+  // page 722, section 13.5.1 in "Internal combustion engine fundamentals" by John B. Heywood, 1988.
+  // These parameters must be parameterized against the real engine.
+  // The values here are the default that might not result in the correct overall behavior.
+  // Without access to real world data these values should be considered placeholders for accurate measurements.
+  "FrictionTorqueParameters":
+  {
+    "cfr0": 0.97,
+    "cfr1": 0.15,
+    "cfr2": 0.05
+  },
+
+  // Optional
+  "airFuelRatio": 14.7, // Petrol
+  "heatValue": 44400000 // Petrol
+}
+
+

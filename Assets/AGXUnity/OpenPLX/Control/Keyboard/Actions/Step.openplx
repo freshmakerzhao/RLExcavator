@@ -1,0 +1,15 @@
+Step is Control.Keyboard.Action:
+    with HoldTrait
+    .doc: """
+Adds a step value once when the key is pressed, optionally clamps the value
+to a min and max value.
+
+current_value: The IntOutput where to read the current value to increment/decrement
+step: The integer value to add to the current value to get the new value that is sent to the target inputs
+min: Optional min value to clamp to if the new value is lower
+max: Optional max value to clamp to if the new value is higher
+"""
+    current_value is Physics.Signals.IntOutput reference
+    step is Int
+    optional min is Int
+    optional max is Int

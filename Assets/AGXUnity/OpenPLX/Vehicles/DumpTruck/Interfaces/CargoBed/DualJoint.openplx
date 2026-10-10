@@ -1,0 +1,3 @@
+trait DualJoint:
+    left_cargo_bed_connector is Physics3D.Interactions.MateConnector
+    right_cargo_bed_connector is Physics3D.Interactions.MateConnector

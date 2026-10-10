@@ -1,0 +1,8 @@
+Base is Components.Primitive.Base:
+    .doc: """
+    The base link defines two connectors intended to connect
+    the link between two other components.
+    """
+
+    connector_1 is Physics3D.Interactions.MateConnector
+    connector_2 is Physics3D.Interactions.MateConnector

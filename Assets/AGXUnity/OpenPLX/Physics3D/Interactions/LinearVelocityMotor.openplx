@@ -11,6 +11,7 @@ LinearVelocityMotor is VelocityMotor:
 
     target_linear_velocity_input is Physics.Signals.LinearVelocity1DInput:
         source: this
+        initial_value: target_speed
 
     target_linear_velocity_output is Physics.Signals.LinearVelocity1DOutput:
         enabled: false

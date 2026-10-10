@@ -1,0 +1,95 @@
+Dual is DumpTruck.Connections.Base:
+    .doc: """
+    A dual A Frame connection.
+    A front one with only a pivoting connection to the chassis,
+    a rear one that also has linear suspension to the chassis.
+
+    Two equalizer bars and two linear spring dampers
+    between the left and right connections of the rear A frame to the chassis.
+    """
+
+    chassis_frame becomes MachineModeling.Components.Primitive.Base with DumpTruck.Interfaces.Chassis.DualAFrame reference
+
+    front_a_frame is MachineModeling.Components.Primitive.Base with Vehicles.DumpTruck.Interfaces.Chassis.AFrame reference
+    rear_a_frame is MachineModeling.Components.Primitive.Base with Vehicles.DumpTruck.Interfaces.Chassis.AFrame reference
+
+    left_equalizer is MachineModeling.Components.Primitive.Base
+    right_equalizer is MachineModeling.Components.Primitive.Base
+
+    # Connectors on the left and right equalizer beams
+    left_equalizer_pivot_connector is Physics3D.Interactions.MateConnector
+    left_equalizer_rear_connector is Physics3D.Interactions.MateConnector
+    right_equalizer_pivot_connector is Physics3D.Interactions.MateConnector
+    right_equalizer_rear_connector is Physics3D.Interactions.MateConnector
+
+    left_axle_connector_1 is Physics3D.Interactions.MateConnector
+    right_axle_connector_1 is Physics3D.Interactions.MateConnector
+    left_axle_connector_2 is Physics3D.Interactions.MateConnector
+    right_axle_connector_2 is Physics3D.Interactions.MateConnector
+
+    # Shared suspension parameters for both rear suspension cylinders.
+    min_length is Real
+    stroke_length is Real
+    rod_diameter is Real
+    barrel_diameter is Real
+
+    left_equalizer_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: chassis_frame.rear_left_a_frame_connector
+        to: left_equalizer_pivot_connector
+        hinge:
+            initial_angle: 0
+            flexibility becomes Physics3D.Interactions.Flexibility.LinearElasticHingeFlexibility:
+                default_stiffness: 1e16
+
+    right_equalizer_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: chassis_frame.rear_right_a_frame_connector
+        to: right_equalizer_pivot_connector
+        hinge:
+            initial_angle: 0
+            flexibility becomes Physics3D.Interactions.Flexibility.LinearElasticHingeFlexibility:
+                default_stiffness: 1e16
+
+    front_center_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: chassis_frame.front_center_a_frame_connector
+        to: front_a_frame.center_a_frame_connector
+        hinge.initial_angle: 0
+        hinge.flexibility becomes Physics3D.Interactions.Flexibility.LinearElasticHingeFlexibility:
+            default_stiffness: 1e16
+
+    rear_center_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: chassis_frame.rear_center_a_frame_connector
+        to: rear_a_frame.center_a_frame_connector
+        hinge.flexibility becomes Physics3D.Interactions.Flexibility.LinearElasticHingeFlexibility:
+            default_stiffness: 1e16
+
+    left_suspension is MachineModeling.Actuators.Linear.Connections.Cylinder:
+        from: rear_a_frame.left_a_frame_connector
+        to: left_equalizer_rear_connector
+        actuator:
+            source becomes Physics3D.Interactions.LinearSpring:
+                connectors: left_suspension.actuator.cylindrical.connectors
+            min_length: min_length
+            stroke_length: stroke_length
+            rod.body.diameter: rod_diameter
+            barrel.body.diameter: barrel_diameter
+
+    right_suspension is MachineModeling.Actuators.Linear.Connections.Cylinder:
+        from: rear_a_frame.right_a_frame_connector
+        to: right_equalizer_rear_connector
+        actuator:
+            source becomes Physics3D.Interactions.LinearSpring:
+                connectors: right_suspension.actuator.cylindrical.connectors
+            min_length: min_length
+            stroke_length: stroke_length
+            rod.body.diameter: rod_diameter
+            barrel.body.diameter: barrel_diameter
+
+    # Disable unwanted collisions
+    group_a_frame_and_chassis is Simulation.CollisionGroup:
+        bodies: [front_a_frame.body, rear_a_frame.body, left_equalizer.body, right_equalizer.body]
+    group_suspension is Simulation.CollisionGroup:
+        systems: [left_suspension, right_suspension]
+
+    disable_a_frame_and_chassis is Simulation.DisableCollisionPair:
+        group1: group_a_frame_and_chassis
+        group2: group_suspension

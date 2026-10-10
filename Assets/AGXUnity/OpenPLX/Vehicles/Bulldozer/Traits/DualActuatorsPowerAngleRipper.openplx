@@ -1,0 +1,6 @@
+trait DualActuatorsPowerAngleRipper:
+    .doc: """
+    Adds a PowerAngle ripper to the bulldozer
+    """
+    ripper is Vehicles.Ripper.PowerAngle.DualLiftDualTiltActuated
+    ripper_connection is Vehicles.Ripper.Connections.PowerAngle.DualLiftDualTiltActuated

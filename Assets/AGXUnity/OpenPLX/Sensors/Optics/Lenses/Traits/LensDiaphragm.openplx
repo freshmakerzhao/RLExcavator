@@ -1,0 +1,5 @@
+trait LensDiaphragm:
+    .doc: """
+    Trait applying a diaphragm onto a lens system.
+    """
+    diaphragm is BladedDiaphragm or TextureMaskedDiaphragm

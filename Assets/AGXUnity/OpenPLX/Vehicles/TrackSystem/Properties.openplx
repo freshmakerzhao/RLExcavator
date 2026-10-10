@@ -1,0 +1,49 @@
+﻿Properties:
+    .doc: """
+    These properties define the flexibility and dissipation characteristics of the track system.
+
+    The flexibility is defined through the track's resistance to various deformations:
+    - Tensile: Stretching along the longitudinal axis
+    - Bending: Rotation around vertical and lateral axes
+    - Shear: Deformation along vertical and lateral axes
+    - Torsional: Twisting around the longitudinal axis
+
+    Each flexibility mode includes stiffness and attenuation factors.
+
+    The dissipation is defined through internal friction between track segments.
+
+    bending_rotational_range_min - The min rotational range of the connection between the links.
+                                   This is rotation around the transversal axis.
+    bending_rotational_range_max - The max rotational range of the connection between the links.
+                                   This is rotation around the transversal axis. Note that if max <= min
+                                   then no range is applied to the connection between the links.
+    flexibility                   - Defines the stiffness properties for all deformation modes.
+    damping                      - Defines the damping properties for all
+    dissipation                  - Defines the energy dissipation during deformations.
+
+    Example:
+    In the example below we define the track flexibility and dissipation properties for a track system.
+    The flexibility is defined using a linear elastic track flexibility model, and the dissipation is
+    defined using a attenuation dissipation model.
+
+    properties is Vehicles.TrackSystem.Properties:
+        flexibility becomes Vehicles.TrackSystem.Interactions.Flexibility.LinearElastic:
+            tensile.stiffness: 1e8
+            bending_lateral.stiffness: 50
+        damping becomes Vehicles.TrackSystem.Interactions.Dissipation.TrackAttenuation:
+            tensile.value: 1.5
+
+    track_system is Vehicles.TrackSystem.Base:
+        tracks.link_count: 100
+        properties: properties
+        track_wheels:  [sprocket, idler]
+
+    """
+
+    flexibility is Interactions.Flexibility.DefaultTrackFlexibility
+
+    damping is Interactions.Dissipation.DefaultTrackDissipation
+
+    bending_rotational_range_max is Real: 0.3491
+
+    bending_rotational_range_min is Real: -2.094395

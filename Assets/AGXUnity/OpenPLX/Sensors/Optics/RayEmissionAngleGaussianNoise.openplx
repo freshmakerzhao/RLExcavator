@@ -4,5 +4,5 @@ RayEmissionAngleGaussianNoise is RayEmissionDistortion:
     optical system is assumed to be right handed with the Z-axis pointing along the ray traversal
     direction.
     """
-    gaussian_distribution is Math.Random.GaussianDistribution
+    gaussian_distribution is Math.Distributions.Gaussian
     rotation_axis is Math.Vec3

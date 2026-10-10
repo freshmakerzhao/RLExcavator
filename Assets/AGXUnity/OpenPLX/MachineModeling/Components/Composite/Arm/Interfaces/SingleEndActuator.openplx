@@ -1,0 +1,2 @@
+trait SingleEndActuator:
+    to_actuator  is Physics3D.Interactions.MateConnector

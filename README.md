@@ -16,6 +16,23 @@ python -m earthmoving_autonomy teleop
 Unity 监听 `127.0.0.1:18790`。机器参数仍读取同级 `shared/machine_profile.jsonc`。不要移动整个仓库来改变这个相对位置。
 `MachineProfileLoader` 使用项目已有的 Newtonsoft.Json 读取 JSONC，支持 `//` 和 `/* */` 注释；可达工作空间仍是 Unity 导出的标准 JSON。
 
+### AGX 版本与启动环境
+
+当前固定为 **AGXUnity 5.6.1+22bd584a / AGX Dynamics 2.42.2.1**（Ubuntu 24.04 完整包），Unity 版本保持 6000.3.16f1。两者随同一官方包更新；不要混用系统中其他版本的 AGX 动态库或资源路径。
+
+若终端加载过独立 AGX SDK，可从工作区根目录用干净的进程环境打开编辑器；此命令不会改系统环境：
+
+```bash
+env -u AGX_DIR -u AGX_PLUGIN_PATH -u AGX_FILE_PATH -u AGX_DEPENDENCIES_DIR -u LD_LIBRARY_PATH \
+  "$HOME/Unity/Hub/Editor/6000.3.16f1/Editor/Unity" -projectPath "$PWD/RLExcavator"
+```
+
+固定料池 `SoilTerrain` 的 `EnableDynamicMassUpdates` 和 `RenderSides` 保持关闭：前者需要父刚体，后者会新增侧面网格。当前料池无父刚体，并沿用 ACT 采集时的平面土体网格。不要为修复新版本默认值去改速度、模型或奖励。
+
+本地未纳入 Git 的 WheelLoaderTerrain 示例需使用 5.6.1 官方 `Machine Resetter.cs`；旧脚本中四种重定位类型已从 `agxUtil` 移到 `agxModel`，旧版会阻塞整个项目编译。该本地示例独立于当前挖掘闭环。
+
+升级证据、原始日志和前后闭环结果见 `../EvaluationReport/2026-10-10_agx_upgrade/`。
+
 ## 目录
 
 ```text

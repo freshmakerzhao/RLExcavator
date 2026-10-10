@@ -1,0 +1,84 @@
+Tiltrotator is Vehicles.Excavator.Components.Coupler.QuickCoupler:
+    .doc:"""
+    Defines a tiltrotator by extending the `QuickCoupler` model.
+
+    The tiltrotatoar has three main parts:
+        `tilt_frame` -> `rotator` -> `coupler`
+
+    The motion between the tilt frame and the rotator is achieved by two (left/right)
+    linear actuators.
+    The swivel joint between the rotator and the coupler has a rotational actuator.
+
+    """
+
+    min_length      is Real     # Minimum length of the tilt linear actuators
+    stroke_length   is Real     # Stroke length of the tilt linear actuators
+    rod_diameter    is Real     # Physical diameter of the linear actuator rod
+    barrel_diameter is Real     # Physical diameter of the linear actuator barrel
+
+    max_tilt_angle is Real: Math.PI/2
+
+    initial_swivel_angle is Real: 0.0
+    initial_tilt_angle is Real: 0.0
+
+    tilt_frame is MachineModeling.Components.Primitive.Base with Vehicles.Excavator.Components.Coupler.Interfaces.DualToFrom:
+        left_actuator_connector is Physics3D.Interactions.MateConnector
+        right_actuator_connector is Physics3D.Interactions.MateConnector
+
+    rotator is MachineModeling.Components.Primitive.Base with Vehicles.Excavator.Components.Coupler.Interfaces.DualToFrom:
+        left_actuator_connector is Physics3D.Interactions.MateConnector
+        right_actuator_connector is Physics3D.Interactions.MateConnector
+
+    tilt_frame_connector_1 is MachineModeling.Connections.Pivot.Hinge:
+        from: tilt_frame.to_connector_1
+        to: rotator.from_connector_1
+        hinge.initial_angle: initial_tilt_angle
+
+    tilt_range is Physics3D.Interactions.RotationalRange:
+        connectors: tilt_frame_connector_1.hinge.connectors
+        start: -max_tilt_angle
+        end: max_tilt_angle
+
+    tilt_frame_connector_2 is MachineModeling.Connections.Pivot.Hinge:
+        from: tilt_frame.to_connector_2
+        to: rotator.from_connector_2
+        hinge.initial_angle: initial_tilt_angle
+
+    swivel is MachineModeling.Connections.Pivot.Hinge:
+        from: rotator.to_connector_1
+        to: coupler.from_connector_1
+        hinge.initial_angle: initial_swivel_angle
+
+    swivel_actuator is MachineModeling.Actuators.Rotational.Base:
+        source.connectors: swivel.hinge.connectors
+
+    left_tilt is  MachineModeling.Actuators.Linear.Connections.Cylinder:
+        from: tilt_frame.left_actuator_connector
+        to: rotator.left_actuator_connector
+        actuator:
+            min_length: min_length
+            stroke_length: stroke_length
+            rod.body.diameter: rod_diameter
+            barrel.body.diameter: barrel_diameter
+    right_tilt is  MachineModeling.Actuators.Linear.Connections.Cylinder:
+        from: tilt_frame.right_actuator_connector
+        to: rotator.right_actuator_connector
+        actuator:
+            min_length: min_length
+            stroke_length: stroke_length
+            rod.body.diameter: rod_diameter
+            barrel.body.diameter: barrel_diameter
+
+    # Reassign the system connectors to the correct part connectors.
+    to: coupler.to_connector_1
+    to_actuator: coupler.to_connector_2
+    from: tilt_frame.from_connector_1
+    from_actuator: tilt_frame.from_connector_2
+
+    # Disable inter system collisions
+    no_inter_tiltrotator_collisions is Simulation.CollisionGroup:
+        systems: [tilt_frame, rotator, coupler, left_tilt, right_tilt]
+
+    disable_tiltrotator_pairs is Simulation.DisableCollisionPair:
+        group1: no_inter_tiltrotator_collisions
+        group2: no_inter_tiltrotator_collisions

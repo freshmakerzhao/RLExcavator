@@ -1,0 +1,14 @@
+trait DefaultConnectors:
+    left_upper_connector.position: Math.Vec3.from_xyz(0.1,-1,1)
+    right_upper_connector.position: Math.Vec3.from_xyz(0,1,1)
+    left_mid_connector.position: Math.Vec3.from_xyz(0.25,-1,0.5)
+    right_mid_connector.position: Math.Vec3.from_xyz(0.25,1,0.5)
+    left_lower_connector.position: Math.Vec3.from_xyz(0.5,-1,0)
+    right_lower_connector.position: Math.Vec3.from_xyz(0.5,1,0)
+
+    left_upper_connector.main_axis: Math.Vec3.Y_AXIS()
+    right_upper_connector.main_axis: Math.Vec3.Y_AXIS()
+    left_mid_connector.main_axis: Math.Vec3.Y_AXIS()
+    right_mid_connector.main_axis: Math.Vec3.Y_AXIS()
+    left_lower_connector.main_axis: Math.Vec3.Y_AXIS()
+    right_lower_connector.main_axis: Math.Vec3.Y_AXIS()

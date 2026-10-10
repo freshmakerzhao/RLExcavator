@@ -11,6 +11,21 @@ namespace AGXUnity.IO.OpenPLX
   {
     public GameObject RootNode { get; set; } = null;
 
+    private GameObject m_worldProxyBody;
+    public GameObject WorldProxyBody
+    {
+      get
+      {
+        if ( m_worldProxyBody == null ) {
+          m_worldProxyBody = Factory.Create<RigidBody>();
+          RegisterGameObject( m_worldProxyBody );
+          m_worldProxyBody.transform.SetParent( RootNode.transform, false );
+          m_worldProxyBody.GetComponent<RigidBody>().MotionControl = agx.RigidBody.MotionControl.STATIC;
+          m_worldProxyBody.name = "World Proxy Body";
+        }
+        return m_worldProxyBody;
+      }
+    }
     public HashSet<GameObject> CreatedGameObjects { get; } = new HashSet<GameObject>();
 
     public HashSet<string> RegisteredDocuments { get; } = new HashSet<string>();
@@ -62,9 +77,11 @@ namespace AGXUnity.IO.OpenPLX
     public Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial> TerrainMaterialCache { get; } = new Dictionary<openplx.Terrain.TerrainMaterial, DeformableTerrainMaterial>();
     public Dictionary<openplx.Vehicles.Wheels.ElasticWheel, TwoBodyTireProperties> TirePropertyCache { get; } = new Dictionary<openplx.Vehicles.Wheels.ElasticWheel, TwoBodyTireProperties>();
     public Dictionary<openplx.Terrain.Shovel, DeformableTerrainShovelSettings> ShovelSettingsCache { get; } = new Dictionary<openplx.Terrain.Shovel, DeformableTerrainShovelSettings>();
+    public Dictionary<openplx.Vehicles.TrackSystem.Base, Track> TrackCache { get; } = new Dictionary<openplx.Vehicles.TrackSystem.Base, Track>();
 
     public Dictionary<uint, Material> NativeMappedRenderMaterialCache { get; } = new Dictionary<uint, Material>();
-    public Dictionary<openplx.Visuals.Materials.Material, Material> RenderMaterialCache { get; } = new Dictionary<openplx.Visuals.Materials.Material, Material> { };
+    public Dictionary<openplx.Visuals.Textures.DefaultTexture, Texture2D> TextureCache { get; } = new Dictionary<openplx.Visuals.Textures.DefaultTexture, Texture2D>();
+    public Dictionary<openplx.Physics.Optics.Material, Material> RenderMaterialCache { get; } = new Dictionary<openplx.Physics.Optics.Material, Material> { };
 
     public List<ContactMaterial> MappedContactMaterials { get; } = new List<ContactMaterial>();
     public List<FrictionModel> MappedFrictionModels { get; } = new List<FrictionModel>();
@@ -73,6 +90,8 @@ namespace AGXUnity.IO.OpenPLX
     public List<TrackProperties> MappedTrackProperties { get; } = new List<TrackProperties>();
     public List<TrackInternalMergeProperties> MappedTrackInternalMergeProperties { get; } = new List<TrackInternalMergeProperties>();
     public List<DeformableTerrainMaterial> MappedTerrainMaterials { get; } = new List<DeformableTerrainMaterial> { };
+
+    public List<Error> Warnings { get; } = new List<Error>();
 
     public bool TerrainParticleRendererAdded { get; set; } = false;
 

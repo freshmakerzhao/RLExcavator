@@ -1,0 +1,21 @@
+CylinderBearings is Actuators.Linear.Cylinder:
+    .doc: """
+    Add bearings to the cylinder.
+    The from and to bearings are required as bearings on the
+    components that the cylinder should connect to.
+    The Cylinder bearings will adapt to the bearing separation
+    on the other objects
+    """
+    barrel_separation is Real
+    rod_separation is Real
+
+    barrel:
+        bearings is MachineModeling.Components.Composite.BearingPair:
+            separation: barrel_separation
+            body: barrel.body
+            local_axis: MachineModeling.Constants.AlongAxle
+    rod:
+        bearings is MachineModeling.Components.Composite.BearingPair:
+            separation: rod_separation
+            body: rod.body
+            local_axis: MachineModeling.Constants.AlongAxle

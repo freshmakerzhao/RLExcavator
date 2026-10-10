@@ -1,0 +1,8 @@
+DualDistance is Steering.Articulated.DualActuator:
+    left_steering_actuator becomes MachineModeling.Actuators.Linear.Distance
+    right_steering_actuator becomes MachineModeling.Actuators.Linear.Distance
+
+    left_steering_actuator_connection becomes MachineModeling.Actuators.Linear.Connections.Distance:
+        actuator: left_steering_actuator
+    right_steering_actuator_connection becomes MachineModeling.Actuators.Linear.Connections.Distance:
+        actuator: right_steering_actuator

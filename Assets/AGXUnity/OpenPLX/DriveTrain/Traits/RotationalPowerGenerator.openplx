@@ -6,4 +6,3 @@ trait RotationalPowerGenerator is PowerGenerator:
     rpm_output is Physics.Signals.RpmOutput:
         source: this
         enabled: false
-

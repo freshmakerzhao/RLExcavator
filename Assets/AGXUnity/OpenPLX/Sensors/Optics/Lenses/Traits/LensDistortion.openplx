@@ -1,0 +1,5 @@
+trait LensDistortion:
+    .doc: """
+    Trait applying a lens distortion model onto a lens system.
+    """
+    distortion is BrownConradyLensDistortion

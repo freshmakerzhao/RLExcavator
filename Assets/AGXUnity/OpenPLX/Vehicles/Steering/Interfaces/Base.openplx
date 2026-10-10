@@ -1,0 +1,10 @@
+trait Base:
+    .doc: """
+Base trait for various steering mechanism interfaces,
+which have a knuckle angle and length in common.
+
+The interfaces are both intended for Kinematic coupling
+as well as linked steering mechanism.
+"""
+    knuckle_angle is Real
+    knuckle_length is Real

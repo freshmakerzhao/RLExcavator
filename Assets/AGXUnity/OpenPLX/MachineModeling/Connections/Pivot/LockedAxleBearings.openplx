@@ -1,0 +1,14 @@
+LockedAxleBearings is Connections.Pivot.AxleBearings:
+    .doc: """
+    Adds one lock from each connected component to the axle,
+    so that it does not slide away.
+    By default it chooses the left mate on the from side
+    and the right mate on the to side.
+    """
+    from_lock is Physics3D.Interactions.LinearSpring:
+        connectors: left_from_mate.connectors
+        position: -from_bearings.separation * 0.5
+
+    to_lock is Physics3D.Interactions.LinearSpring:
+        connectors: right_to_mate.connectors
+        position: to_bearings.separation * 0.5

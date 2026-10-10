@@ -1,0 +1,15 @@
+Base is Physics3D.System:
+    .doc: """
+    A Bulldozer can have either a rigid articulated chassis.
+    The blade connection differ between bulldozers that can
+    either only lift, lift and tilt, or lift tild and incline
+    the blade.
+    The undercarrige can either be fixed or pivot about the
+    equalizer bar.
+
+    """
+    with Vehicles.Interfaces.UpForwardVectors
+    chassis is MachineModeling.Components.Primitive.Base or MachineModeling.Components.Composite.Base
+
+    blade is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Blades.BaseConnectors
+    blade_connection is Bulldozer.Connections.Blade.Base

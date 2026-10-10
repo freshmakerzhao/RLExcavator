@@ -5,7 +5,6 @@ namespace AGXUnity.IO.OpenPLX
   public enum AgxUnityOpenPLXErrors
   {
     InternalMapperError = 0,
-    Unimplemented = 1,
     NullChild = 2,
     LocalOffsetNotSupported = 3,
     MissingMaterial = 4,
@@ -22,7 +21,16 @@ namespace AGXUnity.IO.OpenPLX
     TraitNotImportable = 15,
     NonPrincipalAxis = 16,
     MultipleDistanceDistortions = 17,
-    NonSymmetricSweepPattern = 18,
+    MissingTrackSystem = 18,
+    DuplicateTrackConnection = 19,
+    InvalidLinkDescription = 20,
+    InsufficientTrackWheels = 21,
+    MissingTrackWheelBody = 22,
+    IncompatibleSamplers = 23,
+
+    //Warnings
+    MissingChassisBody = 98,
+    Unimplemented = 99,
   }
 
   public class BaseError : openplx.Error
@@ -84,6 +92,17 @@ namespace AGXUnity.IO.OpenPLX
     { }
   }
 
+  public class BaseWarning : BaseError
+  {
+    protected BaseWarning( openplx.Core.Object source, AgxUnityOpenPLXErrors code )
+      : base( source, code )
+    { }
+
+    protected BaseWarning( string sourceID, AgxUnityOpenPLXErrors code )
+      : base( sourceID, code )
+    { }
+  }
+
   public class InternalMapperError : BaseError
   {
     string m_error;
@@ -97,11 +116,11 @@ namespace AGXUnity.IO.OpenPLX
     protected override string createErrorMessage() => m_error;
   }
 
-  public class UnimplementedError : BaseError
+  public class UnimplementedWarning : BaseWarning
   {
     string m_modelName;
 
-    public UnimplementedError( openplx.Core.Object source )
+    public UnimplementedWarning( openplx.Core.Object source )
       : base( source, AgxUnityOpenPLXErrors.Unimplemented )
     {
       m_modelName = source.getType().getNameWithNamespace( "." );
@@ -212,9 +231,9 @@ namespace AGXUnity.IO.OpenPLX
 
   public class InvalidWheelChassisError : BaseError
   {
-    private openplx.Vehicles.Suspensions.Interactions.Mate m_suspension;
+    private openplx.Vehicles.Suspensions.SingleMate.Base m_suspension;
 
-    public InvalidWheelChassisError( openplx.Vehicles.Suspensions.Interactions.Mate suspension )
+    public InvalidWheelChassisError( openplx.Vehicles.Suspensions.SingleMate.Base suspension )
       : base( suspension, AgxUnityOpenPLXErrors.InvalidWheelChassis )
     {
       m_suspension = suspension;
@@ -225,9 +244,9 @@ namespace AGXUnity.IO.OpenPLX
 
   public class MissingWheelBodyError : BaseError
   {
-    private openplx.Vehicles.Suspensions.Interactions.Mate m_suspension;
+    private openplx.Vehicles.Suspensions.SingleMate.Base m_suspension;
 
-    public MissingWheelBodyError( openplx.Vehicles.Suspensions.Interactions.Mate suspension )
+    public MissingWheelBodyError( openplx.Vehicles.Suspensions.SingleMate.Base suspension )
       : base( suspension, AgxUnityOpenPLXErrors.MissingWheelBody )
     {
       m_suspension = suspension;
@@ -238,9 +257,9 @@ namespace AGXUnity.IO.OpenPLX
 
   public class UnmappedWheelError : BaseError
   {
-    private openplx.Vehicles.Suspensions.Suspension m_wheel;
+    private openplx.Vehicles.Suspensions.SingleMate.Base m_wheel;
 
-    public UnmappedWheelError( openplx.Vehicles.Suspensions.Suspension wheel )
+    public UnmappedWheelError( openplx.Vehicles.Suspensions.SingleMate.Base wheel )
       : base( wheel, AgxUnityOpenPLXErrors.UnmappedWheel )
     {
       m_wheel = wheel;
@@ -281,12 +300,70 @@ namespace AGXUnity.IO.OpenPLX
     protected override string createErrorMessage() => $"AGXUnity only supports a single distance distortion";
   }
 
-  public class NonSymmetricSweepPatternError : BaseError
+  public class MissingTrackSystemError : BaseError
   {
-    public NonSymmetricSweepPatternError( openplx.Math.Vec2 FoV )
-      : base( FoV, AgxUnityOpenPLXErrors.NonSymmetricSweepPattern )
+    public MissingTrackSystemError( openplx.Vehicles.TrackSystem.Connections.Base source )
+      : base( source, AgxUnityOpenPLXErrors.MissingTrackSystem )
     { }
 
-    protected override string createErrorMessage() => $"AGXUnity only supports symmetrical sweep patterns";
+    protected override string createErrorMessage() => $"Track connection does not specify a track system";
+  }
+
+  public class DuplicateTrackConnectionError : BaseError
+  {
+    private openplx.Vehicles.TrackSystem.Base m_system;
+
+    public DuplicateTrackConnectionError( openplx.Vehicles.TrackSystem.Connections.Base source, openplx.Vehicles.TrackSystem.Base system )
+      : base( source, AgxUnityOpenPLXErrors.DuplicateTrackConnection )
+    {
+      m_system = system;
+    }
+
+    protected override string createErrorMessage() => $"Track system '{m_system.getName()}' is specified in multiple track connections";
+  }
+
+  public class InvalidLinkDescriptionError : BaseError
+  {
+    public InvalidLinkDescriptionError( openplx.Vehicles.TrackSystem.Components.Tracks.LinkDescription.Base source )
+      : base( source, AgxUnityOpenPLXErrors.InvalidLinkDescription )
+    { }
+
+    protected override string createErrorMessage() => $"Link description needs to have non-zero, positive width and height";
+  }
+
+  public class InsufficientTrackWheelsError : BaseError
+  {
+    public InsufficientTrackWheelsError( openplx.Vehicles.TrackSystem.Base source )
+      : base( source, AgxUnityOpenPLXErrors.InsufficientTrackWheels )
+    { }
+
+    protected override string createErrorMessage() => $"Track system needs to have at least two track wheels";
+  }
+
+  public class MissingTrackWheelBodyError : BaseError
+  {
+    public MissingTrackWheelBodyError( openplx.Vehicles.TrackSystem.Components.TrackWheels.Base source )
+      : base( source, AgxUnityOpenPLXErrors.MissingTrackWheelBody )
+    { }
+
+    protected override string createErrorMessage() => $"Track wheel's body was not properly mapped to a RigidBody";
+  }
+
+  public class IncompatibleSamplersError : BaseError
+  {
+    public IncompatibleSamplersError( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.IncompatibleSamplers )
+    { }
+
+    protected override string createErrorMessage() => $"Base Color map and Alpha map sampler traits need to match or be unspecified";
+  }
+
+  public class MissingChassisBodyWarning : BaseWarning
+  {
+    public MissingChassisBodyWarning( openplx.Core.Object source )
+      : base( source, AgxUnityOpenPLXErrors.MissingChassisBody )
+    { }
+
+    protected override string createErrorMessage() => $"Track does not specify a chassis body, defaulting to full DoF simulation";
   }
 }

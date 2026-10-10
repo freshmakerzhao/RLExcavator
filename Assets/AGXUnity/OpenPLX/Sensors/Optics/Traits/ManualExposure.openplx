@@ -1,0 +1,5 @@
+trait ManualExposure:
+    .doc: """
+    Trait for photodetectors with a manual exposure control.
+    """
+    exposure_compensation is Real

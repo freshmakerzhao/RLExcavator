@@ -1,0 +1,4 @@
+DistanceRange is LinearRange:
+    .doc: """
+A linear range between two points.
+"""

@@ -3,7 +3,6 @@ Value:
 Base for different types of values, e.g. for use in ValueOutputSignal
 """
 
-
 IntValue is Value:
     .doc: """
 Base for Values that are integers
@@ -23,7 +22,6 @@ RealValue is Value:
 Base for Values that are real numbers
 """
     value is Real
-
 
 AngleValue is RealValue:
     static fn create(value: Real) -> AngleValue
@@ -48,7 +46,6 @@ RatioValue is RealValue:
 MassValue is RealValue:
     static fn create(value: Real) -> MassValue
 
-
 Vec2Value is Value:
     .doc: """
 Base for Values that are real Vec3s
@@ -59,7 +56,6 @@ TorqueRangeValue is Vec2Value:
     static fn create(value: Math.Vec2) -> TorqueRangeValue
 ForceRangeValue is Vec2Value:
     static fn create(value: Math.Vec2) -> ForceRangeValue
-
 
 Vec3Value is Value:
     .doc: """

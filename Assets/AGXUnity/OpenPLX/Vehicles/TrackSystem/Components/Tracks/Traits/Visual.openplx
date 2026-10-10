@@ -1,0 +1,15 @@
+trait Visual:
+    .doc: """
+    A trait that defines an arbitrary visual geometry for all track links in a track.
+
+    Example:
+
+    Link is TrackSystem.Components.Tracks.LinkDescription.Box:
+        with TrackSystem.Components.Tracks.Traits.Visual
+        visual_geometry becomes Visuals.Geometries.Cylinder:
+            radius: height / 2
+            height: width
+        width: 0.2
+        height: 0.05
+    """
+    visual_geometry is Visuals.Node

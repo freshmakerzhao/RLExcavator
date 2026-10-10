@@ -1,0 +1,12 @@
+LiftTilt is Bulldozer.Connections.Blade.PushBars.Base:
+    with Modules.Lift
+    with Modules.Tilt
+    .doc: """
+    The blade_angle will determine the initial angle.
+    Adjustable with the tilt actuators
+    """
+
+    left_push_bar_connection:
+        hinge.initial_angle: blade_angle
+    right_push_bar_connection:
+        hinge.initial_angle: blade_angle

@@ -1,0 +1,7 @@
+trait Single:
+    .doc: """
+    A trait for adding a single connector for the excavator swing joint between the
+    chassis and undercarriage.
+    """
+
+    swing_connector is Physics3D.Interactions.MateConnector

@@ -1,0 +1,11 @@
+trait RipperConnectors:
+    .doc: """
+    A trait for adding connectors for connecting
+    a Ripper to a chassis body
+    """
+    left_lower_ripper_connector is Physics3D.Interactions.MateConnector
+    left_mid_ripper_connector is Physics3D.Interactions.MateConnector
+    left_upper_ripper_connector is Physics3D.Interactions.MateConnector
+    right_lower_ripper_connector is Physics3D.Interactions.MateConnector
+    right_mid_ripper_connector is Physics3D.Interactions.MateConnector
+    right_upper_ripper_connector is Physics3D.Interactions.MateConnector

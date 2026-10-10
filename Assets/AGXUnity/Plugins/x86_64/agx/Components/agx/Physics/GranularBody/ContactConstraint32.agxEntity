@@ -16,7 +16,7 @@
   <Attribute.Scalar name="iterationCount" type="UInt:32bit"/>
   
   <Attribute.Scalar name="isImpacting" type="Bool"/>
-  <Attribute.Scalar name="activeCount" type="UInt"/>
+  <!-- <Attribute.Scalar name="activeCount" type="UInt"/> -->
   <Attribute.Scalar name="restingCompliance" type="Real:32bit"/>
   <Attribute.Scalar name="charContactTime" type="Real:32bit"/>
   <Attribute.Scalar name="charMass" type="Real:32bit"/>

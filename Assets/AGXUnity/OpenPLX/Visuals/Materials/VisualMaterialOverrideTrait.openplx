@@ -1,0 +1,17 @@
+trait VisualMaterialOverrideTrait:
+    .doc: """
+Apply this trait to a visual node to override visual materials in that node and its subnodes.
+Material parameter on geometries will not be changed, but it will not be used in simulation
+either. To keep a set material on a geometry, add it to the material_override_nodes_excluded
+list.
+
+Note that when the owning node has this trait, any changes to materials in a non-excluded
+node will not have any effect. Also, an override will never override another override. This
+means that if you have a node with this trait and a subnode in it also has this trait, the
+geometries in the subnode will keep the material set by the override trait in that subnode.
+
+material_override - this material will override geometry materials in the node
+material_override_nodes_excluded - list of nodes that will keep their original material
+"""
+    material_override is Physics.Optics.Material with Visuals.Optics.VisualMaterial
+    material_override_nodes_excluded is Visuals.Node[]: []

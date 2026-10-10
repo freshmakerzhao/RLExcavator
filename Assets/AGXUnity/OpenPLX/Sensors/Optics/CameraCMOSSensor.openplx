@@ -1,0 +1,7 @@
+CameraCMOSSensor is RectangularPhotodetector:
+    .doc: """
+    A CMOS sensor specification for a common digital camera.
+    """
+    horizontal_resolution is Int
+    vertical_resolution is Int
+    ISO is Real

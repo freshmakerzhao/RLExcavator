@@ -1,0 +1,16 @@
+Base is Vehicles.Base:
+    with Vehicles.Interfaces.UpForwardVectors
+    front_left_wheel is Vehicles.Wheels.Base
+    front_right_wheel is Vehicles.Wheels.Base
+    rear_left_wheel is Vehicles.Wheels.Base
+    rear_right_wheel is Vehicles.Wheels.Base
+
+    front_left_suspension is Vehicles.Suspensions.Base
+    front_right_suspension is Vehicles.Suspensions.Base
+    rear_left_suspension is Vehicles.Suspensions.Base
+    rear_right_suspension is Vehicles.Suspensions.Base
+
+    chassis becomes Chassis.Rigid.Base:
+        local_transform.position: {0,0,0}
+        up_vector: up_vector
+        forward_vector: forward_vector

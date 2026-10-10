@@ -1,0 +1,26 @@
+DualActuator is Steering.Articulated.Base:
+    left_front_connector is Physics3D.Interactions.MateConnector reference
+    right_front_connector is Physics3D.Interactions.MateConnector reference
+    left_rear_connector is Physics3D.Interactions.MateConnector reference
+    right_rear_connector is Physics3D.Interactions.MateConnector reference
+
+    min_length      is Real
+    stroke_length   is Real
+
+    left_steering_actuator is MachineModeling.Actuators.Linear.Base:
+        min_length: min_length
+        stroke_length: stroke_length
+
+    right_steering_actuator is MachineModeling.Actuators.Linear.Base:
+        min_length: min_length
+        stroke_length: stroke_length
+
+    left_steering_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: left_steering_actuator
+        from: left_front_connector
+        to: left_rear_connector
+
+    right_steering_actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        actuator: right_steering_actuator
+        from: right_front_connector
+        to: right_rear_connector

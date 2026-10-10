@@ -1,0 +1,4 @@
+Base is Ripper.Connections.Base:
+    with Ripper.Connections.Traits.ChassisConnectors
+    with Ripper.Connections.Traits.FrameConnection
+    ripper becomes Ripper.FixedMount.Base

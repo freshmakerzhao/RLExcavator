@@ -1,0 +1,15 @@
+trait Single:
+    .doc: """
+    With this trait the excavator swing joint is modelled as a simple hinge joint.
+    """
+
+    chassis becomes MachineModeling.Components.Primitive.Base with Excavator.Interfaces.SwingJoint.Single reference
+    undercarriage becomes MachineModeling.Components.Primitive.Base with Excavator.Interfaces.SwingJoint.Single reference
+
+    initial_angle is Real: 0.0
+
+    joint is MachineModeling.Connections.Pivot.Hinge:
+        from: chassis.swing_connector
+        to: undercarriage.swing_connector
+        hinge.initial_angle: this.initial_angle
+

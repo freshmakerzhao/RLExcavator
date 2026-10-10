@@ -1,0 +1,8 @@
+Set is Control.Keyboard.Action:
+    with HoldTrait
+    .dot: """
+Writes the specific value to the input targets when the action is triggered.
+"""
+    value is Int or Real or Bool
+    # Optional for use when setting the same state as a Ramp action
+    optional ramp_shared_state is Control.Keyboard.Actions.Ramp reference

@@ -1,0 +1,7 @@
+trait Tracked:
+    .doc: """
+    Adds left and right track systems to the vehicle.
+    """
+    left_track is Vehicles.TrackSystem.Base
+    right_track is Vehicles.TrackSystem.Base
+

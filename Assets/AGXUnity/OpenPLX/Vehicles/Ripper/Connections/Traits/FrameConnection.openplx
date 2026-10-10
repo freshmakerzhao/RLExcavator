@@ -1,0 +1,10 @@
+trait FrameConnection:
+    left_connection is MachineModeling.Connections.Pivot.Hinge:
+        hinge.initial_angle: ripper.frame_angle
+        from: ripper.frame.left_connector
+        to: left_chassis_connector
+
+    right_connection is MachineModeling.Connections.Pivot.Hinge:
+        hinge.initial_angle: ripper.frame_angle
+        from: ripper.frame.right_connector
+        to: right_chassis_connector

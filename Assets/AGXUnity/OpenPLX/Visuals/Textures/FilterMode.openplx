@@ -1,0 +1,7 @@
+const FilterMode:
+  .doc: """
+Defines allowed values to represent the texture filtering mode used when using textures.
+"""
+  Point is Int: 0
+  Linear is Int: 1
+  Bilinear is Int: 2

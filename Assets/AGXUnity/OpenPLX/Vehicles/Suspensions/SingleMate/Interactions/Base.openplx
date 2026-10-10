@@ -1,0 +1,5 @@
+Base is Physics3D.Interactions.Mate:
+    .doc: """
+A mate intended for connecting for example a wheel to the chassis
+"""
+    with Suspensions.SingleMate.Interfaces.ChassisAttachmentConnectors

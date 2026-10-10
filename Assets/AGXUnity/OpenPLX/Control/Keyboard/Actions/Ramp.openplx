@@ -1,0 +1,18 @@
+Ramp is Control.Keyboard.Action:
+    with HoldTrait
+    .doc: """
+Keyboard action that continuously ramps a value while the key is held.
+
+The ramp starts from `initial_value`. The value then changes at `rate` units per second.
+
+An optional shared_state reference allows for sharing the current state among several Ramp
+actions. Make sure you have one Ramp action that is the "source of truth" and all other
+Ramp actions that shares its state refers to the same one.
+
+Optional `min` and `max` bounds clamp the resulting value.
+"""
+    initial_value is Real: 0.0
+    optional shared_state is Ramp reference
+    rate is Real
+    optional min is Real
+    optional max is Real

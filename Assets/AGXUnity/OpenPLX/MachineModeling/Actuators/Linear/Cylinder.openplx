@@ -1,0 +1,28 @@
+Cylinder is Actuators.Linear.Base:
+    .doc: """
+    An actuator that consist of two rigid parts, connected with a cylindrical joint.
+    The rigid parts move in AlongCylinder direction
+    """
+    barrel is Actuators.Linear.CylinderPart:
+        local_transform.position: {0,0,0}
+        body.length: min_length
+        body.internal_connector.position: {0,0, barrel.body.length}
+
+    rod is Actuators.Linear.CylinderPart:
+        body.length: stroke_length
+        # The rod will be upside down compared to the barrel
+        body.internal_connector.main_axis: -Math.Vec3.Z_AXIS()
+        # For the connectors to external component to match
+        # when connected, also the normal must be flipped
+        body.internal_connector.normal: -Math.Vec3.X_AXIS()
+
+    cylindrical is Physics3D.Interactions.Cylindrical:
+        connectors: [barrel.body.internal_connector, rod.body.internal_connector]
+
+    source:
+        connectors: cylindrical.connectors
+
+    range is Physics3D.Interactions.LinearRange:
+        connectors: cylindrical.connectors
+        start: 0
+        end: stroke_length

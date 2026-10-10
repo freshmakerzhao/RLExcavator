@@ -30,9 +30,12 @@ GearBox is Physics1D.Interactions.Mate:
         enabled: false
     gear_selection_input is Physics.Signals.IntInput:
         source: this
+        initial_value: initial_gear
+        marshalling.gear is Physics.Signals.IntField
     gear_selection_output is Physics.Signals.IntOutput:
         source: this
         enabled: false
+        marshalling.gear is Physics.Signals.IntField
     gear_ratio_output is Physics.Signals.RatioOutput:
         source: this
         enabled: false

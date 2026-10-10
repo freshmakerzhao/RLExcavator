@@ -1,0 +1,2 @@
+LiftTilt is Bulldozer.Articulated.PushBars.Base:
+    blade_connection becomes Bulldozer.Connections.Blade.PushBars.LiftTilt

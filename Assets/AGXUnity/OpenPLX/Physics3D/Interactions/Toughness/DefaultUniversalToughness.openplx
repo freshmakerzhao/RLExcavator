@@ -1,0 +1,11 @@
+DefaultUniversalToughness is DefaultMateToughness:
+    .doc: """
+    Defines one toughness model for each constrained degree of freedom for a Universal.
+    Two rotational degrees of freedom are left unconstrained -
+    rotation around normal and cross, therefore we define toughness for around main,
+    the constrained rotational direction.
+    """
+    along_main is Physics.Interactions.Toughness.DefaultToughness
+    along_normal is Physics.Interactions.Toughness.DefaultToughness
+    along_cross is Physics.Interactions.Toughness.DefaultToughness
+    around_main is Physics.Interactions.Toughness.DefaultToughness

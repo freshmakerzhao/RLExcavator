@@ -1,0 +1,29 @@
+Pivot is Bulldozer.Connections.Undercarriage.Base:
+    chassis becomes MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Chassis.BaseConnectors, Bulldozer.Interfaces.Chassis.Outputs, Bulldozer.Interfaces.Chassis.EqualizerBarConnector reference
+    left_bogie becomes MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors, Bulldozer.Interfaces.Bogies.EqualizerBarConnector reference
+    right_bogie becomes MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.Bogies.BaseConnectors, Bulldozer.Interfaces.Bogies.EqualizerBarConnector reference
+    left_bogie_connection becomes MachineModeling.Connections.Pivot.Hinge:
+        hinge.initial_angle: 0.0
+        from: chassis.left_bogie_connector
+        to: left_bogie.chassis_connector
+    right_bogie_connection becomes MachineModeling.Connections.Pivot.Hinge:
+        hinge.initial_angle: 0.0
+        from: chassis.right_bogie_connector
+        to: right_bogie.chassis_connector
+
+    equalizer_bar is MachineModeling.Components.Primitive.Base with Bulldozer.Interfaces.EqualizerBar.BaseConnectors reference
+
+    equalizer_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: chassis.equalizer_bar_connector
+        to: equalizer_bar.chassis_connector
+        hinge.initial_angle: 0.0
+
+    left_bogie_equalizer_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: equalizer_bar.left_bogie_connector
+        to: left_bogie.equalizer_bar_connector
+        hinge.initial_angle: 0.0
+
+    right_bogie_equalizer_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: equalizer_bar.right_bogie_connector
+        to: right_bogie.equalizer_bar_connector
+        hinge.initial_angle: 0.0

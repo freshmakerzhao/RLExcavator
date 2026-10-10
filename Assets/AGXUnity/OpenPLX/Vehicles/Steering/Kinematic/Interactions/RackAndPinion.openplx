@@ -1,0 +1,5 @@
+RackAndPinion is Steering.Kinematic.Interactions.Base:
+    .doc: """
+Rack-pinion steering mechanism.
+"""
+    with Steering.Interfaces.RackAndPinion

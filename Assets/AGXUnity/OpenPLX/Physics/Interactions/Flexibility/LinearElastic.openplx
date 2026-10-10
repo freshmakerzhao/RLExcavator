@@ -2,4 +2,4 @@ LinearElastic is DefaultFlexibility:
     .doc: """
     Models the interaction between two objects in contact with a unidirectional elasticity.
     """
-    stiffness is Real: 100000000.0
+    stiffness is Real: Physics.Interactions.Flexibility.Defaults.Stiffness

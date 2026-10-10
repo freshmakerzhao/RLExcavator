@@ -2,6 +2,6 @@ MagnetometerSignalGaussianNoise is MagnetometerSensingDistortion:
     .doc: """
     A Gaussian noise affecting the total magnitude of the measured magnetometer signal.
     """
-    distribution_x is Math.Random.GaussianDistribution
-    distribution_y is Math.Random.GaussianDistribution
-    distribution_z is Math.Random.GaussianDistribution
+    distribution_x is Math.Distributions.Gaussian
+    distribution_y is Math.Distributions.Gaussian
+    distribution_z is Math.Distributions.Gaussian

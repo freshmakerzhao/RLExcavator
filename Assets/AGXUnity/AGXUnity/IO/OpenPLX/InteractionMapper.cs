@@ -47,7 +47,9 @@ namespace AGXUnity.IO.OpenPLX
 
       // Since redirected MCs can be placed in other places than the unique location derived by their
       // names, we need to add some unique identifier to avoid name collisions in the hierarchy.
-      var mcObject = Data.CreateOpenPLXObject( mc.getName() + (mc is RedirectedMateConnector ? $"_rd_#{mc.To32BitFnv1aHash()}" : "") );
+      var mcObject = Data.CreateOpenPLXObject( mc.getName() );
+      if ( mc is RedirectedMateConnector )
+        mcObject.name = mcObject.name + $"_rd_#{mc.To32BitFnv1aHash()}";
       mcObject.AddComponent<ObserverFrame>();
       openplx.Core.Object owner = mc.getOwner();
       if ( mc is RedirectedMateConnector redirected )
@@ -82,6 +84,13 @@ namespace AGXUnity.IO.OpenPLX
 
       var up = main_axis_n.cross(normal_n).normal();
       mcObject.transform.localRotation = Quaternion.LookRotation( main_axis_n.ToHandedVector3(), up.ToHandedVector3() );
+
+      // If this MC is connected to the system rather than a body, move it to the world proxy body
+      // but keep the transform calculated in the local frame.
+      if ( current is openplx.Physics3D.System ) {
+        mcObject.transform.SetParent( Data.WorldProxyBody.transform, true );
+        mcObject.name =  mc.getName();
+      }
 
       Data.MateConnectorCache[ mc ] = mcObject;
     }
@@ -163,8 +172,11 @@ namespace AGXUnity.IO.OpenPLX
     {
       if ( flexibility is openplx.Physics.Interactions.Flexibility.Rigid )
         return float.Epsilon;
-      else if ( flexibility is openplx.Physics.Interactions.Flexibility.LinearElastic elastic )
+      else if ( flexibility is openplx.Physics.Interactions.Flexibility.LinearElastic elastic ) {
+        if ( elastic.stiffness() == 0.0 )
+          return float.MaxValue;
         return (float)( 1.0 / elastic.stiffness() );
+      }
       return null;
     }
 
@@ -292,7 +304,7 @@ namespace AGXUnity.IO.OpenPLX
       else if ( spring is Interactions.LinearSpring ls )
         agxLock.Position = (float)ls.position();
       else
-        Utils.ReportUnimplemented<System.Object>( spring, Data.ErrorReporter );
+        Utils.ReportUnimplemented<System.Object>( spring, Data );
 
       MapControllerDissipation( spring.dissipation(), spring.flexibility(), agxLock );
       MapControllerFlexibility( spring.flexibility(), agxLock );
@@ -352,7 +364,7 @@ namespace AGXUnity.IO.OpenPLX
         Interactions.LinearVelocityMotor => ConstraintType.GenericConstraint1DOF,
         Interactions.ForceMotor => ConstraintType.GenericConstraint1DOF,
         // Unknown
-        _ => Utils.ReportUnimplementedS<ConstraintType>( interaction, Data.ErrorReporter )
+        _ => Utils.ReportUnimplementedS<ConstraintType>( interaction, Data )
       };
 
       if ( type == null )
@@ -398,7 +410,7 @@ namespace AGXUnity.IO.OpenPLX
       };
 
       if ( angleType == null )
-        return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
+        return Utils.ReportUnimplemented<GameObject>( interaction, Data );
 
       g1dof.DOFType = angleType.Value;
 
@@ -424,7 +436,7 @@ namespace AGXUnity.IO.OpenPLX
           EnableForceMotorInteraction( constraint.GetController<TargetSpeedController>(), fm );
           break;
         default:
-          return Utils.ReportUnimplemented<GameObject>( interaction, Data.ErrorReporter );
+          return Utils.ReportUnimplemented<GameObject>( interaction, Data );
       }
 
       return constraint.gameObject;
@@ -501,6 +513,9 @@ namespace AGXUnity.IO.OpenPLX
         }
         fm = Data.DefaultFriction;
       }
+
+      if ( friction.HasTrait<openplx.Vehicles.TrackSystem.SurfaceContact.Traits.TrackFriction>() )
+        fm.TrackFrictionModel = true;
 
       var solveType = FrictionModel.ESolveType.Direct;
       var solveTypeAnnotation = friction.findAnnotations("agx_friction_solve_type");

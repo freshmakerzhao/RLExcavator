@@ -1,0 +1,17 @@
+Base is MachineModeling.Components.Composite.DoubleLinkage.Base:
+    .doc: """
+    Double-linkage variant using paired drive and guide links.
+    """
+
+    drive_links is MachineModeling.Components.Composite.LinkPair
+    guide_links is MachineModeling.Components.Composite.LinkPair
+
+    drive_connector_1: drive_links.connector_1
+    drive_connector_2: drive_links.connector_2
+
+    guide_connector_1: guide_links.connector_1
+    guide_connector_2: guide_links.connector_2
+
+    guide_link_connection becomes MachineModeling.Connections.Pivot.Hinge
+    drive_connection becomes MachineModeling.Connections.Pivot.Hinge
+    link_connection becomes MachineModeling.Connections.Pivot.Hinge

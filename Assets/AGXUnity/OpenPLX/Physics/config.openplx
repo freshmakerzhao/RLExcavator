@@ -1,5 +1,5 @@
 
 config is BundleConfig:
     name: "Physics"
-    version: "0.20.2"
-    dependencies: ["Math==0.20.2"]
+    version: "0.26.7"
+    dependencies: ["Math==0.26.7"]

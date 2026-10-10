@@ -1,0 +1,31 @@
+{
+  "description": "This engine is used in Volvo V60: B4204T26",
+  "reference": "https://www.media.volvocars.com/global/en-gb/media/documentfile/224147/technical-specifications-new-volvo-v60",
+  "name": "Volvo-T5",
+
+  "displacementVolume":    0.001969,     // m^3
+  "maxTorque":             400.0,        // Nm
+  "maxTorqueRPM":          2125.0,       // rpm
+  "maxPowerRPM":           4250.0,       // rpm
+  "idleRPM":               1000,         // rpm
+  "maxRPM":                8000,         // rpm  
+  "crankShaftInertia":     0.4,          // kg.m^2 
+
+ 
+  // Parameters controlling the mean effective friction torque. This corresponds to
+  // page 722, section 13.5.1 in "Internal combustion engine fundamentals" by John B. Heywood, 1988.
+  // These parameters must be parameterized against the real engine.
+  // The values here are the default that might not result in the correct overall behavior.
+  // Without access to real world data these values should be considered placeholders for accurate measurements.
+  "FrictionTorqueParameters":
+  {
+    "cfr0": 0.97,
+    "cfr1": 0.15,
+    "cfr2": 0.05
+  },
+
+  // Optional
+  "airFuelRatio": 14.5, // Diesel
+  "heatValue": 45400000 // Diesel
+}
+

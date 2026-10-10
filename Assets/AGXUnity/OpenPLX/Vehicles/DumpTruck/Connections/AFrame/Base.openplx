@@ -1,0 +1,20 @@
+Base is DumpTruck.Connections.Base:
+    chassis_frame becomes MachineModeling.Components.Primitive.Base with Vehicles.DumpTruck.Interfaces.Chassis.AFrame reference
+
+    a_frame is MachineModeling.Components.Primitive.Base with Vehicles.DumpTruck.Interfaces.Chassis.AFrame reference
+    left_axle_connector is Physics3D.Interactions.MateConnector
+    right_axle_connector is Physics3D.Interactions.MateConnector
+
+    center_connection is MachineModeling.Connections.Pivot.Hinge:
+        from: chassis_frame.center_a_frame_connector
+        to: a_frame.center_a_frame_connector
+        hinge.flexibility becomes Physics3D.Interactions.Flexibility.LinearElasticHingeFlexibility:
+            default_stiffness: 1e16
+
+    # Disable unwanted collisions
+    group_a_frame_and_chassis is Simulation.CollisionGroup:
+        bodies: [a_frame.body, chassis_frame.body]
+
+    disable_a_frame_and_chassis is Simulation.DisableCollisionPair:
+        group1: group_a_frame_and_chassis
+        group2: group_a_frame_and_chassis

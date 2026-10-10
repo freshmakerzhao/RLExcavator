@@ -1,0 +1,6 @@
+Box is TrackSystem.Components.Tracks.LinkVariation.Base:
+    .doc: """
+Defines the height and width of box shaped links of a belt of a track system.
+"""
+    height_variation is Math.Distributions.Cyclic.Base
+    width_variation is Math.Distributions.Cyclic.Base

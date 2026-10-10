@@ -1,0 +1,4 @@
+Base:
+    .doc: """
+Defines cyclic variations
+"""

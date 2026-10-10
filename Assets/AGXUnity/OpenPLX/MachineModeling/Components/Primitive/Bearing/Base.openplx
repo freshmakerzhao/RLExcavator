@@ -1,0 +1,8 @@
+Base is Physics3D.Interactions.RedirectedMateConnector:
+    .doc: """
+    A Bearing will be a mate connector relative the reference_body
+    """
+    main_axis: Constants.AlongAxle
+
+    normal_stiffness is Real: Physics.Interactions.Flexibility.Defaults.Stiffness
+    tilt_stiffness is Real: 1000

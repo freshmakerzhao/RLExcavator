@@ -1,0 +1,3 @@
+trait DualActuatorConnectors:
+    left_actuator_connector is Physics3D.Interactions.MateConnector
+    right_actuator_connector is Physics3D.Interactions.MateConnector

@@ -1,7 +1,7 @@
 PrismaticThresholdFracture is DefaultPrismaticToughness:
     .doc: """
     Define a threshold fracture model for each constrained degree of freedom for a Prismatic.
-    Each dimension can then fail individually at their fracture points. 
+    Each dimension can then fail individually at their fracture points.
     """
     default_limit is Real: 10000.0
     along_normal becomes Physics.Interactions.Toughness.ThresholdFracture:

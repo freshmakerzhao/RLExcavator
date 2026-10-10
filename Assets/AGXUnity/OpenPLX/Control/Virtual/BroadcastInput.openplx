@@ -1,0 +1,8 @@
+BroadcastInput is Physics.Signals.Input:
+    .doc: """
+A virtual input control that broadcasts all fields to
+a list of other inputs that must have matching fields.
+"""
+    type: 0
+    marshalling.is_dynamic: true
+    targets is Physics.Signals.Input[]

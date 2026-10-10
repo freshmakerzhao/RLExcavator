@@ -5,4 +5,3 @@ AsymmetricLimitFriction is DefaultFriction:
     """
     positive_limit is Real
     negative_limit is Real
-    

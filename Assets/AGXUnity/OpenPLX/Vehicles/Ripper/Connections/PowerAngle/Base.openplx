@@ -1,0 +1,10 @@
+Base is Ripper.Connections.Base:
+    with Ripper.Connections.Traits.ChassisConnectors
+    with Ripper.Connections.Traits.FrameConnection
+
+    ripper becomes Ripper.PowerAngle.Base
+
+    internal_connection is Ripper.Connections.PowerAngle.Internal.Base:
+        shank: ripper.shank
+        frame: ripper.frame
+        shank_angle: ripper.shank_angle

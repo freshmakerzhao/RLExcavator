@@ -14,3 +14,4 @@ LinearSpring is SpringInteraction1DOF:
 
     target_position_input is Physics.Signals.Position1DInput:
         source: this
+        initial_value: position

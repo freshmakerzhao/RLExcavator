@@ -1,0 +1,8 @@
+const Format:
+  .doc: """
+Defines the allowed texture formats in the texture formats
+"""
+  R8 is Int: 0
+  RG16 is Int: 1
+  RGB24 is Int: 2
+  RGBA32 is Int: 3

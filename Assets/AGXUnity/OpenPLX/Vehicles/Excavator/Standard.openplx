@@ -1,0 +1,8 @@
+Standard is Vehicles.Excavator.Base:
+    .doc: """
+    Standard excavator with a standard arm and tool-side linkage connection.
+    """
+    with Vehicles.Excavator.Configurations.Tool
+
+    arm becomes Vehicles.Excavator.Components.Arm.Standard
+

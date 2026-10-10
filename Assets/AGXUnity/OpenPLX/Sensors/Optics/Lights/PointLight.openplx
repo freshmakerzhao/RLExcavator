@@ -1,0 +1,6 @@
+PointLight:
+    .doc: """
+    A point light source specification. Intensity is given in lumen.
+    """
+    intensity is Real
+    optional color is Visuals.Properties.Color

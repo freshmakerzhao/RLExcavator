@@ -1,0 +1,5 @@
+Ackermann is Steering.Kinematic.Interactions.Base:
+    .doc: """
+Ackermann steering mechanism.
+"""
+    with Steering.Interfaces.Ackermann

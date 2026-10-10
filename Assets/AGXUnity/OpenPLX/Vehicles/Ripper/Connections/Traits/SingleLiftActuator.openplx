@@ -1,0 +1,2 @@
+trait SingleLiftActuator:
+    lift_actuator_connector is Physics3D.Interactions.MateConnector

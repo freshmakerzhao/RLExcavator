@@ -1,0 +1,7 @@
+trait LiftCylinderConnectors:
+    .doc: """
+    A trait for adding connectors for connecting
+    a LiftCylinder to a chassis body
+    """
+    left_lift_connector is Physics3D.Interactions.MateConnector
+    right_lift_connector is Physics3D.Interactions.MateConnector

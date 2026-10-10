@@ -11,6 +11,7 @@ Examples of interactions are force fields, hinges or static electricity
 
     enable_interaction_input is Physics.Signals.EnableInteractionInput:
         source: this
+        initial_value: enabled
     interaction_enabled_output is Physics.Signals.InteractionEnabledOutput:
         source: this
         enabled: false

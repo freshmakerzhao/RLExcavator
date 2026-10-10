@@ -1,0 +1,2 @@
+Motor is MachineModeling.Actuators.Rotational.Base:
+    source becomes Physics3D.Interactions.RotationalVelocityMotor

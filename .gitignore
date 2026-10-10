@@ -1,4 +1,5 @@
-[Ll]ibrary/
+# Unity cache is at the project root; AGX OpenPLX also ships a source Library/.
+/[Ll]ibrary/
 [Tt]emp/
 [Oo]bj/
 [Bb]uild/

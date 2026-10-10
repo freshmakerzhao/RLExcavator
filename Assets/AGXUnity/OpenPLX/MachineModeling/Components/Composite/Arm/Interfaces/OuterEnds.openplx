@@ -1,0 +1,13 @@
+trait OuterEnds:
+    .doc: """
+    This trait is used with composite arms that consists of several
+    articulating intermediate parts. These two mate connectors
+    will store references to the start of the first arm segment and
+    the end of the last arm segment.
+    """
+
+    start_connector is Physics3D.Interactions.MateConnector reference
+    end_connector is Physics3D.Interactions.MateConnector reference
+
+    start_arm_segment is MachineModeling.Components.Primitive.Base or MachineModeling.Components.Composite.Base reference
+    end_arm_segment is MachineModeling.Components.Primitive.Base or MachineModeling.Components.Composite.Base reference

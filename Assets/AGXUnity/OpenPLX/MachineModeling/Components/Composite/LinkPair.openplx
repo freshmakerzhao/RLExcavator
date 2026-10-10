@@ -1,0 +1,22 @@
+LinkPair is Components.Composite.Base:
+    .doc: """
+    A LinkPair symmetrically defines two primitive links
+    separated by a distance.
+    """
+    separation is Real
+
+    left is Components.Primitive.Link.Base:
+        local_transform.position: -Constants.AlongAxle * separation * 0.5
+
+    right is Components.Primitive.Link.Base:
+        local_transform.position: Constants.AlongAxle * separation * 0.5
+
+    connector_1 is Physics3D.Interactions.MateConnector:
+        position: 0.5*(left.connector_1.position + right.connector_1.position)
+        main_axis: (left.connector_1.main_axis + right.connector_1.main_axis).normal()
+        normal: (left.connector_1.normal + right.connector_1.normal).normal()
+
+    connector_2 is Physics3D.Interactions.MateConnector:
+        position: 0.5*(left.connector_2.position + right.connector_2.position)
+        main_axis: (left.connector_2.main_axis + right.connector_2.main_axis).normal()
+        normal: (left.connector_2.normal + right.connector_2.normal).normal()

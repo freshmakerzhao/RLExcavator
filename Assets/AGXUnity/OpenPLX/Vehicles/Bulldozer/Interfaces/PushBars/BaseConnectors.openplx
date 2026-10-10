@@ -1,0 +1,4 @@
+trait BaseConnectors:
+    rear_connector is Physics3D.Interactions.MateConnector
+    front_connector is Physics3D.Interactions.MateConnector
+    cylinder_connector is Physics3D.Interactions.MateConnector

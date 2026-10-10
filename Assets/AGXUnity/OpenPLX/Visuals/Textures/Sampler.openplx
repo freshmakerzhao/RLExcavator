@@ -1,0 +1,12 @@
+trait Sampler:
+  .doc: """
+When this trait is applied to a texture, it defines how the texture should be
+sampled.
+"""
+  scale_u is Real: 1.0
+  scale_v is Real: 1.0
+  offset_u is Real: 0.0
+  offset_v is Real: 0.0
+
+  wrap_mode is Int: WrapMode.Repeat
+  filter_mode is Int: FilterMode.Linear

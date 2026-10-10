@@ -1,6 +1,6 @@
 DefaultPrismaticFlexibility is DefaultMateFlexibility:
     .doc: """
-    Defines one flexibility model for each constrained degree of freedom for a Prismatic    
+    Defines one flexibility model for each constrained degree of freedom for a Prismatic
     """
     along_normal is Physics.Interactions.Flexibility.DefaultFlexibility
     along_cross is Physics.Interactions.Flexibility.DefaultFlexibility

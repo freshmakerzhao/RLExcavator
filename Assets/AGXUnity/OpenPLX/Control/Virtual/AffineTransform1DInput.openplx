@@ -1,0 +1,12 @@
+AffineTransform1DInput is Physics.Signals.Input:
+    .doc: """
+A virtual input control that multiplies a single real field
+with a scale factor and adds an offset and then forwards to another
+input with a matching real field.
+"""
+    type: 0
+    marshalling.is_dynamic: true
+    field_name is String
+    scale is Real
+    offset is Real
+    target is Physics.Signals.Input reference

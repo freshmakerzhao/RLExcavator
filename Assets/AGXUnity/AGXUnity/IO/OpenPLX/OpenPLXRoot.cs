@@ -31,7 +31,7 @@ namespace AGXUnity.IO.OpenPLX
           throw new System.NullReferenceException( "Cannot get the pruned name before the OpenPLX root has been initialized" );
         var prunedNativeName = Native.getName();
         if ( prunedNativeName.Contains( "." ) )
-          prunedNativeName = prunedNativeName[ ( prunedNativeName.IndexOf( "." ) + 1 ).. ];
+          prunedNativeName = prunedNativeName[ ( prunedNativeName.LastIndexOf( "." ) + 1 ).. ];
         return prunedNativeName;
       }
     }
@@ -107,7 +107,7 @@ namespace AGXUnity.IO.OpenPLX
             continue;
           var native = openPLXObj.FindCorrespondingNative( this, obj );
           if ( native != null )
-            m_nativeMap.Add( new( decl, native ) );
+            m_nativeMap.Add( new( obj.getName(), native ) );
         }
       }
 
@@ -115,24 +115,26 @@ namespace AGXUnity.IO.OpenPLX
       var errorReporter = new ErrorReporter();
       var mapper = new agxopenplx.OpenPlxDriveTrainMapper( errorReporter, map );
 
-      agxPowerLine.PowerLineRef powerline = new agxPowerLine.PowerLineRef(new agxPowerLine.PowerLine());
-      mapper.mapDriveTrainIntoPowerLine( Native as openplx.Physics.System, powerline );
-
       RuntimeMapped = new Dictionary<string, agx.Referenced>();
-      Simulation.Instance.Native.add( powerline.get() );
-      foreach ( var (obj, constraint) in mapper.getMappedConstraints() ) {
-        Simulation.Instance.Native.add( constraint.get() );
-        RuntimeMapped.Add( obj.getName(), constraint.get() );
-      }
-      foreach ( var obj in powerline.getUnits() ) {
-        var objName = obj.getName();
-        if ( objName.StartsWith( PrunedNativeName + "." ) )
-          RuntimeMapped.Add( objName, obj.get() );
-      }
-      foreach ( var obj in powerline.getConnectors() ) {
-        var objName = obj.getName();
-        if ( objName.StartsWith( PrunedNativeName + "." ) )
-          RuntimeMapped.Add( objName, obj.get() );
+
+      agxPowerLine.PowerLineRef powerline = mapper.mapDriveTrainIntoPowerLine( Native as openplx.Physics.System);
+      // TODO: Fix null return from this method
+      if ( powerline != null && powerline.get() != null ) {
+        Simulation.Instance.Native.add( powerline.get() );
+        foreach ( var (obj, constraint) in mapper.getMappedConstraints() ) {
+          Simulation.Instance.Native.add( constraint.get() );
+          RuntimeMapped.Add( obj.getName(), constraint.get() );
+        }
+        foreach ( var obj in powerline.getUnits() ) {
+          var objName = obj.getName();
+          if ( objName.StartsWith( PrunedNativeName + "." ) )
+            RuntimeMapped.Add( objName, obj.get() );
+        }
+        foreach ( var obj in powerline.getConnectors() ) {
+          var objName = obj.getName();
+          if ( objName.StartsWith( PrunedNativeName + "." ) )
+            RuntimeMapped.Add( objName, obj.get() );
+        }
       }
 
       return base.Initialize();

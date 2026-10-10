@@ -1,0 +1,7 @@
+Base is Physics3D.System:
+    .doc: """
+    The primitive base component is a System and
+    has by definition one rigid body placed at the origin.
+    """
+    body is Physics3D.Bodies.RigidBody:
+        kinematics.local_transform.position: {0,0,0}

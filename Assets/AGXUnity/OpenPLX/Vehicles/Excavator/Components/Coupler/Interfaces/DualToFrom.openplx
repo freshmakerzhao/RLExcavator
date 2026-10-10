@@ -1,0 +1,36 @@
+trait DualToFrom:
+    .doc: """
+    Trait for defining two set of connectors.
+
+    For the excavator coupler's these conenctors (`from_connector_#` and `to _connector_#`)
+    are used to define connectors on the coupler's internal parts.
+
+    The coupler system will also have a set of external connectors (`from`, `to` , `from_actuator`, `to_actuator`)
+    that is used for connecting the coupler to external components.
+
+    Example:
+        A tiltrotator may have the following three internal parts
+
+        tilt_frame -> rotator -> coupler
+
+        each of these internal parts the internal connectors `from_connector_#` and
+        `to_connector_#`.
+
+        The complete tiltrotator system has the external connectors (`from`, `to` , `from_actuator`, `to_actuator`)
+        which in turn is assigned to the corresponding internal connections as follows:
+
+        ```
+        from: tilt_frame.from_connector_1
+        from_actuator: tilt_frame.from_connector_2
+
+        to: coupler.to_connector_1
+        to_actuator: coupler.to_connector_2
+        ```
+
+    """
+
+    from_connector_1 is Physics3D.Interactions.MateConnector
+    to_connector_1 is Physics3D.Interactions.MateConnector
+
+    from_connector_2 is Physics3D.Interactions.MateConnector
+    to_connector_2 is Physics3D.Interactions.MateConnector

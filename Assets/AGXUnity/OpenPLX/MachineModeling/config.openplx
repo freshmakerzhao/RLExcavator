@@ -1,0 +1,5 @@
+
+config is BundleConfig:
+    name: "MachineModeling"
+    version: "0.26.7"
+    dependencies: ["Physics3D==0.26.7", "DriveTrain==0.26.7", "Simulation==0.26.7", "Visuals==0.26.7"]

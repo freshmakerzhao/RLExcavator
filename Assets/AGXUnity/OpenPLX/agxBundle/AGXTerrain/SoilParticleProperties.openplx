@@ -1,0 +1,25 @@
+trait SoilParticleProperties:
+    enable_compaction is Bool: true
+    delete_particles_outside_bounds is Bool: false
+    aggregate_lock_compliance0 is AggregateLockCompliance:
+        dof: 0
+    aggregate_lock_compliance1 is AggregateLockCompliance:
+        dof: 1
+    aggregate_lock_compliance2 is AggregateLockCompliance:
+        dof: 2
+    aggregate_lock_compliance3 is AggregateLockCompliance:
+        dof: 3
+    aggregate_lock_compliance4 is AggregateLockCompliance:
+        dof: 4
+    aggregate_lock_compliance5 is AggregateLockCompliance:
+        dof: 5
+    merge_speed_threshold is Real: 4.0
+    particle_growth_rate is Real: 0.05
+    particle_life_time is Real: Math.INF
+    particle_merge_rate is Real: 9.0
+    particle_merge_threshold is Real: 0.3
+    particle_size_scaling is Real: 1.0
+
+AggregateLockCompliance:
+    compliance is Real: 1e-09
+    dof is Int

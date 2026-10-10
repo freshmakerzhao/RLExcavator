@@ -1,0 +1,41 @@
+trait FourWheels:
+    .doc: """
+    Trait for adding wheels to a 4 wheel vehicle.
+    """
+
+    left_front_wheel is Vehicles.Wheels.Base
+    right_front_wheel is Vehicles.Wheels.Base
+    left_rear_wheel is Vehicles.Wheels.Base
+    right_rear_wheel is Vehicles.Wheels.Base
+
+    front_wheel_axle is MachineModeling.Components.Primitive.Base with DumpTruck.Interfaces.WheelAxle.WheelConnectors, Vehicles.DumpTruck.Interfaces.Chassis.AFrame
+    rear_wheel_axle is MachineModeling.Components.Primitive.Base with DumpTruck.Interfaces.WheelAxle.WheelConnectors, Vehicles.DumpTruck.Interfaces.Chassis.AFrame
+
+    front_axle_connection.left_axle_connector: front_wheel_axle.left_wheel_connector
+    front_axle_connection.right_axle_connector: front_wheel_axle.right_wheel_connector
+    rear_axle_connection.left_axle_connector: rear_wheel_axle.left_wheel_connector
+    rear_axle_connection.right_axle_connector: rear_wheel_axle.right_wheel_connector
+
+    front_axle_connection.left_wheel_connection is Physics3D.Interactions.Hinge:
+        connectors: [front_axle_connection.left_axle_connector, left_front_wheel.connector]
+    front_axle_connection.right_wheel_connection is Physics3D.Interactions.Hinge:
+        connectors: [front_axle_connection.right_axle_connector, right_front_wheel.connector]
+    rear_axle_connection.left_wheel_connection is Physics3D.Interactions.Hinge:
+        connectors: [rear_axle_connection.left_axle_connector, left_rear_wheel.connector]
+    rear_axle_connection.right_wheel_connection is Physics3D.Interactions.Hinge:
+        connectors: [rear_axle_connection.right_axle_connector, right_rear_wheel.connector]
+
+    axle_collision_group is Simulation.CollisionGroup:
+        bodies: [front_wheel_axle.body, rear_wheel_axle.body]
+
+    wheel_collision_group is Simulation.CollisionGroup:
+        systems: [
+            left_front_wheel,
+            right_front_wheel,
+            left_rear_wheel,
+            right_rear_wheel
+        ]
+
+    disable_axle_wheel_collisions is Simulation.DisableCollisionPair:
+        group1: axle_collision_group
+        group2: wheel_collision_group

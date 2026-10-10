@@ -1,0 +1,9 @@
+Base is MachineModeling.Connections.Base:
+    .doc: """
+    Base excavator arm-to-chassis connection.
+
+    Concrete variants define the number of arm pivots and arm actuators.
+    """
+
+    arm is MachineModeling.Components.Primitive.Base reference
+    chassis is MachineModeling.Components.Primitive.Base reference

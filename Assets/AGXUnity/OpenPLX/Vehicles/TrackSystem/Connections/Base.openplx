@@ -1,0 +1,34 @@
+Base is MachineModeling.Connections.Base:
+    .doc: """
+This is the connection base to use when connecting the TrackSystem to your Vehicle.
+Note that there are several Traits that extend this Base so it could be used for
+TrackSystem with two or more TrackWheels.
+
+Example:
+In the example bellow we assume the four connectors are created in the system
+and that we have four TrackWheels.
+E.g.
+    sprocket is Vehicles.TrackSystem.Components.TrackWheels.Sprocket
+    ...
+
+    sprocket_connector is Physics3D.Interactions.RedirectedMateConnector
+    ...
+
+    track_system is Vehicles.TrackSystem.Base:
+        ...
+        track_wheels: [sprocket, idler, road_wheel_1, road_wheel_2]
+
+    tracks_connection is Vehicles.TrackSystem.Connections.Base with Vehicles.TrackSystem.Connections.Traits.FourWheels:
+        track_system : track_system_instance
+        chassis_connectors: [track_system.sprocket_connector,
+                             track_system.idler_connector,
+                             track_system.wheel_connector_1
+                             track_system.wheel_connector_2]
+"""
+    hinge_1 is MachineModeling.Connections.Pivot.Hinge:
+        from: connectors[0]
+        to: track_system.track_wheels[0].center_connector
+
+    connectors is Physics3D.Interactions.MateConnector[]
+
+    track_system is TrackSystem.Base reference

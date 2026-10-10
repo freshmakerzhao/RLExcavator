@@ -46,6 +46,7 @@ the clutch torque is negative -> dynamic braking.
         enabled: false
     engagement_fraction_input is Physics.Signals.FractionInput:
         source: this
+        initial_value: initial_engagement_fraction
     engagement_fraction_output is Physics.Signals.FractionOutput:
         source: this
         enabled: false

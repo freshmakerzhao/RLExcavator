@@ -1,0 +1,6 @@
+LockedBearings is Connections.Pivot.Bearings:
+    .doc: """
+    Adds a lock to the left side bearings
+    """
+    lock is Physics3D.Interactions.LinearSpring:
+        connectors: [from_bearings.left, to_bearings.left]

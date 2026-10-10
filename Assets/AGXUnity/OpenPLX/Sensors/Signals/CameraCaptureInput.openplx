@@ -1,0 +1,10 @@
+CameraCaptureInput is Physics.Signals.Input:
+    .doc: """
+    An input sending a capture signal to a camera or any of its outputs.
+    This is used to tell a manual capture camera, or output, when to capture.
+    """
+    type: 0
+    source is CameraLogic or Signals.CameraColorOutput or Signals.CameraDepthOutput reference
+
+    # Assign true on capture, and reset to false to disable capturing
+    marshalling.value is Physics.Signals.BoolField

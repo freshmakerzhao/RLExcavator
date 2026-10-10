@@ -1,0 +1,7 @@
+Base is Components.Composite.Base:
+    .doc: """
+    Abstract model for a rotational actuator. By using this in your model,
+    you have the option to replace it with any rotational actuator inheriting from this model.
+    """
+
+    source is Physics.Interactions.Interaction

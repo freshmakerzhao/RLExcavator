@@ -1,0 +1,13 @@
+Base is MachineModeling.Components.Composite.Base:
+    .doc: """
+    Base model for excavator tools such as bucket or grippers etc.
+
+    The base model only includes the bare minimum, i.e. two attachment points.
+    One attachment point for what is normally a pivot joint and the other attachment
+    point for what is normally a linear actuator such as an hydraulic cylinder.
+
+    This is a `base` model and is to be extended with a more detailed model.
+    """
+
+    with MachineModeling.Components.Composite.Arm.Interfaces.SingleJoint
+    with MachineModeling.Components.Composite.Arm.Interfaces.SingleActuator

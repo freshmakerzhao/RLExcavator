@@ -1,0 +1,30 @@
+trait TrackSupportGeometry:
+    .doc: """
+    Marks a body, system, or geometry as support geometry for a track system.
+
+    Support geometry contributes to supporting and guiding the track, similar to
+    how rollers support the track path. However, this geometry is treated as
+    sliding support rather than as a rolling TrackWheel.
+
+    In contrast to TrackWheels, support geometries are not guaranteed to be inside
+    the track path and may therefore be located either inside or outside the track.
+
+    Example with a body:
+
+    support_bar is Physics3D.Bodies.RigidBody with Vehicles.TrackSystem.Components.Traits.TrackSupportGeometry:
+        track_system: track_system
+
+    Example with a system:
+
+    support_module is Physics3D.System with Vehicles.TrackSystem.Components.Traits.TrackSupportGeometry:
+        track_system: track_system
+
+    Example with a geometry:
+
+    support_body is Physics3D.Bodies.RigidBody
+    support_body.slider is Physics3D.Geometries.Cylinder with Vehicles.TrackSystem.Components.Traits.TrackSupportGeometry:
+        track_system: track_system
+        radius: 0.1
+        height: 0.5
+    """
+    track_system is TrackSystem.Base reference

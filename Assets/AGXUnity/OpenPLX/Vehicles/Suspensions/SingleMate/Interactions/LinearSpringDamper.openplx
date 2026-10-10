@@ -1,0 +1,8 @@
+LinearSpringDamper is Vehicles.Suspensions.SingleMate.Interactions.Base:
+    .doc: """
+The LinearSpringDamper adds stiffness and damping parameters to the suspension mate.
+"""
+    spring_damping is Physics.Interactions.Dissipation.MechanicalDamping:
+        damping_constant: 1E7 / 3.0
+    spring_constant is Physics.Interactions.Flexibility.LinearElastic:
+        stiffness: 100000000

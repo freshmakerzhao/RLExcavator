@@ -1,0 +1,8 @@
+trait DefaultConnectors:
+    rear_connector.position: Math.Vec3.from_xyz(-1,0,0)
+    front_connector.position: Math.Vec3.from_xyz(1,0,0)
+    cylinder_connector.position: Math.Vec3.from_xyz(0,0,0.2)
+
+    rear_connector.main_axis: Math.Vec3.from_xyz(0,1,0)
+    front_connector.main_axis: Math.Vec3.from_xyz(0,1,0)
+    cylinder_connector.main_axis: Math.Vec3.from_xyz(0,1,0)

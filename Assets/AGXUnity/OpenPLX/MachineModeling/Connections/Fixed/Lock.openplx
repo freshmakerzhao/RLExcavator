@@ -1,0 +1,14 @@
+Lock is MachineModeling.Connections.Base:
+    with Connections.Traits.PairwiseConnection
+    .doc: """
+    A Hinge connection is the simplest type of Pivot connection
+    and constrains all degrees of freedom, except the axis of rotation.
+    Note that to prevent rotation about the two other axes,
+    the Hinge defines constaints that will introduce a moment.
+
+    To simulate a more realistic Pivot connection
+    see the Bearings and AxleBearings variants.
+    With them realistic Bearing forces can be computed.
+    """
+    lock is Physics3D.Interactions.Lock:
+        connectors: [from, to]

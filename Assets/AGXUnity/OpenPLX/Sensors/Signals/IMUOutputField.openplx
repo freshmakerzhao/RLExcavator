@@ -1,0 +1,8 @@
+const IMUOutputFieldConstant:
+    X_F64 is Int: 1
+    Y_F64 is Int: 2
+    Z_F64 is Int: 3
+
+IMUOutputField:
+    field is Int
+    sensor is Sensors.SensorLogic reference

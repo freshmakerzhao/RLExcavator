@@ -1,0 +1,8 @@
+trait DualJoint:
+    from_left is Physics3D.Interactions.MateConnector
+    from_right is Physics3D.Interactions.MateConnector
+
+    from:
+        position: 0.5*(from_left.position + from_right.position)
+        main_axis: (from_left.main_axis + from_right.main_axis).normal()
+        normal: (from_left.normal + from_right.normal).normal()

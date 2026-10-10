@@ -27,6 +27,7 @@ Distance is Mate:
 
     target_distance_input is Physics.Signals.Position1DInput:
         source: this
+        initial_value: target_distance
 
     force_output is Physics.Signals.Force1DOutput:
         enabled: false

@@ -1,0 +1,54 @@
+Base is MachineModeling.Components.Composite.Base:
+    .doc: """
+    Base model for a double-linkage assembly.
+
+    The linkage connects a guide-side connector to a drive-side connector with
+    one guide link and one drive link.
+
+    The guide connector is the guide-link pivot on the grounded side.
+    The drive connector is the drive-link pivot on the driven side.
+
+    Concrete variants provide either singular links or link pairs and map their
+    link-specific connectors onto the abstract connector references used here.
+
+    It is usually important that the linkage never rotates near the parallel state.
+    Therefore the link_connection has a range defining valid solutions.
+    By default the valid range is 0-180 degrees. By changing the sign of the
+    valid_link_sign, the range of -180 - 0 degrees is valid.
+
+    The `guide_connector` and `drive_connector` refers to the external connectors
+    acting on the linkage system.
+
+    The numbered connectors `drive_connector_#` and `guide_connector_#` refers to
+    connectors internal to the linkage system.
+
+    """
+    local_transform.position: {0,0,0}
+
+    valid_link_sign is Real: 1
+
+    guide_connector is Physics3D.Interactions.MateConnector reference
+    drive_connector is Physics3D.Interactions.MateConnector reference
+
+    drive_connector_1 is Physics3D.Interactions.MateConnector reference
+    drive_connector_2 is Physics3D.Interactions.MateConnector reference
+
+    guide_connector_1 is Physics3D.Interactions.MateConnector reference
+    guide_connector_2 is Physics3D.Interactions.MateConnector reference
+
+    guide_link_connection is MachineModeling.Connections.Base with MachineModeling.Connections.Interfaces.FromTo:
+        from: guide_connector
+        to: guide_connector_1
+
+    drive_connection is MachineModeling.Connections.Base with MachineModeling.Connections.Interfaces.FromTo:
+        from: drive_connector_2
+        to: drive_connector
+
+    link_connection is MachineModeling.Connections.Base with MachineModeling.Connections.Interfaces.FromTo:
+        from: guide_connector_2
+        to: drive_connector_1
+        valid_range is Physics3D.Interactions.RotationalRange:
+            connectors: [link_connection.from, link_connection.to]
+            enabled: false
+            start: -0.5 * Math.PI + valid_link_sign * 0.5 * Math.PI
+            end: 0.5 * Math.PI + valid_link_sign * 0.5 * Math.PI

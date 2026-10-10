@@ -1,0 +1,30 @@
+trait Suspension:
+    min_length is Real
+    stroke_length is Real
+    rod_diameter is Real
+    barrel_diameter is Real
+
+    left_suspension is MachineModeling.Actuators.Linear.Connections.Cylinder:
+        from: a_frame.left_a_frame_connector
+        to:   chassis_frame.left_a_frame_connector
+        actuator:
+            source becomes Physics3D.Interactions.LinearSpring:
+                connectors: left_suspension.actuator.cylindrical.connectors
+            min_length: min_length
+            stroke_length: stroke_length
+            rod.body.diameter: rod_diameter
+            barrel.body.diameter: barrel_diameter
+
+    right_suspension is MachineModeling.Actuators.Linear.Connections.Cylinder:
+        from: a_frame.right_a_frame_connector
+        to:   chassis_frame.right_a_frame_connector
+        actuator:
+            source becomes Physics3D.Interactions.LinearSpring:
+                connectors: right_suspension.actuator.cylindrical.connectors
+
+            min_length: min_length
+            stroke_length: stroke_length
+            rod.body.diameter: rod_diameter
+            barrel.body.diameter: barrel_diameter
+
+    group_a_frame_and_chassis.systems: [left_suspension, right_suspension]

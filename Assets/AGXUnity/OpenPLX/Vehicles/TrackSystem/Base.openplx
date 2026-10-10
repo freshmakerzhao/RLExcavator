@@ -1,0 +1,92 @@
+Base is MachineModeling.Components.Composite.Base:
+    .doc: """
+A Track System for vehicles. With this component you may add tracks to your vehicle.
+
+A Track System is defined to have one tracks component, track properties, and tension initialization.
+The tracks component defines the repeated link geometry through link_description,
+the number of links through link_count, and optionally a material for the track links.
+If tracks.material is set, it overrides materials defined on geometries in the link nodes.
+
+The Track System also needs a a connection with N number of wheels where both the Connections.Base
+and the Components.Tracks.Base have the same number of wheels. In your behicle you then connect
+each connector in the connection to whereever your track wheels are lookated.
+
+The routing of the tracks around the track wheels is solved in runtime.
+
+If the set of track wheels contain a Sprocket the rotation axis of the first defined Sprocket
+defines the tracks transversal axis. It is expected that all track wheel have the rotation
+axis in the same or almost the same direction.
+
+    properties              - The track flexibility and energy dissipation parameters. This defines properties
+                              such as the track stiffness.
+    tracks                  - The tracks, defines number of shoes, width and thickness.
+    tension_initialization  - How the track is initialized with respect to track tension, e.g. by defining the
+                              track rest length.
+    track_wheel_1           - The first TrackWheel in the tracks. Preferrably this is a Sprocket that has a direct
+                              connection with the vehicle chassis.
+    track_wheel_2           - The second TrackWheel in the tracks. If you have more TrackWheels in your track system
+                              you could extend this system with as many TrackWheels as you like using this parameter
+                              naming syntax.
+    chassis_body            - This body is the chassis or simular which the Track System is connected to. Note
+                              that it is optional and if this isn't given the body of track_wheel_1 connection is choosed
+                              as the chassis body for this Track System.
+
+Example:
+
+TrackedVehicle is Physics3D.System:
+    chassis is Physics3D.Bodies.RigidBody
+
+    track_material is Physics.Geometries.Material
+
+    sprocket is Vehicles.TrackSystem.Components.TrackWheels.Sprocket with Vehicles.TrackSystem.Components.TrackWheels.Traits.CylindricalShape, Vehicles.TrackSystem.Components.TrackWheels.Traits.CylindricalVisual:
+        radius: 0.15
+        width: 0.5
+
+    idler is Vehicles.TrackSystem.Components.TrackWheels.Idler with Vehicles.TrackSystem.Components.TrackWheels.Traits.CylindricalShape:
+        radius: 0.15
+        width: 0.5
+
+    road_wheel is Vehicles.TrackSystem.Components.TrackWheels.RoadWheel with Vehicles.TrackSystem.Components.TrackWheels.Traits.CylindricalShape:
+        radius: 0.15
+        width: 0.5
+
+    sprocket_connector is Physics3D.Interactions.StructuralPlanarConnector:
+        x: 2.1
+        y: 1.1
+        redirected_parent: chassis
+
+    idler_connector is Physics3D.Interactions.StructuralPlanarConnector:
+        x: -1.1
+        y: 1.1
+        redirected_parent: chassis
+
+    road_wheel_connector is Physics3D.Interactions.StructuralPlanarConnector:
+        x: -1.1
+        y: -1.1
+        redirected_parent: chassis
+
+    track_system is Vehicles.TrackSystem.Base:
+        tracks.link_count: 100
+        tracks.material: track_material
+        tracks.link_description.width: 0.5
+        tracks.link_description.height: 0.05
+        track_wheels:  [sprocket,
+                        idler,
+                        road_wheel]
+
+    tracks_connection is Vehicles.TrackSystem.Connections.Base with Vehicles.TrackSystem.Connections.Traits.ThreeWheels:
+        track_system : track_system
+        connectors: [sprocket_connector,
+                     idler_connector,
+                     road_wheel_connector]
+"""
+
+    properties is TrackSystem.Properties
+
+    tracks is TrackSystem.Components.Tracks.Base
+
+    tension_initialization is TrackSystem.TensionInitialisation
+
+    track_wheels is TrackSystem.Components.TrackWheels.Base[]
+
+    optional chassis_body is Physics3D.Bodies.RigidBody reference

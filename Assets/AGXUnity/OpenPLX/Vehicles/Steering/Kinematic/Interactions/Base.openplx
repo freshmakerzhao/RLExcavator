@@ -1,0 +1,16 @@
+Base is Physics.Interactions.Interaction1DOF:
+    .doc: """
+Base class for various steering mechanisms, given two SingleMate Suspensions
+both having the compatible steering trait.
+"""
+    with Physics.Signals.AngleInputTrait
+    with Physics.Signals.AngleOutputTrait
+
+    connectors: []
+
+    steering_angle_input is Physics.Signals.AngleInput:
+        source: this
+
+    steering_angle_output is Physics.Signals.AngleOutput:
+        enabled: false
+        source: this

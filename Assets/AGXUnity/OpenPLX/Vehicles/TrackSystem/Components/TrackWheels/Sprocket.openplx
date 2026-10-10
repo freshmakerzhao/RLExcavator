@@ -1,0 +1,23 @@
+Sprocket is TrackSystem.Components.TrackWheels.Base:
+    .doc: """
+    A sprocket with a rigid body. A cylindrical geometry can be added to the wheel via e.g. the CylindricalShape trait.
+    local_center_axis is y direction by default assuming that the non rotated cylinder axis is in y direction.
+    Note that the first sprocket in the track system defines the plane where the tracks are defined.
+
+    The sprocket track wheel. It is often the track wheel that is responsible for driving the track.
+    It is usually connected to the drive shaft of the vehicle and has teeth that engage
+    with the track links to propel the vehicle forward.
+
+    Assumed to have its origin at the TrackSystem.Base origin,
+    thereby center_connector can be placed relative the TrackSystem.System.
+
+    Example:
+        This sprocket has a rigid body named body and a cylinder geometry as contact geometry.
+        A TrackWheel have a center_connector that is used to connect it to the track system via e.g. Physics3D.Interactions.Hinge
+        or a MachineModeling.Connections.Pivot.Hinge.
+
+        sprocket is Vehicles.TrackSystem.Components.TrackWheels.Sprocket with Vehicles.TrackSystem.Components.TrackWheels.Traits.CylindricalShape:
+            radius: 0.15
+            width: 0.5
+
+    """

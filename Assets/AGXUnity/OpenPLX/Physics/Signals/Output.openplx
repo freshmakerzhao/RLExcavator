@@ -7,4 +7,3 @@ An Output, i.e. a sender of signals.
     type is Int
     enabled is Bool: true
     marshalling is Marshalling
-

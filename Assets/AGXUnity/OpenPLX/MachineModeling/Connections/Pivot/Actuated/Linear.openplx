@@ -1,0 +1,15 @@
+Linear is MachineModeling.Connections.Pivot.Actuated.Base:
+    .doc: """
+    Hinge pivot connection driven by a linear actuator.
+
+    The linear actuator is connected between the ground and drive mate
+    connectors, producing pivot motion through the configured connector
+    geometry.
+    """
+    with MachineModeling.Connections.Pivot.Actuated.Configurations.Hinge
+
+    actuator becomes MachineModeling.Actuators.Linear.Base
+    actuator_connection is MachineModeling.Actuators.Linear.Connections.Base:
+        from: ground_connector
+        to: drive_connector
+        actuator: actuator

@@ -1,0 +1,3 @@
+UdpServer is Server:
+    address is String
+    port is Int
