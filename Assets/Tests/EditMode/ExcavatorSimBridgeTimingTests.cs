@@ -8,6 +8,47 @@ namespace RLExcavator.Tests
   public class ExcavatorSimBridgeTimingTests
   {
     [Test]
+    public void StatePublishesTheAuthoredOriginIdentity()
+    {
+      var go = new GameObject("origin-identity-test");
+      go.SetActive(false);
+      try {
+        Type bridgeType = Type.GetType("RLExcavator.ExcavatorSimBridge, Assembly-CSharp");
+        Component bridge = go.AddComponent(bridgeType);
+        bridgeType.GetField("machineFrameId").SetValue(bridge, "swing_axis_chassis_v1");
+        Type replyType = bridgeType.GetNestedType("Reply", BindingFlags.NonPublic);
+        object reply = Activator.CreateInstance(replyType, true);
+        var populate = bridgeType.GetMethod("PopulateState", BindingFlags.NonPublic | BindingFlags.Instance)
+          .MakeGenericMethod(replyType);
+        object result = populate.Invoke(bridge, new[] { reply });
+        // 即使尚未接好执行器，状态也必须说明原点身份，不能用同名 ROS frame 混淆新旧记录。
+        StringAssert.Contains("\"machine_frame_id\":\"swing_axis_chassis_v1\"", JsonUtility.ToJson(result));
+      }
+      finally { UnityEngine.Object.DestroyImmediate(go); }
+    }
+
+    [TestCase("{\"enabled\":true}", true, true)]
+    [TestCase("{\"enabled\":false}", true, false)]
+    [TestCase("{}", false, false)]
+    [TestCase("{\"enabled\":null}", false, false)]
+    [TestCase("{\"enabled\":1}", false, false)]
+    [TestCase("{\"enabled\":0}", false, false)]
+    [TestCase("{\"enabled\":\"true\"}", false, false)]
+    [TestCase("{\"enabled\":\"false\"}", false, false)]
+    [TestCase("{\"enabled\":{\"enabled\":true}}", false, false)]
+    [TestCase("{\"enabled\":true,\"enabled\":false}", false, false)]
+    [TestCase("{", false, false)]
+    public void LidarConfigurationRequiresAnExplicitBooleanToken(string json, bool valid, bool enabled)
+    {
+      Type bridgeType = Type.GetType("RLExcavator.ExcavatorSimBridge, Assembly-CSharp");
+      var parse = bridgeType.GetMethod("TryReadLidarEnabled", BindingFlags.NonPublic | BindingFlags.Static);
+      Assert.That(parse, Is.Not.Null, "不能用 JsonUtility 把缺失/数字/字符串宽松转换为雷达开关");
+      var args = new object[] { json, false };
+      Assert.That(parse.Invoke(null, args), Is.EqualTo(valid));
+      Assert.That(args[1], Is.EqualTo(enabled));
+    }
+
+    [Test]
     public void PythonRoundTripTimeIsAcceptedButFutureAndExpiredCommandsAreRejected()
     {
       var gameObject = new GameObject( "bridge-time-test" );

@@ -7,6 +7,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using AGXUnity;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEngine;
 
 namespace RLExcavator
@@ -28,7 +30,7 @@ namespace RLExcavator
     }
 
     [Serializable]
-    private sealed class Reply
+    private class Reply
     {
       public string kind;
       public int epoch;
@@ -37,6 +39,7 @@ namespace RLExcavator
       public string reason;
       public int state_sequence;
       public double sim_time_s;
+      public string machine_frame_id;
       public bool state_valid;
       public ActuatorState actuator_state;
       public BucketTipPose bucket_tip_pose;
@@ -44,6 +47,32 @@ namespace RLExcavator
       public RawJointAngles raw_joint_angles_rad;
       public ExcavatorWallContacts.State wall_contact;
       public ExcavatorMaterialTelemetry.State material_state;
+    }
+
+    // JsonUtility 会为 null 的内联对象输出默认字段，单独的回复类型保证普通状态不携带空地图。
+    [Serializable]
+    private sealed class TerrainReply : Reply
+    {
+      public ExcavatorTerrainTelemetry.State terrain_state;
+    }
+
+    [Serializable]
+    private sealed class LidarReply : Reply
+    {
+      public ExcavatorLidarTelemetry.ScanSet lidar_state;
+    }
+
+    [Serializable]
+    private sealed class LidarConfigurationReply : Reply
+    {
+      public LidarConfiguration lidar_configuration;
+    }
+
+    [Serializable]
+    private sealed class LidarConfiguration
+    {
+      public bool enabled;
+      public int sensor_count;
     }
 
     [Serializable]
@@ -100,6 +129,8 @@ namespace RLExcavator
     public int maxStepsPerRequest = 1000;
     [Tooltip("Fixed machine frame used for Follow waypoints.")]
     public Transform machineRoot;
+    [Tooltip("随坐标原点迁移而更新；Python 对照共享配置，防止新旧原点混用。")]
+    public string machineFrameId = "legacy_machine_root_v1";
     [Tooltip("Physical tip point on the bucket.")]
     public Transform bucketTip;
     [Tooltip("Swinging upper body frame used to measure bucket pitch.")]
@@ -112,6 +143,10 @@ namespace RLExcavator
     public ExcavatorWallContacts wallContacts;
     [Tooltip("阶段边界读取的斗内及车厢物料统计；不在每个物理步遍历颗粒。")]
     public ExcavatorMaterialTelemetry materialTelemetry;
+    [Tooltip("按需读取活动地形；不进入 ACT 图像采样或每个物理步。")]
+    public ExcavatorTerrainTelemetry terrainTelemetry;
+    [Tooltip("AGX 雷达扫描窗口；只在显式 read_lidar 请求中发送点云。")]
+    public ExcavatorLidarTelemetry[] lidarSensors = System.Array.Empty<ExcavatorLidarTelemetry>();
     [Tooltip("Raw boom hinge angle for calibration; not an ACT sensor angle.")]
     public Constraint boomJoint;
     [Tooltip("Raw arm hinge angle for calibration; not an ACT sensor angle.")]
@@ -262,6 +297,8 @@ namespace RLExcavator
       }
       m_stateSequence++;
       m_simTime = m_stateSequence * (double)m_simulation.TimeStep;
+      foreach (var lidar in lidarSensors ?? System.Array.Empty<ExcavatorLidarTelemetry>())
+        if (lidar != null) lidar.CaptureStep(m_epoch, m_stateSequence, m_simTime, m_simulation.TimeStep);
       m_stepsRemaining--;
       if ( m_stepsRemaining == 0 )
         Complete( ReadState() );
@@ -279,6 +316,8 @@ namespace RLExcavator
         ClearTarget();
         m_actuators.StopAll();
         m_epoch++;
+        foreach (var lidar in lidarSensors ?? System.Array.Empty<ExcavatorLidarTelemetry>())
+          if (lidar != null) lidar.BeginEpoch(m_epoch);
         m_lastSequence = 0;
         m_stateSequence = 0;
         m_simTime = 0;
@@ -329,6 +368,46 @@ namespace RLExcavator
         return;
       }
 
+      if (request.kind == "configure_lidar") {
+        if (request.epoch != m_epoch || m_epoch == 0) { Reject(pending, request, "wrong_epoch"); return; }
+        if (!TryReadLidarEnabled(pending.json, out bool enabled)) {
+          Reject(pending, request, "invalid_lidar_enabled"); return;
+        }
+        // 启停与当前本体状态同帧，不采集 RGB、不推进物理、不消耗动作序号。
+        var configuration = PopulateState(new LidarConfigurationReply());
+        if (!configuration.state_valid) { Reject(pending, request, "lidar_state_invalid"); return; }
+        try { ExcavatorLidarTelemetry.ConfigureScanSet(lidarSensors, enabled); }
+        catch (InvalidOperationException error) { Reject(pending, request, error.Message); return; }
+        configuration.kind = "lidar_configuration";
+        configuration.reason = "lidar_configured";
+        configuration.lidar_configuration = new LidarConfiguration { enabled = enabled, sensor_count = lidarSensors.Length };
+        Complete(pending, configuration);
+        return;
+      }
+
+      if (request.kind == "read_lidar") {
+        if (request.epoch != m_epoch || m_epoch == 0) { Reject(pending, request, "wrong_epoch"); return; }
+        var scan = PopulateState(new LidarReply());
+        if (!scan.state_valid) { Reject(pending, request, "lidar_state_invalid"); return; }
+        scan.kind = "lidar";
+        scan.reason = "lidar_read";
+        scan.lidar_state = ExcavatorLidarTelemetry.ReadScanSet(lidarSensors, m_epoch);
+        Complete(pending, scan);
+        return;
+      }
+
+      if ( request.kind == "read_terrain" ) {
+        if ( request.epoch != m_epoch || m_epoch == 0 ) { Reject( pending, request, "wrong_epoch" ); return; }
+        var terrain = PopulateState( new TerrainReply() );
+        if ( !terrain.state_valid ) { Reject( pending, request, "terrain_state_invalid" ); return; }
+        terrain.kind = "terrain";
+        terrain.reason = "terrain_read";
+        terrain.terrain_state = terrainTelemetry != null ? terrainTelemetry.ReadState() :
+          new ExcavatorTerrainTelemetry.State { reason = "terrain_reader_missing" };
+        Complete( pending, terrain );
+        return;
+      }
+
       if ( request.kind == "observe" ) {
         if ( request.epoch != m_epoch || m_epoch == 0 ) { Reject( pending, request, "wrong_epoch" ); return; }
         try {
@@ -358,6 +437,20 @@ namespace RLExcavator
       Reject( pending, request, "unsupported_kind" );
     }
 
+    private static bool TryReadLidarEnabled(string json, out bool enabled)
+    {
+      enabled = false;
+      try {
+        // JsonUtility 会把缺失、数字或字符串宽松转换；配置开关必须是显式 JSON bool。
+        var data = JObject.Parse(json, new JsonLoadSettings { DuplicatePropertyNameHandling = DuplicatePropertyNameHandling.Error });
+        var value = data["enabled"];
+        if (value == null || value.Type != JTokenType.Boolean) return false;
+        enabled = (bool)value;
+        return true;
+      }
+      catch (JsonException) { return false; }
+    }
+
     private bool ApplyTarget( bool manual, float[] values )
     {
       return manual
@@ -385,11 +478,21 @@ namespace RLExcavator
 
     private Reply ReadState()
     {
-      var result = new Reply { kind = "state", epoch = m_epoch, accepted = true,
-        reason = "stepped", state_sequence = m_stateSequence, sim_time_s = m_simTime,
-        wall_contact = wallContacts != null ? wallContacts.ReadState() : new ExcavatorWallContacts.State(),
-        state_valid = HasActuators() && HasTipPose() &&
-          boomJoint != null && armJoint != null && bucketJoint != null };
+      return PopulateState( new Reply() );
+    }
+
+    private T PopulateState<T>( T result ) where T : Reply
+    {
+      result.kind = "state";
+      result.epoch = m_epoch;
+      result.accepted = true;
+      result.reason = "stepped";
+      result.state_sequence = m_stateSequence;
+      result.sim_time_s = m_simTime;
+      result.machine_frame_id = machineFrameId;
+      result.wall_contact = wallContacts != null ? wallContacts.ReadState() : new ExcavatorWallContacts.State();
+      result.state_valid = HasActuators() && HasTipPose() &&
+        boomJoint != null && armJoint != null && bucketJoint != null;
       if ( !result.state_valid ) return result;
       try {
         result.actuator_state = new ActuatorState {

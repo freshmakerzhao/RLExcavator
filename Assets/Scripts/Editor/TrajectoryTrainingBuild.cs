@@ -1,4 +1,6 @@
 using System.IO;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using UnityEditor;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
@@ -13,7 +15,7 @@ namespace RLExcavator.Editor
   public static class TrajectoryTrainingBuild
   {
     private const string DefaultOutputPath =
-      "Builds/ExcavatorTrajectoryLimitsV2/ExcavatorTrajectoryLimitsV2.x86_64";
+      "Builds/ExcavatorGroundOrigin/ExcavatorGroundOrigin.x86_64";
     private const string TrackingBaseOutputPath =
       "Builds/ExcavatorTrackingBase/ExcavatorTrackingBase.x86_64";
 
@@ -88,8 +90,21 @@ namespace RLExcavator.Editor
 
       string grpcTargetDirectory = Path.Combine( dataPath, "Plugins", "x86_64" );
       string streamingAssetsDirectory = Path.Combine( dataPath, "StreamingAssets" );
+      string workspaceFile = ReadWorkspaceRelativePath( machineProfilePath );
+      string workspaceSource = Path.GetFullPath( Path.Combine(
+        Path.GetDirectoryName( Path.GetFullPath( machineProfilePath ) ), workspaceFile ) );
+      string workspaceTarget = Path.GetFullPath( Path.Combine( streamingAssetsDirectory, workspaceFile ) );
+      if ( !workspaceTarget.StartsWith(
+        Path.GetFullPath( streamingAssetsDirectory ) + Path.DirectorySeparatorChar,
+        System.StringComparison.Ordinal ) )
+        throw new BuildFailedException( "Workspace path must stay inside StreamingAssets." );
+      if ( !File.Exists( workspaceSource ) )
+        throw new BuildFailedException( $"Reachable workspace is missing: {workspaceSource}" );
+
+      // 配置与工作空间成对部署，避免播放器悄悄退回 prefab 中的旧原点锚点。
       Directory.CreateDirectory( grpcTargetDirectory );
       Directory.CreateDirectory( streamingAssetsDirectory );
+      Directory.CreateDirectory( Path.GetDirectoryName( workspaceTarget ) );
       File.Copy(
         grpcSource,
         Path.Combine( grpcTargetDirectory, Path.GetFileName( grpcSource ) ),
@@ -98,6 +113,28 @@ namespace RLExcavator.Editor
         machineProfilePath,
         Path.Combine( streamingAssetsDirectory, "machine_profile.jsonc" ),
         true );
+      File.Copy( workspaceSource, workspaceTarget, true );
+    }
+
+    private static string ReadWorkspaceRelativePath( string machineProfilePath )
+    {
+      try {
+        // 与 MachineProfileLoader 一样使用现有 Newtonsoft 读取带注释配置。
+        using ( var reader = new JsonTextReader( File.OpenText( machineProfilePath ) ) ) {
+          reader.DateParseHandling = DateParseHandling.None;
+          JObject profile = JObject.Load( reader, new JsonLoadSettings {
+            CommentHandling = CommentHandling.Ignore
+          } );
+          JToken value = profile[ "reachable_workspace_file" ];
+          string path = value?.Type == JTokenType.String ? value.Value<string>() : null;
+          if ( string.IsNullOrWhiteSpace( path ) || Path.IsPathRooted( path ) )
+            throw new BuildFailedException( "reachable_workspace_file must be a nonempty relative path." );
+          return path;
+        }
+      }
+      catch ( JsonException exception ) {
+        throw new BuildFailedException( "Invalid machine profile JSONC: " + exception.Message );
+      }
     }
 
     private static string GetArgValue( string name, string fallback )

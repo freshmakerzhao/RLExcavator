@@ -371,6 +371,8 @@ namespace RLExcavator
     private int m_policyActionSequence = 0;
     private bool m_policyDecisionPending = false;
     private MachineProfile m_machineProfile = null;
+    private ContinuousPathTracking m_continuousPath;
+    private bool UsesContinuousPath => m_continuousPath != null && m_continuousPath.isActiveAndEnabled;
 
     // UI / 调试只读属性
 
@@ -395,7 +397,7 @@ namespace RLExcavator
     public int CurrentTargetCount => trajectory != null ? trajectory.TargetCount : HasTarget() ? 1 : 0;
 
     /// <summary>当前路径完成进度，范围 0 到 1</summary>
-    public float CurrentPathProgress => trajectory != null ? trajectory.Progress : 0f;
+    public float CurrentPathProgress => UsesContinuousPath ? m_continuousPath.Progress : trajectory != null ? trajectory.Progress : 0f;
 
     /// <summary>每次完整路径成功完成时递增。用于 demo 状态机跨 episode reset 稳定检测完成事件。</summary>
     public int CompletedPathSerial => m_completedPathSerial;
@@ -636,6 +638,7 @@ namespace RLExcavator
       CurrentEpisode = 0;
       maxEpisodeSteps = kLockedMaxEpisodeSteps;
       MaxStep = kLockedMaxEpisodeSteps;
+      m_continuousPath = GetComponent<ContinuousPathTracking>();
 
       if ( environmentRoot == null )
         environmentRoot = transform.root;
@@ -645,6 +648,9 @@ namespace RLExcavator
 
       LoadMachineProfileAndApplyObservationConstants();
       ValidateReferences();
+      if ( UsesContinuousPath )
+        Debug.Log( "[ExcavatorTrajectoryAgent] continuous_path_v1: independent 47D observation contract; "
+          + "machine_profile supplies mechanical scales only. Legacy 38D models are not compatible.", this );
     }
 
     public override void OnEpisodeBegin()
@@ -699,7 +705,10 @@ namespace RLExcavator
       if ( randomizeTaskModeOnEpisodeBegin )
         taskMode = Random.value < 0.5f ? TrajectoryTaskMode.MoveToDig : TrajectoryTaskMode.CarryMaterial;
 
-      if ( trajectory != null )
+      // 候选连续路径从复位后的真实铲尖生成；旧场景保留原初始化时序。
+      if ( UsesContinuousPath )
+        m_continuousPath.InvalidatePath();
+      else if ( trajectory != null )
         trajectory.ResetPath();
 
       if ( debugEpisodeEvents )
@@ -714,10 +723,13 @@ namespace RLExcavator
     }
 
     /// <summary>
-    /// 38 维观测顺序不变；新训练场景的油缸正向为伸长，旧 checkpoint 不兼容。
+    /// 默认保持 38 维；只有挂载 ContinuousPathTracking 的独立候选场景输出 47 维。
     /// </summary>
     public override void CollectObservations( VectorSensor sensor )
     {
+      // 连续路径必须先从复位后的铲尖生成，再产生首个有效策略观测。
+      if ( UsesContinuousPath && m_waitingForPoseReset && ( controller == null || !controller.IsHoming ) )
+        BeginEpisodeMeasurements();
       // DecisionRequester may re-apply the stored action between decisions.  Only the
       // action following a fresh observation request is a new policy decision.
       m_policyDecisionPending = true;
@@ -735,11 +747,14 @@ namespace RLExcavator
 
       AddVectorObservation( sensor, tipBase / Mathf.Max( positionNormalizer, 0.01f ) );
       AddVectorObservation( sensor, m_tipVelocityLocal );
-      AddLookaheadWaypointObservations( sensor, tipBase );
-
-      sensor.AddObservation( trajectory != null ? trajectory.Progress : 0f );
-      sensor.AddObservation( ClampedTubeCrossTrackRatio() );
-      sensor.AddObservation( IsFinalWaypoint() ? 1f : 0f );
+      if ( UsesContinuousPath )
+        m_continuousPath.AddPathObservations( sensor, tipBase, distanceNormalizer );
+      else {
+        AddLookaheadWaypointObservations( sensor, tipBase );
+        sensor.AddObservation( trajectory != null ? trajectory.Progress : 0f );
+        sensor.AddObservation( ClampedTubeCrossTrackRatio() );
+        sensor.AddObservation( IsFinalWaypoint() ? 1f : 0f );
+      }
       sensor.AddObservation( taskMode == TrajectoryTaskMode.MoveToDig ? 1f : 0f );
       sensor.AddObservation( taskMode == TrajectoryTaskMode.CarryMaterial ? 1f : 0f );
       sensor.AddObservation( Mathf.Clamp01( (float)StepCount / Mathf.Max( maxEpisodeSteps, 1 ) ) );
@@ -760,6 +775,13 @@ namespace RLExcavator
       if ( controller != null && controller.IsHoming )
         return;
 
+      if ( m_waitingForPoseReset && UsesContinuousPath ) {
+        // Homing 结束可能落在两个决策之间；等待新观测，不执行 homing 期间存下的动作。
+        if ( controller != null )
+          controller.SetNormalizedSpeeds( 0f, 0f, 0f, 0f );
+        RequestDecision();
+        return;
+      }
       if ( m_waitingForPoseReset )
         BeginEpisodeMeasurements();
 
@@ -791,6 +813,11 @@ namespace RLExcavator
           m_missingReferenceWarned = true;
         }
         EndEpisodeAsFailure( "missing_reference" );
+        return;
+      }
+
+      if ( UsesContinuousPath ) {
+        EvaluateContinuousPathAction( action, isNewPolicyDecision );
         return;
       }
 
@@ -977,6 +1004,43 @@ namespace RLExcavator
       m_previousBucketPitchErrorAbsDeg = bucketPitchErrorAbsDeg;
     }
 
+    private void EvaluateContinuousPathAction( Vector4 action, bool isNewPolicyDecision )
+    {
+      Vector3 tip = CurrentTipBasePosition();
+      AddReward( m_continuousPath.EvaluateStep(
+        tip, BucketPitchErrorDegrees(), action, Time.fixedDeltaTime, isNewPolicyDecision ) );
+      m_previousAction = action;
+      m_episodeMinDistance = Mathf.Min( m_episodeMinDistance, m_continuousPath.EndpointDistanceM );
+
+      if ( m_continuousPath.Completed ) {
+        m_episodeCompletedPath = true;
+        m_completedPathSerial++;
+        if ( successIndicator != null )
+          successIndicator.Show();
+        EndEpisodeWithStats( true );
+        return;
+      }
+
+      if ( StepCount + 1 >= maxEpisodeSteps ) {
+        m_episodeTimedOut = true;
+        EndEpisodeAsFailure( "timeout" );
+        return;
+      }
+
+      // 复用已有机械活动范围及卡死处理；连续路径没有 waypoint timeout。
+      m_outOfBoundsSteps = failOnOutOfBounds && IsOutOfReachableWorkspace() ? m_outOfBoundsSteps + 1 : 0;
+      if ( m_outOfBoundsSteps > Mathf.Max( outOfBoundsFailureSteps, 0 ) ) {
+        m_episodeOutOfBounds = true;
+        EndEpisodeAsFailure( "out_of_bounds" );
+        return;
+      }
+      float meanAction = ( Mathf.Abs( action.x ) + Mathf.Abs( action.y ) + Mathf.Abs( action.z ) + Mathf.Abs( action.w ) ) / 4f;
+      if ( failOnStuck && IsMechanicallyStuck( tip, meanAction ) ) {
+        m_episodeStuck = true;
+        EndEpisodeAsFailure( "stuck" );
+      }
+    }
+
     private void PublishPolicyAction( Vector4 rawAction )
     {
       Vector4 commanded = controller == null
@@ -1021,6 +1085,36 @@ namespace RLExcavator
     private void BeginEpisodeMeasurements()
     {
       m_waitingForPoseReset = false;
+      if ( UsesContinuousPath && trajectory != null && bucketTip != null ) {
+        trajectory.ResetPath();
+        Transform root = MachineRootFrame();
+        Vector3[] path;
+        if ( m_continuousPath.generateTrainingReference && trajectory.randomizePathOnReset ) {
+          if ( m_continuousPath.preserveTrainingPathShape ) {
+            var sampled = new Vector3[ trajectory.TargetCount ];
+            for ( int i = 0; i < sampled.Length; i++ )
+              sampled[ i ] = root.InverseTransformPoint( trajectory.GetWaypointPosition( i ) );
+            path = ContinuousPathTracking.AlignTrainingReferenceStart( sampled, CurrentTipBasePosition() );
+          }
+          else {
+            Vector3 endpoint = root.InverseTransformPoint( trajectory.GetWaypointPosition( trajectory.TargetCount - 1 ) );
+            float bend = trajectory.reachableWorkspaceUseCurvedPaths ? trajectory.reachableWorkspaceCurveStrength : 0f;
+            path = ContinuousPathTracking.CreateTrainingReferencePath(
+              CurrentTipBasePosition(), endpoint, 5, Random.onUnitSphere, bend );
+          }
+          var worldPoints = new Vector3[ path.Length ];
+          for ( int i = 0; i < path.Length; i++ )
+            worldPoints[ i ] = root.TransformPoint( path[ i ] );
+          trajectory.SetPlannedPath( worldPoints ); // 显示和诊断使用与训练相同的参考。
+        }
+        else {
+          path = new Vector3[ trajectory.TargetCount + 1 ];
+          path[ 0 ] = CurrentTipBasePosition();
+          for ( int i = 0; i < trajectory.TargetCount; i++ )
+            path[ i + 1 ] = root.InverseTransformPoint( trajectory.GetWaypointPosition( i ) );
+        }
+        m_continuousPath.ResetPath( path );
+      }
       m_previousDistance = CurrentDistanceToTargetInternal();
       m_previousProgress = trajectory != null ? trajectory.Progress : 0f;
       m_episodeMinDistance = bucketTip != null && trajectory != null ? m_previousDistance : 0f;
@@ -1049,6 +1143,15 @@ namespace RLExcavator
         return;
 
       m_episodeStatsRecorded = true;
+
+      if ( UsesContinuousPath ) {
+        m_continuousPath.RecordEpisodeStats( completed || m_episodeCompletedPath, taskMode.ToString() );
+        var continuousStats = Academy.Instance.StatsRecorder;
+        continuousStats.Add( "ContinuousPath/TimeoutRate", m_episodeTimedOut ? 1f : 0f, StatAggregationMethod.Average );
+        continuousStats.Add( "ContinuousPath/OutOfBoundsRate", m_episodeOutOfBounds ? 1f : 0f, StatAggregationMethod.Average );
+        continuousStats.Add( "ContinuousPath/StuckRate", m_episodeStuck ? 1f : 0f, StatAggregationMethod.Average );
+        return;
+      }
 
       float finalDistance = CurrentDistanceToTargetInternal();
       float minDistance = float.IsPositiveInfinity( m_episodeMinDistance ) ? finalDistance : m_episodeMinDistance;
@@ -1111,6 +1214,8 @@ namespace RLExcavator
 
     private float CurrentDistanceToTargetInternal()
     {
+      if ( UsesContinuousPath && m_continuousPath.Ready )
+        return m_continuousPath.EndpointDistanceM;
       if ( bucketTip == null || trajectory == null )
         return 0f;
 
@@ -1124,6 +1229,8 @@ namespace RLExcavator
 
     private float CurrentReachThreshold()
     {
+      if ( UsesContinuousPath )
+        return m_continuousPath.endpointToleranceM;
       float threshold = Mathf.Max( targetThreshold, 0f );
       if ( !includeTargetVisualRadiusInThreshold || trajectory == null )
         return threshold;

@@ -1,0 +1,261 @@
+{
+  "baseline_id": "rl_follow_ground_origin_20261014",
+  "frozen_on": "2026-10-14",
+  "scope": "Simulation tracking and tested loading routes. Continuous XY is sampled, not exhaustively certified. Known far-left return stalls are retained in the acceptance report.",
+  "onnx": {
+    "file": "ScaleFollowGroundOrigin_20261014.onnx",
+    "sha256": "0ca787c4f853c5f19b0b166461a8dac65971e0a5118244ecb7d68c269d5c355b",
+    "input": "obs_0[batch,38]",
+    "output": "deterministic_continuous_actions[batch,4]",
+    "action_order": [
+      "boom",
+      "stick",
+      "bucket",
+      "swing"
+    ]
+  },
+  "training": {
+    "run_id": "traj_ground_origin_20261013",
+    "checkpoint_step": 20000034,
+    "seed": 20261013,
+    "checkpoint": {
+      "path": "/home/zhaoshuai/workspace_uinty/RL_prj/RLExcavator/results/traj_ground_origin_20261013/ExcavatorTrajectory/checkpoint.pt",
+      "bytes": 1857845,
+      "sha256": "a33efa9c1988d282820e28c777fad93ca0e90c267d7107177a0f6ddf78afc200"
+    },
+    "initialization": "origin-adjusted warm-start, followed by 20 million PPO steps"
+  },
+  "machine_profile_snapshot": {
+    "purpose": "Provenance only; shared/machine_profile.jsonc remains authoritative.",
+    "source_file": "shared/machine_profile.jsonc",
+    "source_sha256": "cf0e76baf1db381a701447dd0c6707ca1e6d4ca4a39becd7a57ce7d8363dfb8b",
+    "content": {
+      "schema_version": "0.3.2",
+      "machine_id": "scale_excavator_v1",
+      "machine_type": "excavator",
+      "reachable_workspace_file": "reachable_workspaces/scale_excavator_workspace.json",
+      "conventions": {
+        "action_range": [
+          -1.0,
+          1.0
+        ],
+        "cylinder_velocity_unit": "m/s",
+        "cylinder_range_unit": "m",
+        "swing_velocity_unit": "rad/s",
+        "base_frame": "Runtime origin at the swing axis intersection with the track support plane; X forward, Y left, Z up; does NOT rotate with swing. FK extrinsics require calibration.",
+        "ff_axis_meaning": "normalized joystick axis in [-1,1]; deploy maps to servo angle = axis*45 + 90 (deg)"
+      },
+      "action_order": [
+        "boom",
+        "stick",
+        "bucket",
+        "swing"
+      ],
+      "actuators": {
+        "boom": {
+          "action_index": 0,
+          "command_deadzone_positive_normalized": 0.05698005698,
+          "command_deadzone_negative_normalized": 0.108108108108,
+          "joint_type": "prismatic",
+          "max_speed_positive": 0.0351,
+          "max_speed_negative": 0.0185,
+          "range": [
+            -0.08,
+            0.095
+          ],
+          "deploy_position_observation": {
+            "source": "stm32_absolute_cable_encoder",
+            "range": [
+              0.07,
+              0.19
+            ],
+            "status": "firmware_safety_bounds"
+          },
+          "range_enabled_required": true,
+          "sign": 1,
+          "deploy_observation_sign": -1,
+          "deploy_pca_channel": 1,
+          "deploy_drive": "servo_valve",
+          "ff_table": {
+            "v_ref_mps": [
+              0.0,
+              0.01,
+              0.03
+            ],
+            "axis": [
+              0.0,
+              0.15,
+              1.0
+            ]
+          },
+          "calibrated": "positive_negative_speed_from_csv"
+        },
+        "stick": {
+          "action_index": 1,
+          "command_deadzone_positive_normalized": 0.045045045045,
+          "command_deadzone_negative_normalized": 0.089635854342,
+          "joint_type": "prismatic",
+          "max_speed_positive": 0.0444,
+          "max_speed_negative": 0.0357,
+          "range": [
+            -0.09,
+            0.06
+          ],
+          "deploy_position_observation": {
+            "source": "stm32_absolute_cable_encoder",
+            "range": [
+              0.06,
+              0.21
+            ],
+            "status": "firmware_safety_bounds"
+          },
+          "range_enabled_required": true,
+          "sign": 1,
+          "deploy_observation_sign": -1,
+          "deploy_pca_channel": 2,
+          "deploy_drive": "servo_valve",
+          "ff_table": {
+            "v_ref_mps": [
+              0.0,
+              0.01,
+              0.03
+            ],
+            "axis": [
+              0.0,
+              0.15,
+              1.0
+            ]
+          },
+          "calibrated": "positive_negative_speed_from_csv"
+        },
+        "bucket": {
+          "action_index": 2,
+          "command_deadzone_positive_normalized": 0.058479532164,
+          "command_deadzone_negative_normalized": 0.047732696897,
+          "joint_type": "prismatic",
+          "max_speed_positive": 0.0342,
+          "max_speed_negative": 0.0419,
+          "range": [
+            -0.045,
+            0.085
+          ],
+          "deploy_position_observation": {
+            "source": "stm32_absolute_cable_encoder",
+            "range": [
+              0.06,
+              0.17
+            ],
+            "status": "firmware_safety_bounds"
+          },
+          "range_enabled_required": true,
+          "sign": 1,
+          "deploy_observation_sign": -1,
+          "deploy_pca_channel": 0,
+          "deploy_drive": "servo_valve",
+          "ff_table": {
+            "v_ref_mps": [
+              0.0,
+              0.01,
+              0.03
+            ],
+            "axis": [
+              0.0,
+              0.15,
+              1.0
+            ]
+          },
+          "calibrated": "positive_negative_speed_from_csv"
+        },
+        "swing": {
+          "action_index": 3,
+          "command_deadzone_positive_normalized": 0.090175344686,
+          "command_deadzone_negative_normalized": 0.119264165553,
+          "joint_type": "revolute_continuous",
+          "max_speed_positive": 0.6,
+          "max_speed_negative": 0.6,
+          "range": [
+            null,
+            null
+          ],
+          "range_enabled_required": false,
+          "sign": 1,
+          "deploy_observation_sign": -1,
+          "deploy_pca_channel": 3,
+          "deploy_drive": "motor_esc",
+          "ff_table": null,
+          "calibrated": false
+        }
+      },
+      "observation_schema": {
+        "id": "scale_excavator_v2_38d",
+        "total_dim": 38,
+        "action_dim": 4,
+        "waypoint_lookahead": 3,
+        "num_task_modes": 2,
+        "runtime_tip_frame": {
+          "id": "swing_ground_chassis_v1",
+          "origin_in_training_ros_m": [
+            0.0,
+            0.0,
+            0.0
+          ]
+        },
+        "tool_attitude": {
+          "enabled": true,
+          "type": "bucket_pitch"
+        },
+        "normalizers": {
+          "position_normalizer": 1.13,
+          "tip_velocity_scale": 0.05,
+          "distance_normalizer": 1.13,
+          "tube_radius": 0.04,
+          "target_threshold": 0.03,
+          "pitch_norm_deg": 180.0
+        }
+      },
+      "task_profile": {
+        "bucket_pitch_targets_deg": {
+          "MoveToDig": 70.0,
+          "CarryMaterial": 180.0
+        }
+      },
+      "deploy": {
+        "udp_ip": "192.168.2.62",
+        "udp_port": 8888,
+        "rate_hz": 10,
+        "software_deadzone": 0.15,
+        "servo_center_deg": 90,
+        "servo_span_deg": 45,
+        "pump_pca_channel": 4,
+        "safety": {
+          "command_clamp": [
+            -1.0,
+            1.0
+          ],
+          "comms_timeout_to_zero_s": 0.5
+        }
+      }
+    }
+  },
+  "acceptance": {
+    "report": "EvaluationReport/2026-10-14_rl_ai_acceptance/README.md",
+    "offline_file": "EvaluationReport/2026-10-14_rl_ai_acceptance/rl_export/acceptance.json",
+    "fixed_three_summary": "/home/zhaoshuai/workspace_uinty/RL_prj/earthmoving-autonomy/runs/20261014-233253-924495-cycle/summary.json",
+    "fixed_smoke_summary": "/home/zhaoshuai/workspace_uinty/RL_prj/earthmoving-autonomy/runs/20261014-235310-983296-cycle/summary.json",
+    "known_failures": "boundary_findings.json and original candidate collision/timeout traces",
+    "coordinate_bounds_ros_xy_m": [
+      [
+        0.82,
+        -0.45
+      ],
+      [
+        1.0,
+        0.35
+      ]
+    ]
+  },
+  "reachable_workspace_snapshot": {
+    "source_file": "reachable_workspaces/scale_excavator_workspace.json"
+  },
+  "player_profile_note": "The frozen C# player profile retains the old Python offset field; C# training does not consume that Python boundary offset."
+}

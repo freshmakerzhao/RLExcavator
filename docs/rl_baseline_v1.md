@@ -1,6 +1,6 @@
 # RL Follow 基线 v1
 
-2026-10-01 冻结 `Assets/AIModels/ScaleFollow3cm_20260929.onnx` 为第一版 RL 基线。后续先以它跑通选点、挖掘和倾倒流程，再比较新的 RL 算法；不保留短路径模型作为另一份基线。
+2026-10-01 冻结 `Assets/AIModels/ScaleFollow3cm_20260929.onnx` 为第一版 RL 基线，以下记录保留为历史证据。2026-10-14 当前入口已切换到新原点模型 `ScaleFollowGroundOrigin_20261014.onnx`；本模型不删除，回退时必须同时恢复对应的共享原点偏移与匹配路线。当前验证与切换备份见[本轮验收](../../EvaluationReport/2026-10-14_rl_ai_acceptance/README.md)。
 
 - 训练 run：`traj_full_follow_3cm_20260929`，最终 checkpoint：20,000,037 步。
 - ONNX SHA-256：`8590762a1994213214e8a8a229b6feba4f72bc1cb3a7592d35f232dda7f8bce2`。
@@ -24,7 +24,7 @@ cd /home/zhaoshuai/workspace_uinty/RL_prj/earthmoving-autonomy
 python -m earthmoving_autonomy follow
 ```
 
-主项目 `config/follow.jsonc` 默认使用本模型。日常只需修改路点与任务模式；不要用此前方向未修正的模型替换它。
+上述命令读取主项目 `config/follow.jsonc`，当前执行新原点模型，并非本文的旧基线。复现实验请使用匹配模型与机器契约的完整配置；不要只换回 ONNX 文件，也不要使用此前方向未修正的模型。
 
 ## 仓库内容
 
