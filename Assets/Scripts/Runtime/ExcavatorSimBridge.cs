@@ -27,6 +27,7 @@ namespace RLExcavator
       public string[] axis_order;
       public float[] values;
       public int steps;
+      public Vector3[] points_ros_m;
     }
 
     [Serializable]
@@ -129,6 +130,8 @@ namespace RLExcavator
     public int maxStepsPerRequest = 1000;
     [Tooltip("Fixed machine frame used for Follow waypoints.")]
     public Transform machineRoot;
+    [Tooltip("Only show the current RL reference path in the overview/Scene view; excluded from policy cameras.")]
+    public bool showReferencePath = true;
     [Tooltip("随坐标原点迁移而更新；Python 对照共享配置，防止新旧原点混用。")]
     public string machineFrameId = "legacy_machine_root_v1";
     [Tooltip("Physical tip point on the bucket.")]
@@ -176,6 +179,7 @@ namespace RLExcavator
     private readonly float[] m_target = new float[4];
     private bool m_hasTarget;
     private bool m_manualTarget;
+    private ExcavatorReferencePath m_referencePath;
 
     private void Start()
     {
@@ -188,6 +192,7 @@ namespace RLExcavator
       }
 
       m_previousSteppingMode = m_simulation.AutoSteppingMode;
+      m_referencePath = gameObject.AddComponent<ExcavatorReferencePath>();
       m_simulation.AutoSteppingMode = Simulation.AutoSteppingModes.Disabled;
       m_simulation.TimeStep = Time.fixedDeltaTime;
       m_actuators.StopAll();
@@ -207,6 +212,7 @@ namespace RLExcavator
 
     private void Update()
     {
+      if (m_referencePath != null) m_referencePath.visible = showReferencePath;
       int generation = Interlocked.CompareExchange( ref m_disconnectGeneration, 0, 0 );
       if ( generation != m_seenDisconnectGeneration ) {
         m_seenDisconnectGeneration = generation;
@@ -365,6 +371,16 @@ namespace RLExcavator
         effect.material_state = materialTelemetry != null ? materialTelemetry.ReadState() :
           new ExcavatorMaterialTelemetry.State { available = false, reason = "material_reader_missing" };
         Complete( pending, effect );
+        return;
+      }
+
+      if (request.kind == "reference_path") {
+        if (request.epoch != m_epoch || m_epoch == 0) { Reject(pending, request, "wrong_epoch"); return; }
+        try { m_referencePath.SetPath(request.points_ros_m, machineRoot, Camera.main); }
+        catch (ArgumentException error) { Reject(pending, request, error.Message); return; }
+        // Display-only: no physics step, state read, actuator target, or motion sequence change.
+        Complete(pending, new Reply { kind = "reference_path_result", epoch = m_epoch,
+          accepted = true, reason = "reference_path_displayed" });
         return;
       }
 
@@ -572,6 +588,7 @@ namespace RLExcavator
 
     private void ClearTarget()
     {
+      if (m_referencePath != null) m_referencePath.Clear();
       m_hasTarget = false;
       m_manualTarget = false;
       Array.Clear( m_target, 0, m_target.Length );
@@ -600,7 +617,8 @@ namespace RLExcavator
           using ( var writer = new StreamWriter( stream, new UTF8Encoding( false ) ) { AutoFlush = true } ) {
             string line;
             while ( m_running && (line = reader.ReadLine()) != null ) {
-              if ( line.Length > 4096 ) { writer.WriteLine( "{\"accepted\":false,\"reason\":\"line_too_long\"}" ); continue; }
+              // Dense reference curves contain hundreds of XYZ samples; commands remain small.
+              if ( line.Length > 65536 ) { writer.WriteLine( "{\"accepted\":false,\"reason\":\"line_too_long\"}" ); continue; }
               var pending = new Pending { json = line,
                 reply = new TaskCompletionSource<string>( TaskCreationOptions.RunContinuationsAsynchronously ) };
               lock ( m_inboxLock ) m_inbox.Enqueue( pending );
@@ -619,6 +637,7 @@ namespace RLExcavator
 
     private void OnDisable()
     {
+      if (m_referencePath != null) m_referencePath.Clear();
       m_running = false;
       m_listener?.Stop();
       if ( m_actuators != null ) m_actuators.StopAll();
