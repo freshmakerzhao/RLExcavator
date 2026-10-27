@@ -15,11 +15,18 @@ namespace RLExcavator
     public const int ObservationSize = 47;
     public const int PathObservationSize = 21;
 
+    [Header("Optional smooth-reference training (isolated curve scene only)")]
+    [Range(0f, 1f)] public float smoothTrainingReferenceProbability = 0f;
+    [Min(0f)] public float smoothCornerCutDistanceM = 0.08f;
+    [Min(0.001f)] public float smoothSampleSpacingM = 0.01f;
+
     [Header("Training reference generation (episode reset only)")]
     [Tooltip("仅训练场景启用：使用采样终点，从复位后的真实铲尖生成弱弯参考。关闭时保持提供的路径。")]
     public bool generateTrainingReference = false;
     [Tooltip("长路径课程保留工作空间弧形；仅将采样起点偏差逐渐衰减到零。旧短路径课程保持关闭。")]
     public bool preserveTrainingPathShape = false;
+    [Tooltip("仅新课程开启：复位等待不计入执行时间，与 Runtime 的技能时钟一致。旧候选保持原计时。") ]
+    public bool resetClockAfterHoming = false;
 
     [Header("Path observation")]
     [Min(0.001f)] public float corridorRadiusM = 0.08f;
@@ -34,6 +41,10 @@ namespace RLExcavator
     [Header("Reward: rates integrate simulation seconds")]
     [Min(0f)] public float progressWeight = 10f;
     [Min(0f)] public float contourCostPerSecond = 0.5f;
+    [Tooltip("仅新训练课程开启：横偏代价使用几何最近点，有序投影仍负责进度和观测。")]
+    public bool useGeometricContourCost = false;
+    [Min(0f)] public float cornerContourGain = 0f;
+    [Min(0.001f)] public float cornerInfluenceDistanceM = 0.2f;
     [Tooltip("角度改善奖励有正有负；与路径推进一样按差值计算，不乘时间步长。")]
     [Min(0f)] public float pitchProgressWeight = 10f;
     [Min(0f)] public float pitchCostPerSecond = 3f;
@@ -51,6 +62,8 @@ namespace RLExcavator
     private float m_elapsedSeconds;
     private float m_settledSeconds;
     private float m_crossTrackIntegral;
+    private float m_geometricCrossTrackIntegral;
+    private float m_projectionArcGapIntegral;
     private float m_speedIntegral;
     private float m_pitchErrorIntegral;
     private float m_actionDeltaSum;
@@ -65,6 +78,10 @@ namespace RLExcavator
     public float TipSpeedMps { get; private set; }
     public float CrossTrackDistanceM => Ready ? m_projection.Distance : 0f;
     public float MaxCrossTrackDistanceM { get; private set; }
+    public float GeometricCrossTrackDistanceM { get; private set; }
+    public float GeometricMaxCrossTrackDistanceM { get; private set; }
+    public float GeometricMeanCrossTrackDistanceM => m_geometricCrossTrackIntegral / Mathf.Max( m_elapsedSeconds, 1e-6f );
+    public float LastContourPenalty { get; private set; }
     public float LastPitchErrorDeg { get; private set; }
     public float LastProgressReward { get; private set; }
     public float LastPitchProgressReward { get; private set; }
@@ -117,6 +134,8 @@ namespace RLExcavator
       m_previousDecisionAction = Vector4.zero;
       m_elapsedSeconds = m_settledSeconds = 0f;
       m_crossTrackIntegral = m_speedIntegral = m_pitchErrorIntegral = 0f;
+      m_geometricCrossTrackIntegral = m_projectionArcGapIntegral = 0f;
+      GeometricCrossTrackDistanceM = GeometricMaxCrossTrackDistanceM = LastContourPenalty = 0f;
       m_actionDeltaSum = 0f;
       m_decisionCount = 0;
       m_hasPitchSample = false;
@@ -176,12 +195,19 @@ namespace RLExcavator
       LastProgressReward = progressWeight * creditedDelta / Mathf.Max( m_path.Length, 0.01f );
       LastSmoothPenalty = DecisionSmoothPenalty( action, isNewPolicyDecision );
 
-      float contourRatio = Mathf.Min( CrossTrackDistanceM / Mathf.Max( corridorRadiusM, 0.001f ), 4f );
+      // 几何距离单独统计，避免把拐角处的有序投影滞后误报为横向偏差。
+      var geometric = m_path.Project( tip, m_projection.ArcLength, m_path.Length );
+      GeometricCrossTrackDistanceM = geometric.Distance;
+      m_projectionArcGapIntegral += Mathf.Abs( geometric.ArcLength - m_projection.ArcLength ) * elapsed;
+      float contourDistance = useGeometricContourCost ? geometric.Distance : CrossTrackDistanceM;
+      float cornerWeight = useGeometricContourCost
+        ? 1f + cornerContourGain * m_path.CornerImportance( geometric.ArcLength, cornerInfluenceDistanceM ) : 1f;
+      float contourRatio = Mathf.Min( contourDistance / Mathf.Max( corridorRadiusM, 0.001f ), 4f );
+      LastContourPenalty = -elapsed * contourCostPerSecond * cornerWeight * contourRatio * contourRatio;
       float terminalBlend = Mathf.Clamp01( 1f - EndpointDistanceM / Mathf.Max( terminalApproachDistanceM, 0.001f ) );
       float speedCost = terminalSpeedCostPerSecond * terminalBlend * Mathf.Pow( TipSpeedMps / 0.5f, 2f );
-      float reward = LastProgressReward + LastPitchProgressReward + LastSmoothPenalty - elapsed * (
-        contourCostPerSecond * contourRatio * contourRatio
-        + pitchCostPerSecond * LastPitchErrorDeg / 180f
+      float reward = LastProgressReward + LastPitchProgressReward + LastSmoothPenalty + LastContourPenalty - elapsed * (
+        pitchCostPerSecond * LastPitchErrorDeg / 180f
         + energyCostPerSecond * action.sqrMagnitude / 4f
         + timeCostPerSecond + speedCost );
 
@@ -216,6 +242,8 @@ namespace RLExcavator
     {
       m_elapsedSeconds += dt;
       m_crossTrackIntegral += CrossTrackDistanceM * dt;
+      m_geometricCrossTrackIntegral += GeometricCrossTrackDistanceM * dt;
+      GeometricMaxCrossTrackDistanceM = Mathf.Max( GeometricMaxCrossTrackDistanceM, GeometricCrossTrackDistanceM );
       m_speedIntegral += TipSpeedMps * dt;
       m_pitchErrorIntegral += LastPitchErrorDeg * dt;
       MaxCrossTrackDistanceM = Mathf.Max( MaxCrossTrackDistanceM, CrossTrackDistanceM );
@@ -233,6 +261,9 @@ namespace RLExcavator
       stats.Add( "ContinuousPath/DurationS", m_elapsedSeconds, StatAggregationMethod.Average );
       stats.Add( "ContinuousPath/MeanCrossTrackM", m_crossTrackIntegral / duration, StatAggregationMethod.Average );
       stats.Add( "ContinuousPath/MaxCrossTrackM", MaxCrossTrackDistanceM, StatAggregationMethod.Average );
+      stats.Add( "ContinuousPath/GeometricMeanCrossTrackM", GeometricMeanCrossTrackDistanceM, StatAggregationMethod.Average );
+      stats.Add( "ContinuousPath/GeometricMaxCrossTrackM", GeometricMaxCrossTrackDistanceM, StatAggregationMethod.Average );
+      stats.Add( "ContinuousPath/MeanProjectionArcGapM", m_projectionArcGapIntegral / duration, StatAggregationMethod.Average );
       stats.Add( "ContinuousPath/MeanTipSpeedMps", m_speedIntegral / duration, StatAggregationMethod.Average );
       stats.Add( "ContinuousPath/MeanActionDeltaSquared", m_actionDeltaSum / Mathf.Max( m_decisionCount, 1 ), StatAggregationMethod.Average );
       stats.Add( "ContinuousPath/MeanPitchErrorDeg", m_pitchErrorIntegral / duration, StatAggregationMethod.Average );
@@ -243,6 +274,8 @@ namespace RLExcavator
       stats.Add( $"ContinuousPath/{taskMode}/TerminalErrorM", EndpointDistanceM, StatAggregationMethod.Average );
       stats.Add( $"ContinuousPath/{taskMode}/TerminalPitchErrorDeg", LastPitchErrorDeg, StatAggregationMethod.Average );
       stats.Add( $"ContinuousPath/{taskMode}/MeanCrossTrackM", m_crossTrackIntegral / duration, StatAggregationMethod.Average );
+      stats.Add( $"ContinuousPath/{taskMode}/GeometricMeanCrossTrackM", GeometricMeanCrossTrackDistanceM, StatAggregationMethod.Average );
+      stats.Add( $"ContinuousPath/{taskMode}/GeometricMaxCrossTrackM", GeometricMaxCrossTrackDistanceM, StatAggregationMethod.Average );
     }
 
     private static void AddVector( VectorSensor sensor, Vector3 vector )

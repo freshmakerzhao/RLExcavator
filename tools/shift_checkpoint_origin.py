@@ -32,8 +32,9 @@ def observation_shift(origin_shift_unity_m, position_normalizer):
             or not math.isfinite(position_normalizer) or position_normalizer <= 0):
         raise ValueError('Require three finite Unity metres and a positive position normalizer')
     # 新原点向 +Y 移动，物体的新 Y 坐标就向 -Y 移动，均值也必须同向移动。
-    shift = -torch.tensor(origin_shift_unity_m, dtype=torch.float32) / position_normalizer
-    return torch.cat((torch.zeros(9), shift, torch.zeros(26)))
+    shift = -torch.tensor(origin_shift_unity_m, dtype=torch.float32,
+                          device='cpu') / position_normalizer
+    return torch.cat((torch.zeros(9, device='cpu'), shift, torch.zeros(26, device='cpu')))
 
 
 def shifted_state(checkpoint, shift):
@@ -68,8 +69,10 @@ def load_networks(checkpoint):
                                    ObservationType.DEFAULT, 'VectorSensor')]
     settings = NetworkSettings(normalize=True, hidden_units=256, num_layers=2,
                                deterministic=True)
-    actor = SimpleActor(observation, settings, ActionSpec.create_continuous(4)).cpu().eval()
-    critic = ValueNetwork(['extrinsic'], observation, settings).cpu().eval()
+    # ML-Agents 导入可能将默认设备设为 CUDA；离线等价验证固定在 CPU。
+    with torch.device('cpu'):
+        actor = SimpleActor(observation, settings, ActionSpec.create_continuous(4)).eval()
+        critic = ValueNetwork(['extrinsic'], observation, settings).eval()
     # 严格加载拒绝网络架构漂移，避免对未知 checkpoint 默默做“近似”适配。
     actor.load_state_dict(checkpoint['Policy'], strict=True)
     critic.load_state_dict(checkpoint['Optimizer:critic'], strict=True)
@@ -82,12 +85,13 @@ def verify_equivalence(old, new, shift):
     normalizer = old_actor.network_body.observation_encoder.processors[0].normalizer
     mean = normalizer.running_mean
     std = (normalizer.running_variance / normalizer.normalization_steps).sqrt()
-    generator = torch.Generator().manual_seed(20261013)
+    generator = torch.Generator(device='cpu').manual_seed(20261013)
     # 测试 checkpoint 分布附近和裁剪边界；这是代数平移验证，不冒充 Unity 轨迹验收。
     probes = torch.cat((mean[None], mean[None] - 6 * std, mean[None] + 6 * std,
-                        mean + torch.randn(512, 38, generator=generator) * std * 2))
+                        mean + torch.randn(512, 38, generator=generator,
+                                           device='cpu') * std * 2))
     translated = probes + shift
-    with torch.no_grad():
+    with torch.no_grad(), torch.device('cpu'):
         normal_new = new_actor.network_body.observation_encoder.processors[0].normalizer
         norm_old, norm_new = normalizer(probes), normal_new(translated)
         torch.testing.assert_close(norm_old, norm_new, rtol=0, atol=2e-6)

@@ -10,6 +10,35 @@ namespace RLExcavator.Tests
     private Type Reader => Type.GetType("RLExcavator.ExcavatorLidarTelemetry, Assembly-CSharp");
 
     [Test]
+    public void PlacementSelectionKeepsOnlySelectedSensorAndReaderEnabled()
+    {
+      var selector = Type.GetType("RLExcavator.Editor.LidarPlacementExperiment, Assembly-CSharp-Editor");
+      Assert.That(selector, Is.Not.Null);
+      var root = new GameObject("PlacementSelectionTest");
+      root.SetActive(false);
+      try {
+        var readers = Array.CreateInstance(Reader, 2);
+        var sensors = new Behaviour[2];
+        for (int i = 0; i < 2; ++i) {
+          var go = new GameObject("placement" + i);
+          go.transform.SetParent(root.transform);
+          var reader = go.AddComponent(Reader);
+          sensors[i] = (Behaviour)go.AddComponent(Type.GetType("AGXUnity.Sensor.LidarSensor, AGXUnity"));
+          Reader.GetField("sensor").SetValue(reader, sensors[i]);
+          readers.SetValue(reader, i);
+        }
+        var bridge = root.AddComponent(Type.GetType("RLExcavator.ExcavatorSimBridge, Assembly-CSharp"));
+        selector.GetMethod("Select").Invoke(null, new object[] { bridge, readers, readers.GetValue(1) });
+        Assert.That(sensors[0].enabled, Is.False);
+        Assert.That(sensors[1].enabled, Is.True);
+        var selected = (Array)bridge.GetType().GetField("lidarSensors").GetValue(bridge);
+        Assert.That(selected.Length, Is.EqualTo(1));
+        Assert.That(selected.GetValue(0), Is.SameAs(readers.GetValue(1)));
+      }
+      finally { UnityEngine.Object.DestroyImmediate(root); }
+    }
+
+    [Test]
     public void DisabledScanningClearsWindowAndRequiresFreshWindowWhenEnabled()
     {
       var setEnabled = Reader.GetMethod("SetScanningEnabled");
@@ -54,7 +83,7 @@ namespace RLExcavator.Tests
     public void ConfigureScanSetValidatesAllBindingsBeforeChangingAnySensor()
     {
       var configure = Reader.GetMethod("ConfigureScanSet");
-      Assert.That(configure, Is.Not.Null, "三雷达开关必须先整体校验");
+      Assert.That(configure, Is.Not.Null, "已配置雷达的开关必须先整体校验");
       var root = new GameObject("LidarSetSwitchTest");
       root.SetActive(false);
       try {
@@ -71,11 +100,17 @@ namespace RLExcavator.Tests
           Reader.GetField("scanModel").SetValue(reader, i == 2 ? "e1r_fov_proxy_v1" : "airy_fov_proxy_v1");
           readers.SetValue(reader, i);
         }
-        var incomplete = Array.CreateInstance(Reader, 2);
-        incomplete.SetValue(readers.GetValue(0), 0);
-        incomplete.SetValue(readers.GetValue(1), 1);
-        Assert.Throws<TargetInvocationException>(() => configure.Invoke(null, new object[] { incomplete, false }));
+        var empty = Array.CreateInstance(Reader, 0);
+        Assert.Throws<TargetInvocationException>(() => configure.Invoke(null, new object[] { empty, false }));
         Assert.That(sensors, Has.All.Property("enabled").True);
+        var pair = Array.CreateInstance(Reader, 2);
+        pair.SetValue(readers.GetValue(0), 0);
+        pair.SetValue(readers.GetValue(2), 1);
+        configure.Invoke(null, new object[] { pair, false });
+        Assert.That(sensors[0].enabled, Is.False);
+        Assert.That(sensors[1].enabled, Is.True, "未纳入本次配置的传感器不能被改变");
+        Assert.That(sensors[2].enabled, Is.False);
+        configure.Invoke(null, new object[] { pair, true });
         Reader.GetField("sensor").SetValue(readers.GetValue(2), sensors[1]);
         var failure = Assert.Throws<TargetInvocationException>(() => configure.Invoke(null, new object[] { readers, false }));
         Assert.That(failure.InnerException, Is.TypeOf<InvalidOperationException>());
@@ -137,7 +172,7 @@ namespace RLExcavator.Tests
     }
 
     [Test]
-    public void ThreeSensorReadRequiresMatchingModelsAndWindows()
+    public void ConfiguredSensorSubsetRequiresMatchingModelsAndWindows()
     {
       var merge = Reader.GetMethod("CombineStates");
       Assert.That(merge, Is.Not.Null, "三雷达读取尚未实现");
@@ -181,6 +216,14 @@ namespace RLExcavator.Tests
       type.GetField("scan_model").SetValue(scans.GetValue(2), "e1r_fov_proxy_v1");
       var single = Array.CreateInstance(type, 1);
       single.SetValue(scans.GetValue(0), 0);
+      Assert.That(Field<bool>(merge.Invoke(null, new object[] { single, 3 }), "available"), Is.True);
+      Assert.That(Field<int>(merge.Invoke(null, new object[] { single, 3 }), "point_count"), Is.EqualTo(1));
+      var pair = Array.CreateInstance(type, 2);
+      pair.SetValue(scans.GetValue(0), 0);
+      pair.SetValue(scans.GetValue(2), 1);
+      Assert.That(Field<bool>(merge.Invoke(null, new object[] { pair, 3 }), "available"), Is.True);
+      Assert.That(Field<bool>(merge.Invoke(null, new object[] { Array.CreateInstance(type, 0), 3 }), "available"), Is.False);
+      type.GetField("sensor_id").SetValue(single.GetValue(0), "unknown");
       Assert.That(Field<bool>(merge.Invoke(null, new object[] { single, 3 }), "available"), Is.False);
     }
 

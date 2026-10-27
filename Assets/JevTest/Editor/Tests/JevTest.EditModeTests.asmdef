@@ -1,0 +1,6 @@
+{
+  "name": "JevTest.EditModeTests",
+  "includePlatforms": ["Editor"],
+  "autoReferenced": false,
+  "optionalUnityReferences": ["TestAssemblies"]
+}

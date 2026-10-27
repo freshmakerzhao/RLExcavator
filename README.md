@@ -14,9 +14,15 @@ python -m earthmoving_autonomy teleop
 ```
 
 Unity 监听 `127.0.0.1:18790`。机器参数仍读取同级 `shared/machine_profile.jsonc`。不要移动整个仓库来改变这个相对位置。
+`ExcavatorRuntime` 是基础接口场景。当前固定传感器布局实验使用
+`Assets/Scenes/ExcavatorRuntimeLidarPlacements.unity`；左右停车实验使用
+`ExcavatorRuntimeCameraTruck*.unity`，实验配置与结果从 [ExperimentData](../ExperimentData/README.md) 查找。
+`ExcavatorRuntimeCAT365` 和 `jev_test` 是独立开发场景，不代表主线跨本体验收完成；
+CAT 场景额外依赖工作区 `shared/machines/cat365_sim.jsonc`。
+Follow执行时，Main Camera与Scene视图只显示RL真正使用的一条青色参考路径；可在`ExcavatorSimBridge`切换`Show Reference Path`。该线不进入策略相机，技能结束后清除。
 `MachineProfileLoader` 使用项目已有的 Newtonsoft.Json 读取 JSONC，支持 `//` 和 `/* */` 注释；可达工作空间仍是 Unity 导出的标准 JSON。
 
-运行场景的 `MachineRoot` 位于**回转轴线与履带支撑平面的交点**，固定到 `Body_Track`，ROS 轴向为前/左/上，原点身份 `swing_ground_chassis_v1`。在 Hierarchy 搜索 `MachineRoot` 即可查看；调整坐标不移动物理模型。训练场景使用同一定义，当前 Follow 已切换到新原点模型 `ScaleFollowGroundOrigin_20261014.onnx`，Python 模型入口平移为零；旧模型保留用于成对回退。定义见 [ADR-0023](../docs/adr/0023-swing-axis-runtime-origin.md)，模型与运行验证见[本轮验收](../EvaluationReport/2026-10-14_rl_ai_acceptance/README.md)。
+运行场景的 `MachineRoot` 位于**回转轴线与履带支撑平面的交点**，固定到 `Body_Track`，ROS 轴向为前/左/上，原点身份 `swing_ground_chassis_v1`。在 Hierarchy 搜索 `MachineRoot` 即可查看；调整坐标不移动物理模型。训练场景使用同一定义。旧 38 维 Follow 示例保留 `ScaleFollowGroundOrigin_20261014.onnx`；当前曲线作业实验由 Python 加载 `ScaleContinuousPathV5Original3M_20261021.onnx`（47 维、3,000,018 步），使用 `follow_v5_curve.jsonc` 或显式左右对称版 `follow_v5_curve_canonical.jsonc`。Unity 接收物理动作与参考曲线，不在运行场景中额外推理该策略。原点定义见 [ADR-0023](../docs/adr/0023-swing-axis-runtime-origin.md)。
 
 在 **Scene 视图打开 Gizmos**，即可看到支撑平面上正式原点的黄色球/圆环与 ROS 坐标轴：红 X 向前、绿 Y 向左、蓝 Z 向上；此前青色候选点不再单独保留。无需选中物体，Play 时也可见，标记可透过机体显示。`MachineRootGizmo` 只在编辑器 Scene 相机绘制，不进入 Game/ACT 相机图像、雷达点云或物理碰撞；关闭 Scene 的 Gizmos 可隐藏。
 
@@ -66,7 +72,7 @@ docs/                            运行说明与基线/训练说明
 
 ## 阅读代码
 
-1. `Scripts/Runtime/ExcavatorSimBridge.cs`：接收 `reset`、`velocity_reference`、`manual_action`、`step`、`observe`、`read_effect`、`read_terrain`、`configure_lidar`、`read_lidar`，返回状态。
+1. `Scripts/Runtime/ExcavatorSimBridge.cs`：接收 `reset`、`velocity_reference`、`manual_action`、`step`、`observe`、`read_effect`、`read_terrain`、`configure_lidar`、`read_lidar`，返回状态；`reference_path`仅交给`ExcavatorReferencePath.cs`显示当前参考线。
 2. `Scripts/Runtime/ExcavatorRuntimeActuators.cs`：把命令交给 AGX 约束，读取四轴状态。
 3. `Scripts/Runtime/ExcavatorRuntimeSoil.cs`：复位土体和颗粒；`ExcavatorCameraCapture.cs` 采集图像。
 4. `Scripts/Runtime/ExcavatorWallContacts.cs`：只读记录挖掘机与四面沙池墙的 AGX 接触；状态中的 `wall_contact` 自成功 reset 起累计，忽略颗粒、底板和卡车，不修改动作。字段定义见[设备契约](../earthmoving-autonomy/docs/follow-sim-contract.md)。
@@ -79,7 +85,9 @@ docs/                            运行说明与基线/训练说明
 
 ## 仿真雷达
 
-运行场景采用 **左右两颗竖直朝下的 Airy 视场代理＋大臂下缘 E1R 视场代理**，为 2026-10-13 用户确认的固定布置。Airy 随上车转动，E1R 还随大臂俯仰。Hierarchy 搜索 `Lidar`，选中后按 F 定位；蓝色为 `LidarAiryRight`，绿色为 `LidarAiryLeft`，橙色为 `LidarE1RFront`。这些实体和支架仅用于示意，不参与碰撞或光线遮挡，也不是厂家外形模型。它们位于 `SensorIllustration` 层，从 ACT 前相机排除并关闭投影，避免示意几何改变冻结策略的视觉输入；真机外壳与相机的安装间距仍须单独验证。
+当前 `ExcavatorRuntimeLidarPlacements` 默认启用料池与墙之间架上离地 **110 cm 的单颗 E1R 视场代理**，其他安装候选及机身/大臂雷达不启用；机身左右相机保留用户调整后的安装变换。编辑器工具 `LidarPlacementExperiment` 用于独立安装位置实验，不应在冻结实验中随意切换。
+
+下表记录基础 `ExcavatorRuntime` 保留的 2026-10-13 历史三雷达布局：**左右两颗竖直朝下的 Airy＋大臂下缘 E1R**。Airy 随上车转动，E1R 还随大臂俯仰。Hierarchy 搜索 `Lidar`，选中后按 F 定位。示意外壳位于 `SensorIllustration` 层，不参与碰撞或遮挡，从 ACT 前相机排除并关闭投影；真机安装效果需单独验证。
 
 | 节点 | 初始 Unity 世界坐标（m） | 安装与扫描 |
 |---|---|---|
@@ -89,13 +97,13 @@ docs/                            运行说明与基线/训练说明
 
 AGX 当前未提供这两个型号的预设，使用 `GenericHorizontalSweep` 验证视场和场景遮挡：Airy 水平 360°、倒装前原生垂直 0～90°、360×48 射线/周期、0.1～60 m；E1R 水平 120°、垂直 90°、192×135 射线/周期、0.1～30 m。均为 10 Hz，累计 0.2 s 后提供完整窗口。**Airy 射线密度被简化，E1R 使用扫描式代理，未复现真实 Flash 时序、测距噪声或精度。** 不能据此直接确定真机安装效果。
 
-当前参数、重新采集的安装图/三台点云/处理阶段图和验收数据集中在[固定雷达布置记录](../EvaluationReport/2026-10-13_fixed_lidar_layout/README.md)。此前的[右 Airy 倾斜试验](../EvaluationReport/2026-10-13_airy_side_aim/README.md)和[大臂安装试验](../EvaluationReport/2026-10-13_boom_lidar/README.md)仅保留为历史对照，其中倾斜右 Airy 的覆盖数字不代表当前固定布置。
+上述历史三雷达参数与安装图在[固定雷达布置记录](../EvaluationReport/2026-10-13_fixed_lidar_layout/README.md)。当前架上方案见[架上 110 cm 验证](../EvaluationReport/2026-10-23_shelf_lidar_110cm/README.md)，最终批次的传感器身份以各批冻结快照为准。
 
-两台 Airy 位于 `Body_Swing` 下，E1R 位于 `Body_Boom` 下，每台使用 `AGXUnity.Sensor.LidarSensor` 和 `ExcavatorLidarTelemetry`。桥接器 `lidarSensors` 绑定三台不同传感器、共用机器根；遥测按采样物理步的传感器变换将点转到机器根坐标，不能将 E1R 相对机器根的外参当常量。`read_lidar` 返回 `lidar_scan_set_v1`，保留每台的 `scan_model`、点、位置和时间窗；Python 校验共同窗口后合并，缺一台时整体不可用。只读不再次扫描；reset 清空三台缓存。
+每台雷达使用 `AGXUnity.Sensor.LidarSensor` 和 `ExcavatorLidarTelemetry`。桥接器 `lidarSensors` 支持 **1–3 台非空、不重复的显式集合**，共用机器根；遥测按采样物理步的传感器变换将点转到机器根坐标，不能将随臂传感器外参当常量。`read_lidar` 返回 `lidar_scan_set_v1`，保留每台的 `scan_model`、点、位置和时间窗；Python 校验已配置集合的共同窗口后合并。已配置传感器缺测时整体不可用，未配置的安装候选不参与校验。只读不再次扫描；reset 清空已配置缓存。
 
-每次 reset 后，Python 可发送 `{"kind":"configure_lidar","epoch":当前回合,"enabled":true或false}`。该配置不推进物理、不读取 RGB、不消耗动作序号；关闭会禁用三台 AGX `LidarSensor` 的原生射线扫描并清空缓存，`read_lidar` 明确返回 `lidar_disabled_by_configuration`。重新开启也清空旧缓存，需正常推进物理形成新的完整 0.2 s 窗口；reset 本身只清缓存，不更改开关。请求必须包含真正的 JSON 布尔值，并完整绑定当前三台雷达。
+每次 reset 后，Python 可发送 `{"kind":"configure_lidar","epoch":当前回合,"enabled":true或false}`。该配置不推进物理、不读取 RGB、不消耗动作序号；关闭会禁用已配置 AGX `LidarSensor` 的原生射线扫描并清空缓存，`read_lidar` 明确返回 `lidar_disabled_by_configuration`。重新开启也清空旧缓存，需正常推进物理形成新的完整 0.2 s 窗口；reset 本身只清缓存，不更改开关。请求必须包含真正的 JSON 布尔值，并完整绑定当前配置集合。
 
-AGX SensorEnvironment 要求 `Simulation.PreIntegratePositions=true`，已写入运行场景。雷达未加入 RL/ACT 策略输入，RL 训练场景不启用这套雷达。主项目运行 `python -m earthmoving_autonomy lidar` 可生成高程图与真值对照；命令会 reset，不能与遥操作或循环任务同时使用。详细契约见[第 9 节](../earthmoving-autonomy/docs/follow-sim-contract.md#9-仿真-lidar-只读扫描2026-10-12)，安装覆盖及回归见[三雷达验证记录](../EvaluationReport/2026-10-12_airy_e1r_layout/README.md)。尚未实现料池/卡车定位、车厢装满判断或人员识别。
+AGX SensorEnvironment 要求 `Simulation.PreIntegratePositions=true`，已写入运行场景。雷达未加入 RL/ACT 策略输入，RL 训练场景不启用这套雷达。主项目运行 `python -m earthmoving_autonomy lidar` 可生成高程图与真值对照；命令会 reset，不能与遥操作或循环任务同时使用。详细契约见[第 9 节](../earthmoving-autonomy/docs/follow-sim-contract.md#9-仿真-lidar-只读扫描2026-10-12)，安装覆盖及回归见[三雷达验证记录](../EvaluationReport/2026-10-12_airy_e1r_layout/README.md)。Python 侧已接入使用颜色与平面先验的车厢候选定位，尚不等于通用料池/卡车定位；车厢装满判断与人员识别未实现。
 
 ## 检查与训练
 
@@ -104,6 +112,12 @@ Unity Play 后，从本仓库目录检查设备协议：
 ```bash
 python tools/sim_bridge_client.py --smoke
 python tools/sim_bridge_client.py --manual-axis boom
+```
+
+训练辅助工具测试使用含 ML-Agents 的环境，离线运行，无需启动 Unity：
+
+```bash
+conda activate ml_agents
 python -m unittest discover -s tools/tests -v
 ```
 
@@ -113,6 +127,8 @@ Unity Test Runner 的 EditMode 覆盖当前协议、杆量、机器参数、训�
 - [RL Follow 基线](docs/rl_baseline_v1.md)
 - [训练环境、分段训练与导出](docs/mlagents_training_environment.md)
 - [V4 扩大连续路径课程、采样范围与训练记录](../EvaluationReport/2026-10-19_continuous_path_rl_v4/README.md)：独立 Expanded 场景与 player，从 V3 权重继续训练。
+- [V5 任务起姿、装配对齐与继续训练](../EvaluationReport/2026-10-21_continuous_path_rl_v5/README.md)：独立 Mission 场景补充运输／返回任务；V5 Original 3M 已由 Python 曲线配置接入，历史与续训权重分别记录。
+- [V5 固定用例配对与曲线续训](../EvaluationReport/2026-10-21_continuous_path_rl_v5/paired_curve_stage/README.md)：三组权重比较、两铲交接和独立 Curve 场景的运行入口。
 - [本次清理及验收记录](../EvaluationReport/2026-10-05_unity_cleanup.md)
 
 `docs/rl_excavator_master_execution_plan_2026-06-25.md` 保留为共享配置仍引用的历史契约来源；当前运行入口以本 README 和上述三份说明为准。基线 metadata 的历史路径与哈希不因目录整理而重写。

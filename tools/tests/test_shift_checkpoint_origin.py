@@ -17,6 +17,17 @@ BASELINE = Path(__file__).parents[2] / (
     'results/traj_full_follow_3cm_20260929/ExcavatorTrajectory/checkpoint.pt')
 
 
+class ObservationShiftDeviceTests(unittest.TestCase):
+    def test_shift_stays_on_cpu_with_non_cpu_default_device(self):
+        with torch.device('meta'):
+            shift = origin_shift.observation_shift((0.01, -0.5, -0.058), 0.5)
+        self.assertEqual(shift.device.type, 'cpu')
+        expected = torch.cat((torch.zeros(9, device='cpu'),
+                              torch.tensor([-0.02, 1.0, 0.116], device='cpu'),
+                              torch.zeros(26, device='cpu')))
+        torch.testing.assert_close(shift, expected)
+
+
 @unittest.skipUnless(BASELINE.is_file(), 'Frozen local checkpoint not installed')
 class ActualCheckpointTests(unittest.TestCase):
     def test_new_checkpoint_preserves_actions_values_and_source(self):
@@ -29,7 +40,7 @@ class ActualCheckpointTests(unittest.TestCase):
             self.assertLess(report['verification']['value_max_abs_error'], 1e-4)
             old = torch.load(BASELINE, map_location='cpu', weights_only=True)
             new = torch.load(output, map_location='cpu', weights_only=True)
-            delta = torch.tensor([0.01, -0.5, -0.058]) / 0.5
+            delta = torch.tensor([0.01, -0.5, -0.058], device='cpu') / 0.5
             changed = []
             for section in ('Policy', 'Optimizer:critic'):
                 for key, value in old[section].items():

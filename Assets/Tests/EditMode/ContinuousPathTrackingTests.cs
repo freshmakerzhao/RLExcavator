@@ -8,6 +8,26 @@ namespace RLExcavator.Tests
 {
   public class ContinuousPathTrackingTests
   {
+    [Test]
+    public void GeometricCornerCostDoesNotConfuseProjectionLagWithContourError()
+    {
+      var useGeometry = m_tracking.GetType().GetField( "useGeometricContourCost" );
+      Assert.That( useGeometry, Is.Not.Null, "Refinement needs a separate geometric training cost." );
+      Assert.That( useGeometry.GetValue( m_tracking ), Is.False, "Existing scenes retain their original reward." );
+      useGeometry.SetValue( m_tracking, true );
+      m_tracking.GetType().GetField( "cornerContourGain" ).SetValue( m_tracking, 2f );
+      m_tracking.GetType().GetField( "contourCostPerSecond" ).SetValue( m_tracking, 1f );
+      Reset( Vector3.zero, Vector3.right, Vector3.right + Vector3.up );
+      Step( Vector3.right * 0.92f );
+      Step( new Vector3( 0.96f, 0.08f, 0f ) );
+      Assert.That( Property<float>( "GeometricCrossTrackDistanceM" ), Is.EqualTo( 0.04f ).Within( 1e-5f ) );
+      Assert.That( Property<float>( "CrossTrackDistanceM" ), Is.GreaterThan( 0.045f ),
+        "Ordered progress remains bounded; changing the cost must not hide its arc lag." );
+      Assert.That( Property<float>( "LastContourPenalty" ), Is.EqualTo( -0.04f ).Within( 1e-5f ),
+        "True distance 4cm, corner weight 1.6 and elapsed 0.1s determine the cost." );
+      Assert.That( Property<bool>( "Completed" ), Is.False );
+    }
+
     private GameObject m_object;
     private Component m_tracking;
 

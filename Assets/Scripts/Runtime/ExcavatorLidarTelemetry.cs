@@ -41,7 +41,7 @@ namespace RLExcavator
       public float[] sensor_position_ros_m = new float[3];
     }
 
-    /// <summary>三雷达共同窗口；每台数据保留来源，Python 校验后再拼接 XYZ。</summary>
+    /// <summary>已配置雷达的共同窗口；每台保留来源，Python 校验后再拼接 XYZ。</summary>
     [Serializable]
     public sealed class ScanSet
     {
@@ -66,12 +66,12 @@ namespace RLExcavator
       return CombineStates(scans, epoch);
     }
 
-    /// <summary>先检查完整接线，再统一启停三台；失败时不能只切换部分雷达。</summary>
+    /// <summary>先检查已配置子集的接线，再统一启停；失败时不切换任何一台。</summary>
     public static void ConfigureScanSet(ExcavatorLidarTelemetry[] readers, bool enabled)
     {
       if (!HasValidBindings(readers))
         throw new InvalidOperationException("lidar_set_invalid_bindings");
-      if (!readers.Select(r => r.sensorId).OrderBy(id => id).SequenceEqual(new[] { "LidarAiryLeft", "LidarAiryRight", "LidarE1RFront" }))
+      if (!ValidSensorIds(readers.Select(r => r.sensorId).ToArray()))
         throw new InvalidOperationException("lidar_set_unconfigured");
       if (readers.Any(r => r.scanModel != (r.sensorId == "LidarE1RFront" ? "e1r_fov_proxy_v1" : "airy_fov_proxy_v1")))
         throw new InvalidOperationException("lidar_set_model_mismatch");
@@ -79,16 +79,20 @@ namespace RLExcavator
     }
 
     private static bool HasValidBindings(ExcavatorLidarTelemetry[] readers) =>
-      readers != null && readers.Length == 3 && readers.All(r => r != null && r.sensor != null && r.machineRoot != null)
-      && readers.Select(r => r.sensor).Distinct().Count() == 3
+      readers != null && readers.Length >= 1 && readers.Length <= 3 && readers.All(r => r != null && r.sensor != null && r.machineRoot != null)
+      && readers.Select(r => r.sensor).Distinct().Count() == readers.Length
       && readers.All(r => r.machineRoot == readers[0].machineRoot);
+
+    private static bool ValidSensorIds(string[] ids) =>
+      ids.Length >= 1 && ids.Length <= 3 && ids.Distinct().Count() == ids.Length
+      && ids.All(id => id == "LidarAiryLeft" || id == "LidarAiryRight" || id == "LidarE1RFront");
 
     public static ScanSet CombineStates(State[] scans, int epoch)
     {
       var result = new ScanSet { epoch = epoch, scans = scans ?? Array.Empty<State>(),
         point_count = scans?.Sum(s => s?.point_count ?? 0) ?? 0 };
-      if (scans == null || scans.Length != 3 || scans.Any(s => s == null)
-          || !scans.Select(s => s.sensor_id).OrderBy(id => id).SequenceEqual(new[] { "LidarAiryLeft", "LidarAiryRight", "LidarE1RFront" }))
+      if (scans == null || scans.Any(s => s == null)
+          || !ValidSensorIds(scans.Select(s => s.sensor_id).ToArray()))
         return result;
       if (scans.All(s => s.reason == "lidar_disabled_by_configuration")) {
         result.reason = "lidar_disabled_by_configuration";

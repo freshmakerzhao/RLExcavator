@@ -15,6 +15,9 @@ namespace RLExcavator
     public Constraint[] bucket;
     public Constraint swing;
 
+    [Tooltip("机型配置相对 Unity 项目目录的路径；留空沿用 shared/machine_profile.jsonc。")]
+    public string machineProfilePath = "";
+
     public float boomAcceleration = 0.7f;
     public float bucketAcceleration = 0.7f;
     public int homeSettleSteps = 60;
@@ -43,7 +46,7 @@ namespace RLExcavator
       m_rootPosition = transform.position;
       m_rootRotation = transform.rotation;
       try {
-        MachineProfile profile = MachineProfileLoader.Load();
+        MachineProfile profile = LoadMachineProfile();
         string[] order = profile.ActionOrder;
         if ( order.Length != 4 || order[0] != "boom" || order[1] != "stick" ||
              order[2] != "bucket" || order[3] != "swing" )
@@ -69,6 +72,13 @@ namespace RLExcavator
     {
       if ( m_ready && !m_homeCaptured )
         CaptureHomePose();
+    }
+
+    private MachineProfile LoadMachineProfile()
+    {
+      if (string.IsNullOrEmpty(machineProfilePath)) return MachineProfileLoader.Load();
+      string path = System.IO.Path.GetFullPath(System.IO.Path.Combine(Application.dataPath, "..", machineProfilePath));
+      return MachineProfileLoader.LoadFromPath(path);
     }
 
     public bool TrySetPhysicalSpeeds( float boomSpeed, float stickSpeed, float bucketSpeed, float swingSpeed )

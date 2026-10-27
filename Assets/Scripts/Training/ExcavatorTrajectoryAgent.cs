@@ -371,6 +371,11 @@ namespace RLExcavator
     private int m_policyActionSequence = 0;
     private bool m_policyDecisionPending = false;
     private MachineProfile m_machineProfile = null;
+    private ContinuousPathMissionCourse m_missionCourse;
+    private ContinuousPathBenchmark m_benchmark;
+    private int m_episodeStartStep;
+    private int EffectiveEpisodeStep => UsesContinuousPath && m_continuousPath.resetClockAfterHoming
+      ? ( m_waitingForPoseReset ? 0 : Mathf.Max( StepCount - m_episodeStartStep, 0 ) ) : StepCount;
     private ContinuousPathTracking m_continuousPath;
     private bool UsesContinuousPath => m_continuousPath != null && m_continuousPath.isActiveAndEnabled;
 
@@ -639,6 +644,8 @@ namespace RLExcavator
       maxEpisodeSteps = kLockedMaxEpisodeSteps;
       MaxStep = kLockedMaxEpisodeSteps;
       m_continuousPath = GetComponent<ContinuousPathTracking>();
+      m_missionCourse = GetComponent<ContinuousPathMissionCourse>();
+      m_benchmark = GetComponent<ContinuousPathBenchmark>();
 
       if ( environmentRoot == null )
         environmentRoot = transform.root;
@@ -647,6 +654,10 @@ namespace RLExcavator
         ResolveMissingReferences();
 
       LoadMachineProfileAndApplyObservationConstants();
+      // Agent.Initialize may run before this sibling component's OnEnable.
+      // Read its configured state here; isActiveAndEnabled is lifecycle-dependent.
+      if ( m_continuousPath != null && m_continuousPath.enabled && m_continuousPath.resetClockAfterHoming )
+        MaxStep = 0; // profile加载后关闭自动计时；新课程显式限制1500个有效执行步。
       ValidateReferences();
       if ( UsesContinuousPath )
         Debug.Log( "[ExcavatorTrajectoryAgent] continuous_path_v1: independent 47D observation contract; "
@@ -705,6 +716,9 @@ namespace RLExcavator
       if ( randomizeTaskModeOnEpisodeBegin )
         taskMode = Random.value < 0.5f ? TrajectoryTaskMode.MoveToDig : TrajectoryTaskMode.CarryMaterial;
 
+      if ( m_benchmark != null )
+        m_benchmark.Prepare( this );
+
       // 候选连续路径从复位后的真实铲尖生成；旧场景保留原初始化时序。
       if ( UsesContinuousPath )
         m_continuousPath.InvalidatePath();
@@ -713,6 +727,9 @@ namespace RLExcavator
 
       if ( debugEpisodeEvents )
         Debug.Log( $"[ExcavatorTrajectoryAgent] Episode {CurrentEpisode} begin." );
+
+      if ( UsesContinuousPath && m_missionCourse != null && m_missionCourse.enabled )
+        m_missionCourse.PrepareEpisode( controller );
 
       if ( resetPoseOnEpisodeBegin && controller != null ) {
         controller.BeginHomePoseReset( poseResetSettleSteps );
@@ -757,7 +774,7 @@ namespace RLExcavator
       }
       sensor.AddObservation( taskMode == TrajectoryTaskMode.MoveToDig ? 1f : 0f );
       sensor.AddObservation( taskMode == TrajectoryTaskMode.CarryMaterial ? 1f : 0f );
-      sensor.AddObservation( Mathf.Clamp01( (float)StepCount / Mathf.Max( maxEpisodeSteps, 1 ) ) );
+      sensor.AddObservation( Mathf.Clamp01( (float)EffectiveEpisodeStep / Mathf.Max( maxEpisodeSteps, 1 ) ) );
 
       sensor.AddObservation( m_previousAction.x );
       sensor.AddObservation( m_previousAction.y );
@@ -1009,6 +1026,8 @@ namespace RLExcavator
       Vector3 tip = CurrentTipBasePosition();
       AddReward( m_continuousPath.EvaluateStep(
         tip, BucketPitchErrorDegrees(), action, Time.fixedDeltaTime, isNewPolicyDecision ) );
+      if ( m_benchmark != null )
+        m_benchmark.RecordSample( this, m_continuousPath, tip );
       m_previousAction = action;
       m_episodeMinDistance = Mathf.Min( m_episodeMinDistance, m_continuousPath.EndpointDistanceM );
 
@@ -1021,7 +1040,7 @@ namespace RLExcavator
         return;
       }
 
-      if ( StepCount + 1 >= maxEpisodeSteps ) {
+      if ( EffectiveEpisodeStep + 1 >= maxEpisodeSteps ) {
         m_episodeTimedOut = true;
         EndEpisodeAsFailure( "timeout" );
         return;
@@ -1085,11 +1104,19 @@ namespace RLExcavator
     private void BeginEpisodeMeasurements()
     {
       m_waitingForPoseReset = false;
+      m_episodeStartStep = StepCount;
       if ( UsesContinuousPath && trajectory != null && bucketTip != null ) {
         trajectory.ResetPath();
         Transform root = MachineRootFrame();
         Vector3[] path;
-        if ( m_continuousPath.generateTrainingReference && trajectory.randomizePathOnReset ) {
+        if ( m_missionCourse != null && m_missionCourse.enabled ) {
+          path = m_missionCourse.CreateReference( CurrentTipBasePosition() );
+          var missionWorldPoints = new Vector3[ path.Length ];
+          for ( int i = 0; i < path.Length; i++ )
+            missionWorldPoints[ i ] = root.TransformPoint( path[ i ] );
+          trajectory.SetPlannedPath( missionWorldPoints );
+        }
+        else if ( m_continuousPath.generateTrainingReference && trajectory.randomizePathOnReset ) {
           if ( m_continuousPath.preserveTrainingPathShape ) {
             var sampled = new Vector3[ trajectory.TargetCount ];
             for ( int i = 0; i < sampled.Length; i++ )
@@ -1113,7 +1140,18 @@ namespace RLExcavator
           for ( int i = 0; i < trajectory.TargetCount; i++ )
             path[ i + 1 ] = root.InverseTransformPoint( trajectory.GetWaypointPosition( i ) );
         }
+        bool smoothReference = m_continuousPath.smoothTrainingReferenceProbability > 0f &&
+          Random.value < m_continuousPath.smoothTrainingReferenceProbability;
+        if ( smoothReference )
+          path = SmoothReferencePath.Build( path, m_continuousPath.smoothCornerCutDistanceM,
+            m_continuousPath.smoothSampleSpacingM );
         m_continuousPath.ResetPath( path );
+        if ( m_continuousPath.smoothTrainingReferenceProbability > 0f ) {
+          Academy.Instance.StatsRecorder.Add( "ContinuousPath/TrainingSmoothedReferenceRate", smoothReference ? 1f : 0f );
+          Academy.Instance.StatsRecorder.Add( "ContinuousPath/TrainingReferencePoints", path.Length );
+        }
+        if ( m_benchmark != null )
+          m_benchmark.RecordStart( this, path );
       }
       m_previousDistance = CurrentDistanceToTargetInternal();
       m_previousProgress = trajectory != null ? trajectory.Progress : 0f;
@@ -1134,6 +1172,8 @@ namespace RLExcavator
         m_lastEpisodeEndReason = "success";
 
       RecordEpisodeStatsIfNeeded( completed );
+      if ( m_benchmark != null )
+        m_benchmark.RecordEnd( completed, completed ? "success" : m_episodeFailureReason );
       EndEpisode();
     }
 
@@ -1147,6 +1187,17 @@ namespace RLExcavator
       if ( UsesContinuousPath ) {
         m_continuousPath.RecordEpisodeStats( completed || m_episodeCompletedPath, taskMode.ToString() );
         var continuousStats = Academy.Instance.StatsRecorder;
+        bool missionCourse = m_missionCourse != null && m_missionCourse.enabled;
+        string course = missionCourse ? "Mission" : "Workspace";
+        string courseTask = $"ContinuousPath/{course}/{taskMode}";
+        float finished = completed || m_episodeCompletedPath ? 1f : 0f;
+        continuousStats.Add( $"{courseTask}/SuccessRate", finished, StatAggregationMethod.Average );
+        continuousStats.Add( $"{courseTask}/TerminalErrorM", m_continuousPath.EndpointDistanceM, StatAggregationMethod.Average );
+        continuousStats.Add( $"{courseTask}/Progress", m_continuousPath.Progress, StatAggregationMethod.Average );
+        continuousStats.Add( $"{courseTask}/GeometricMeanCrossTrackM", m_continuousPath.GeometricMeanCrossTrackDistanceM, StatAggregationMethod.Average );
+        continuousStats.Add( $"{courseTask}/GeometricMaxCrossTrackM", m_continuousPath.GeometricMaxCrossTrackDistanceM, StatAggregationMethod.Average );
+        if ( missionCourse && m_missionCourse.LastPrefixFraction >= 0.999f )
+          continuousStats.Add( $"{courseTask}/FullPathSuccessRate", finished, StatAggregationMethod.Average );
         continuousStats.Add( "ContinuousPath/TimeoutRate", m_episodeTimedOut ? 1f : 0f, StatAggregationMethod.Average );
         continuousStats.Add( "ContinuousPath/OutOfBoundsRate", m_episodeOutOfBounds ? 1f : 0f, StatAggregationMethod.Average );
         continuousStats.Add( "ContinuousPath/StuckRate", m_episodeStuck ? 1f : 0f, StatAggregationMethod.Average );

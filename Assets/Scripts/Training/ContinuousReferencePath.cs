@@ -62,6 +62,20 @@ namespace RLExcavator
     public Vector3 TangentAt( float arcLength )
       => m_points.Length == 1 ? Vector3.zero : SegmentTangent( SegmentAt( arcLength ) );
 
+    /// <summary>弧长邻域内的转角重要度：直线0、直角0.5；相邻角取最大值，不重复叠罚。</summary>
+    public float CornerImportance( float arcLength, float influenceDistanceM )
+    {
+      if ( influenceDistanceM <= 0f )
+        return 0f;
+      float importance = 0f;
+      for ( int i = 1; i < m_points.Length - 1; ++i ) {
+        float proximity = Mathf.Clamp01( 1f - Mathf.Abs( arcLength - m_arcLengths[ i ] ) / influenceDistanceM );
+        float cosine = Mathf.Clamp( Vector3.Dot( SegmentTangent( i - 1 ), SegmentTangent( i ) ), -1f, 1f );
+        importance = Mathf.Max( importance, proximity * ( 1f - cosine ) * 0.5f );
+      }
+      return importance;
+    }
+
     /// <summary>
     /// 在上次沿程位置前后 maxAdvance 米内投影，避免自交路径跳到远处线段。
     /// maxAdvance 由调用者按实际位移给出；本类不积累进度、不要求进入路径点球。

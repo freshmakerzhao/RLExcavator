@@ -7,6 +7,20 @@ namespace RLExcavator.Tests
   public class ContinuousReferencePathTests
   {
     [Test]
+    public void CornerImportanceFollowsTurnAngleAndFadesWithoutChangingThePath()
+    {
+      object bent = Path( Vector3.zero, Vector3.right, Vector3.right + Vector3.up );
+      var importance = bent.GetType().GetMethod( "CornerImportance" );
+      Assert.That( importance, Is.Not.Null, "Training should identify bends without adding waypoint stops." );
+      Assert.That( (float)importance.Invoke( bent, new object[] { 1f, 0.2f } ), Is.EqualTo( 0.5f ).Within( 1e-6f ) );
+      Assert.That( (float)importance.Invoke( bent, new object[] { 0.9f, 0.2f } ), Is.EqualTo( 0.25f ).Within( 1e-6f ) );
+      Assert.That( (float)importance.Invoke( bent, new object[] { 0.5f, 0.2f } ), Is.Zero );
+      object straight = Path( Vector3.zero, Vector3.right, Vector3.right * 2f );
+      Assert.That( (float)importance.Invoke( straight, new object[] { 1f, 0.2f } ), Is.Zero );
+      AssertVector( Sample( bent, "PointAt", 1f ), Vector3.right );
+    }
+
+    [Test]
     public void ArcLengthSamplingPreservesTheOriginalCorner()
     {
       object path = Path( Vector3.zero, Vector3.right, Vector3.right + Vector3.up );

@@ -68,6 +68,25 @@ namespace RLExcavator.Tests
       }
     }
 
+    [Test]
+    public void SecondaryReceivingRegionHasItsOwnGeometryAndInvalidSizeIsMissing()
+    {
+      using ( var scene = new MaterialScene() ) {
+        Transform secondary = scene.AddSecondaryRegion();
+        secondary.position = new Vector3( 10, 0, 0 );
+        secondary.rotation = Quaternion.Euler( 0, 90, 0 );
+        secondary.localScale = Vector3.one * 3;
+        scene.Set( "secondaryTruckRegionSize", new Vector3( 2, 4, 6 ) );
+        Assert.That( scene.ContainsSecondary( secondary.position ), Is.True );
+        Assert.That( scene.ContainsSecondary( secondary.position + Vector3.right * 2.5f ), Is.True );
+        Assert.That( scene.ContainsSecondary( secondary.position + Vector3.forward * 1.1f ), Is.False );
+        Assert.That( scene.Contains( secondary.position ), Is.False );
+        scene.Set( "secondaryTruckRegionSize", Vector3.zero );
+        Assert.That( Field<bool>( scene.State, "available" ), Is.False );
+        Assert.That( Field<string>( scene.State, "reason" ), Is.EqualTo( "invalid_secondary_truck_region" ) );
+      }
+    }
+
     private sealed class MaterialScene : IDisposable
     {
       private readonly GameObject m_host = new GameObject( "material-telemetry-test" );
@@ -102,6 +121,19 @@ namespace RLExcavator.Tests
       {
         // 和运行时调用同一个区域判定，覆盖旋转/缩放造成的常见统计边界错误。
         return (bool)m_readerType.GetMethod( "ContainsTruckPoint", BindingFlags.Instance | BindingFlags.NonPublic )
+          .Invoke( m_reader, new object[] { point } );
+      }
+
+      public Transform AddSecondaryRegion()
+      {
+        Transform region = Child( "SecondaryTruckRegion" );
+        Set( "secondaryTruckRegion", region );
+        return region;
+      }
+
+      public bool ContainsSecondary( Vector3 point )
+      {
+        return (bool)m_readerType.GetMethod( "ContainsSecondaryTruckPoint", BindingFlags.Instance | BindingFlags.NonPublic )
           .Invoke( m_reader, new object[] { point } );
       }
 
