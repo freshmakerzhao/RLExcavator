@@ -3,6 +3,7 @@ using Unity.MLAgents;
 using Unity.MLAgents.Actuators;
 using Unity.MLAgents.Sensors;
 using UnityEngine.Serialization;
+using System.Linq;
 
 namespace RLExcavator
 {
@@ -373,6 +374,7 @@ namespace RLExcavator
     private MachineProfile m_machineProfile = null;
     private ContinuousPathMissionCourse m_missionCourse;
     private ContinuousPathBenchmark m_benchmark;
+    private RealExecutionTrainingRuntime m_realExecution;
     private int m_episodeStartStep;
     private int EffectiveEpisodeStep => UsesContinuousPath && m_continuousPath.resetClockAfterHoming
       ? ( m_waitingForPoseReset ? 0 : Mathf.Max( StepCount - m_episodeStartStep, 0 ) ) : StepCount;
@@ -646,6 +648,7 @@ namespace RLExcavator
       m_continuousPath = GetComponent<ContinuousPathTracking>();
       m_missionCourse = GetComponent<ContinuousPathMissionCourse>();
       m_benchmark = GetComponent<ContinuousPathBenchmark>();
+      m_realExecution = GetComponent<RealExecutionTrainingRuntime>();
 
       if ( environmentRoot == null )
         environmentRoot = transform.root;
@@ -718,6 +721,8 @@ namespace RLExcavator
 
       if ( m_benchmark != null )
         m_benchmark.Prepare( this );
+      if (m_realExecution != null && m_realExecution.enabled)
+        m_realExecution.PrepareEpisode(this);
 
       // 候选连续路径从复位后的真实铲尖生成；旧场景保留原初始化时序。
       if ( UsesContinuousPath )
@@ -1028,6 +1033,8 @@ namespace RLExcavator
         tip, BucketPitchErrorDegrees(), action, Time.fixedDeltaTime, isNewPolicyDecision ) );
       if ( m_benchmark != null )
         m_benchmark.RecordSample( this, m_continuousPath, tip );
+      if (m_realExecution != null && m_realExecution.enabled)
+        m_realExecution.RecordSample(m_continuousPath, tip);
       m_previousAction = action;
       m_episodeMinDistance = Mathf.Min( m_episodeMinDistance, m_continuousPath.EndpointDistanceM );
 
@@ -1109,7 +1116,11 @@ namespace RLExcavator
         trajectory.ResetPath();
         Transform root = MachineRootFrame();
         Vector3[] path;
-        if ( m_missionCourse != null && m_missionCourse.enabled ) {
+        if (m_realExecution != null && m_realExecution.enabled) {
+          path = m_realExecution.BeginReference(CurrentTipBasePosition());
+          trajectory.SetPlannedPath(path.Select(p => root.TransformPoint(p)).ToArray());
+        }
+        else if ( m_missionCourse != null && m_missionCourse.enabled ) {
           path = m_missionCourse.CreateReference( CurrentTipBasePosition() );
           var missionWorldPoints = new Vector3[ path.Length ];
           for ( int i = 0; i < path.Length; i++ )
@@ -1152,6 +1163,8 @@ namespace RLExcavator
         }
         if ( m_benchmark != null )
           m_benchmark.RecordStart( this, path );
+        if (m_realExecution != null && m_realExecution.enabled)
+          m_realExecution.RecordStart(path);
       }
       m_previousDistance = CurrentDistanceToTargetInternal();
       m_previousProgress = trajectory != null ? trajectory.Progress : 0f;
@@ -1174,6 +1187,8 @@ namespace RLExcavator
       RecordEpisodeStatsIfNeeded( completed );
       if ( m_benchmark != null )
         m_benchmark.RecordEnd( completed, completed ? "success" : m_episodeFailureReason );
+      if (m_realExecution != null && m_realExecution.enabled)
+        m_realExecution.RecordEnd(completed, completed ? "success" : m_episodeFailureReason);
       EndEpisode();
     }
 

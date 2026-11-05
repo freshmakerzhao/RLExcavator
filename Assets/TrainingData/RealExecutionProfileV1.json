@@ -1,0 +1,82 @@
+{
+  "schema": "real_execution_profile_v1",
+  "executionVersion": "f407_20261105_candidate_auto_map",
+  "responseModel": "CONDITIONAL_LINEAR_PROXY",
+  "assumptions": "Inverse-feedforward opening gain; no physical minimum-speed, lag, load or PWM-response identification. Zero randomization. 0.25/0.30 old-manual candidates are not imposed as floors.",
+  "controlPeriodSeconds": 0.05,
+  "cylinderOffsetM": [
+    0.1615,
+    0.23725,
+    0.0617
+  ],
+  "rawMinimumMm": [
+    80,
+    60,
+    60
+  ],
+  "rawMaximumMm": [
+    190,
+    220,
+    160
+  ],
+  "swingZeroSensorDeg": 0,
+  "swingSensorSign": 1,
+  "swingMinimumDeg": -100,
+  "swingMaximumDeg": 100,
+  "swingMaximumReferenceRadS": 0.34,
+  "manualDeadzone": 0.15,
+  "proportionalGain": [
+    0.003,
+    0.003,
+    0.003,
+    0.01
+  ],
+  "positiveFeedforward": [
+    0.03333333333333333,
+    0.016666666666666666,
+    0.01639344262295082,
+    0.02
+  ],
+  "negativeFeedforward": [
+    0.03333333333333333,
+    0.023529411764705882,
+    0.0273972602739726,
+    0.02
+  ],
+  "positiveValveStartDeg": [
+    110,
+    105,
+    105
+  ],
+  "positiveValveEndDeg": [
+    115,
+    110,
+    110
+  ],
+  "negativeValveStartDeg": [
+    78,
+    75,
+    76
+  ],
+  "negativeValveEndDeg": [
+    73,
+    69,
+    71
+  ],
+  "maximumPositivePhysicalSpeed": [
+    0.0351,
+    0.0444,
+    0.0342,
+    0.6
+  ],
+  "maximumNegativePhysicalSpeed": [
+    0.0185,
+    0.0357,
+    0.0419,
+    0.6
+  ],
+  "swingMaximumPercent": 20,
+  "pumpPercent": -30,
+  "pwmOscillatorHz": 27443200,
+  "pwmFrequencyHz": 50
+}

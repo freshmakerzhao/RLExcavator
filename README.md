@@ -43,6 +43,8 @@ env -u AGX_DIR -u AGX_PLUGIN_PATH -u AGX_FILE_PATH -u AGX_DEPENDENCIES_DIR -u LD
 
 升级证据、原始日志和前后闭环结果见 `../EvaluationReport/2026-10-10_agx_upgrade/`。
 
+当前执行约束适配使用独立场景，入口与依赖见 [RealExecutionV1 无头训练与评测](docs/real_execution_v1.md)。该版本保留原47维策略契约，以候选F407自动映射进行条件性执行代理实验；不代表真实液压响应已验证。
+
 ## 目录
 
 ```text

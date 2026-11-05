@@ -77,6 +77,8 @@ namespace RLExcavator
     [Tooltip("关闭后忽略 SetNormalizedSpeeds 写入，并保持所有关节目标速度为 0。训练时保持开启；交互 demo 可由 TaskManager 控制。")]
     public bool commandInputEnabled = true;
 
+    [HideInInspector] public RealExecutionTrainingRuntime realExecutionRuntime;
+
     [Header("初始位姿复位")]
     [Tooltip("episode 复位时恢复挖掘机根节点的初始位置和旋转")]
     public bool resetRootPoseOnHomeReset = true;
@@ -390,6 +392,15 @@ namespace RLExcavator
       LastBucketCommand = bucketInput;
       LastSwingCommand = swingInput;
 
+      if (realExecutionRuntime != null && realExecutionRuntime.ExecutionEnabled) {
+        realExecutionRuntime.SubmitReference(new Vector4(
+          CommandToTargetSpeed(boomInput, boomMaxSpeedPositive, boomMaxSpeedNegative),
+          CommandToTargetSpeed(stickInput, stickMaxSpeedPositive, stickMaxSpeedNegative),
+          CommandToTargetSpeed(bucketInput, bucketMaxSpeedPositive, bucketMaxSpeedNegative),
+          CommandToTargetSpeed(swingInput, swingMaxSpeedPositive, swingMaxSpeedNegative)));
+        return;
+      }
+
       bool holdBoom = m_zeroSpeedPositionHoldEnabled && IsZeroCommand( boomInput );
       bool holdStick = m_zeroSpeedPositionHoldEnabled && IsZeroCommand( stickInput );
       bool holdBucket = m_zeroSpeedPositionHoldEnabled && IsZeroCommand( bucketInput );
@@ -471,6 +482,7 @@ namespace RLExcavator
     /// <summary>所有关节停下（目标速度=0）。</summary>
     public void StopAll()
     {
+      if (realExecutionRuntime != null) realExecutionRuntime.ClearReference();
       m_boomSpeed = 0f;
       m_bucketSpeed = 0f;
       LastBoomCommand = 0f;
@@ -495,6 +507,21 @@ namespace RLExcavator
       DriveConstraintSet( stick, 0f );
       DriveConstraintSet( bucket, 0f );
       DriveConstraint( swing,  0f );
+    }
+
+    /// <summary>Opt-in experiment proxy output; policy conversion remains in SetNormalizedSpeeds.</summary>
+    public void ApplyExecutionSpeeds(Vector4 speeds)
+    {
+      if (realExecutionRuntime == null || !realExecutionRuntime.ExecutionEnabled || IsHoming || !commandInputEnabled)
+        return;
+      LastBoomTargetSpeed = speeds.x;
+      LastStickTargetSpeed = speeds.y;
+      LastBucketTargetSpeed = speeds.z;
+      LastSwingTargetSpeed = speeds.w;
+      DriveConstraintSet(boom, speeds.x);
+      DriveConstraintSet(stick, speeds.y);
+      DriveConstraintSet(bucket, speeds.z);
+      DriveConstraint(swing, speeds.w);
     }
 
     /// <summary>固定动作伺服模式下，把零速关节锁在当前位置；RL/手动控制默认关闭。</summary>
