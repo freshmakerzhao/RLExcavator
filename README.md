@@ -2,6 +2,8 @@
 
 Unity / AGX 负责挖掘机本体、土体、卡车碰撞、相机和物理步进。技能、策略推理与任务编排在同级 `earthmoving-autonomy` 中；本仓库另外保留训练当前 RL Follow 基线所需的代码。
 
+当前整合主线为 `main`。协作采用功能分支和 PR，由 `@freshmakerzhao` 合并；操作见[分支与提交](docs/contributing.md)。
+
 ## 日常运行
 
 用 Unity **6000.3.16f1** 打开项目，打开 `Assets/Scenes/ExcavatorRuntime.unity`，按 Play。在主项目目录执行：
